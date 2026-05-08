@@ -28,6 +28,13 @@ create policy "profiles: update own"
   using (auth.uid() = id);
 
 -- Auto-create a profile row whenever a new auth user is created.
+-- Pulls display_name from auth.user_metadata if the signup form set it,
+-- otherwise leaves it null for the user to fill in later.
+--
+-- Onboarding state is intentionally NOT stored here: it lives in
+-- auth.users.raw_user_meta_data->>'onboarding_completed' so middleware
+-- can read it from the JWT without an extra query. See
+-- app/welcome/actions.ts for the writer.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -35,7 +42,11 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id) values (new.id)
+  insert into public.profiles (id, display_name)
+    values (
+      new.id,
+      nullif(new.raw_user_meta_data->>'display_name', '')
+    )
     on conflict (id) do nothing;
   return new;
 end;

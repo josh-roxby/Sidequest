@@ -1,43 +1,138 @@
 @import "tailwindcss";
 
-/* Design tokens — placeholder values; final values will come from the
- * design infra. Keep names stable so component code can reference them. */
-:root {
-  --bg: #0b0c0e;
-  --surface: #14161a;
-  --ink: #e8eaed;
-  --mute: #8b919a;
-  --mute-2: #5e646e;
-  --mute-3: #3a3f47;
-  --line: #232830;
-  --line-2: #2e343d;
-  --accent: #b58cff;
-  --accent-glow: rgba(181, 140, 255, 0.35);
-  --accent-on: #0b0c0e;
-  --ok: #5be584;
-  --warn: #ff6b6b;
+/* ====================================================================
+ * Side Quest design tokens — see SideQuestDesign.md §2 for the spec.
+ * Values mirror that doc; component code references these names rather
+ * than hex literals so palette tweaks are one-file affairs.
+ * ================================================================== */
 
-  --f-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+:root {
+  /* Base */
+  --bg:           #F8F7F2;
+  --card:         #FFFFFF;
+  --border:       #E7E4D8;
+
+  /* Greens (primary) */
+  --primary:        #5E7D61;
+  --primary-dark:   #4F6D52;
+  --primary-light:  #7D9B80;
+  --primary-soft:   #AFC3B0;
+
+  /* Accents */
+  --lavender:       #B8A7D1;
+  --lavender-deep:  #9B86B8;
+  --lavender-soft:  #E5DEF0;
+  --gold-soft:      #D8BE85;
+  --gold-deep:      #B89A5F;
+  --gold-faint:     #F4ECD9;
+  --sage:           #D7E2D2;
+  --sage-light:     #EAF0E5;
+
+  /* Text */
+  --text-primary:   #2F3A31;
+  --text-secondary: #667368;
+  --text-muted:     #98A098;
+
+  /* Map specific */
+  --map-paper: #F4F1E8;
+  --map-park:  #D7E2D2;
+  --map-water: #C9D9D5;
+
+  /* Shadows */
+  --shadow-soft:   0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-lifted: 0 8px 28px rgba(47, 58, 49, 0.10);
+  --shadow-key:    0 6px 18px rgba(94, 125, 97, 0.28);
+  --shadow-pop:    0 4px 14px rgba(0, 0, 0, 0.10);
+
+  /* Typography stacks (font-family vars are populated by next/font) */
+  --f-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --f-body:    var(--font-jakarta), system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Motion */
+  --ease-screen:  cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-screen:   350ms;
+  --dur-state:    200ms;
+  --dur-progress: 700ms;
+  --dur-press:    100ms;
+  --dur-reveal:   500ms;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-border: var(--border);
+
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-light: var(--primary-light);
+  --color-primary-soft: var(--primary-soft);
+
+  --color-lavender: var(--lavender);
+  --color-lavender-deep: var(--lavender-deep);
+  --color-lavender-soft: var(--lavender-soft);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-deep: var(--gold-deep);
+  --color-gold-faint: var(--gold-faint);
+  --color-sage: var(--sage);
+  --color-sage-light: var(--sage-light);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  --color-map-paper: var(--map-paper);
+  --color-map-park: var(--map-park);
+  --color-map-water: var(--map-water);
+
+  --font-display: var(--f-display);
+  --font-sans: var(--f-body);
+
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lifted: var(--shadow-lifted);
+  --shadow-key: var(--shadow-key);
+  --shadow-pop: var(--shadow-pop);
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-2xl: 28px;
 }
 
 html, body {
   background: var(--bg);
-  color: var(--ink);
+  color: var(--text-primary);
   font-family: var(--f-body);
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
   min-height: 100dvh;
 }
 
-@theme {
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-ink: var(--ink);
-  --color-mute: var(--mute);
-  --color-accent: var(--accent);
-  --color-ok: var(--ok);
-  --color-warn: var(--warn);
+/* Editorial voice — Fraunces only when explicitly opted in via .font-display
+ * or by the design-system Heading components. Avoid mixing within a line
+ * (see design doc §2.2). */
+.font-display {
+  font-family: var(--f-display);
+  font-feature-settings: "ss01", "ss02";
+}
+
+/* Section eyebrows — see design doc §2.2. */
+.eyebrow {
+  font-family: var(--f-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -1,17 +1,16 @@
 # Side Quest
 
-A walking app. Drop a pin, pick a radius, get a random target inside it, and
-walk a perpendicular-waypoint loop while completing a small generated quest
-("Photograph an unusual cloud", "Listen for a fragrant hedgerow"). Local-first
-with optional cloud sync via Supabase.
+A peaceful walking companion. Drop a pin, take a wander, complete small
+acts of curiosity, and reveal a quietly gamey map of the world around you.
 
 ## Stack
 
 - Next.js 15 (App Router) + React 19 + TypeScript strict
-- Tailwind v4
-- Supabase (auth + Postgres for cloud-synced quest history)
-- Leaflet 1.9 + react-leaflet 5 (CARTO Dark Matter tiles)
-- OSRM walking-route geometry (swap for a paid provider in production)
+- Tailwind v4 (tokens via `@theme` in `app/globals.css`)
+- Fonts: Fraunces (display) + Plus Jakarta Sans (body) via `next/font`
+- Supabase (auth + Postgres + RLS)
+- Lucide React for system icons; custom SVG marks for distinctive glyphs
+- Map provider: TBD (Mapbox GL recommended — see `docs/fog-of-war.md` and `TODO.md`)
 
 ## Getting started
 

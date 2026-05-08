@@ -1,52 +1,59 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Button } from "@/components/primitives/Button";
+import { Eyebrow } from "@/components/primitives/Eyebrow";
+import { CompassMark } from "@/components/marks/CompassMark";
+import { Landscape } from "@/components/illustrations/Landscape";
+import { PhoneFrame } from "@/components/shell/PhoneFrame";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function HomePage() {
+export default async function LandingPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  if (user) {
+    redirect(user.user_metadata?.onboarding_completed ? "/home" : "/welcome");
+  }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-6 py-12">
-      <header className="space-y-2">
-        <p className="font-mono text-xs uppercase tracking-widest text-[color:var(--mute)]">
-          // SIDE QUEST
-        </p>
-        <h1 className="font-[family-name:var(--f-display)] text-3xl font-black">
-          Walk somewhere new.
-        </h1>
-        <p className="text-sm text-[color:var(--mute)]">
-          Drop a pin, pick a radius, get a random target inside it. Walk a loop
-          and complete a small task on the way.
-        </p>
-      </header>
+    <PhoneFrame>
+      <div className="flex min-h-dvh flex-col">
+        <div className="relative h-[42dvh] w-full overflow-hidden">
+          <Landscape className="absolute inset-0 h-full w-full" />
+          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-bg to-transparent" />
+        </div>
 
-      <nav className="flex flex-col gap-2">
-        {user ? (
-          <Link
-            href="/quest"
-            className="rounded-md border border-[color:var(--line)] bg-[color:var(--accent)] px-4 py-2 text-center text-sm font-bold text-[color:var(--accent-on)]"
-          >
-            Open quest map
-          </Link>
-        ) : (
-          <>
-            <Link
-              href="/login"
-              className="rounded-md border border-[color:var(--line)] bg-[color:var(--accent)] px-4 py-2 text-center text-sm font-bold text-[color:var(--accent-on)]"
-            >
-              Log in
+        <div className="flex flex-1 flex-col px-6 pb-10 pt-4">
+          <div className="flex items-center gap-3">
+            <CompassMark size={48} />
+            <div>
+              <Eyebrow>// Side Quest</Eyebrow>
+              <p className="font-display text-[22px] font-semibold leading-tight text-text-primary">
+                Every walk holds a story.
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-5 text-[14px] leading-relaxed text-text-secondary">
+            A peaceful walking companion. Drop a pin, take a wander, and turn
+            ordinary streets into a quiet adventure.
+          </p>
+
+          <div className="mt-auto space-y-2 pt-8">
+            <Link href="/signup" className="block">
+              <Button variant="primary" fullWidth>
+                Begin a journey
+              </Button>
             </Link>
-            <Link
-              href="/signup"
-              className="rounded-md border border-[color:var(--line)] px-4 py-2 text-center text-sm"
-            >
-              Create an account
+            <Link href="/login" className="block">
+              <Button variant="secondary" fullWidth>
+                I already have an account
+              </Button>
             </Link>
-          </>
-        )}
-      </nav>
-    </main>
+          </div>
+        </div>
+      </div>
+    </PhoneFrame>
   );
 }
