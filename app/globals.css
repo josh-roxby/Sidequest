@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* Design tokens — placeholder values; final values will come from the
+ * design infra. Keep names stable so component code can reference them. */
+:root {
+  --bg: #0b0c0e;
+  --surface: #14161a;
+  --ink: #e8eaed;
+  --mute: #8b919a;
+  --mute-2: #5e646e;
+  --mute-3: #3a3f47;
+  --line: #232830;
+  --line-2: #2e343d;
+  --accent: #b58cff;
+  --accent-glow: rgba(181, 140, 255, 0.35);
+  --accent-on: #0b0c0e;
+  --ok: #5be584;
+  --warn: #ff6b6b;
+
+  --f-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+}
+
+body {
+  min-height: 100dvh;
+}
+
+@theme {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-mute: var(--mute);
+  --color-accent: var(--accent);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+}

@@ -1,0 +1,30 @@
+/* Override Leaflet's default #ddd container bg so map gaps and the
+ * pre-tile-load surface inherit the app's dark palette instead of
+ * flashing white on zoom-out.
+ *
+ * `isolation: isolate` forces the leaflet-container to create its own
+ * stacking context. Leaflet's internal panes range up to z-700 (popups);
+ * without isolation those z-indexes bleed up the tree and outrank app
+ * chrome (floating nav z-40, popovers z-50, modals). Isolation keeps all
+ * Leaflet stacking scoped inside the map container. */
+.leaflet-container {
+  background: var(--bg);
+  isolation: isolate;
+}
+
+.sqs-live-marker {
+  pointer-events: none;
+}
+
+.sqs-live-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  background: #4faaff;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 14px rgba(79, 170, 255, 0.75);
+}
