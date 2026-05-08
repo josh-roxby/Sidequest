@@ -19,7 +19,7 @@ export default async function LoginPage({
         <div className="flex flex-1 flex-col justify-center">
           <div className="mb-6 flex flex-col items-center gap-3">
             <CompassMark size={56} />
-            <Eyebrow>// Welcome back</Eyebrow>
+            <Eyebrow>Welcome back</Eyebrow>
             <h1 className="font-display text-[28px] font-semibold text-text-primary">
               Sign in
             </h1>

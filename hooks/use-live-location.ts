@@ -18,11 +18,9 @@ export function useLiveLocation(active: boolean): LiveState {
   const [state, setState] = useState<LiveState>(initialState);
 
   useEffect(() => {
-    if (!active) {
-      setState(initialState);
-      return;
-    }
+    if (!active) return;
     if (typeof navigator === "undefined" || !navigator.geolocation) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot capability check on activation
       setState({ ...initialState, error: "Browser doesn't support geolocation." });
       return;
     }
@@ -45,5 +43,8 @@ export function useLiveLocation(active: boolean): LiveState {
     return () => navigator.geolocation.clearWatch(id);
   }, [active]);
 
-  return state;
+  // Derive idle state instead of setState-ing during the inactive
+  // branch of the effect — keeps `react-hooks/set-state-in-effect` happy
+  // and is conceptually cleaner.
+  return active ? state : initialState;
 }

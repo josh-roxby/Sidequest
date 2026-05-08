@@ -40,6 +40,11 @@ export function useProjectStorage<T>(
   const [hydrated, setHydrated] = useState(false);
   const versionRef = useRef(version);
 
+  // Hydrate from localStorage after mount so SSR matches the empty
+  // defaultData and the client only diverges once it's safe. This is
+  // the canonical pattern for SSR-safe browser-storage hydration; the
+  // `react-hooks/set-state-in-effect` rule false-positives on it.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const root = readRoot();
     const slot = root.projects[slug];
@@ -48,6 +53,7 @@ export function useProjectStorage<T>(
     }
     setHydrated(true);
   }, [slug]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const update = useCallback(
     (updater: T | ((prev: T) => T)) => {

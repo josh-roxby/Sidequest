@@ -11,7 +11,7 @@ export default function QuestsScreen() {
   return (
     <ScreenContainer>
       <div className="py-4">
-        <Eyebrow>// Quests</Eyebrow>
+        <Eyebrow>Quests</Eyebrow>
         <h1 className="font-display text-[26px] font-semibold text-text-primary">
           Today&apos;s side quest
         </h1>
@@ -20,7 +20,7 @@ export default function QuestsScreen() {
         </p>
       </div>
 
-      <Eyebrow className="mt-2">// Current Quest</Eyebrow>
+      <Eyebrow className="mt-2">Current Quest</Eyebrow>
       <Card variant="lg" hero className="mt-2">
         <div className="flex items-start gap-4">
           <div className="relative shrink-0">
@@ -58,7 +58,7 @@ export default function QuestsScreen() {
         </div>
       </Card>
 
-      <Eyebrow className="mt-6">// Quest History</Eyebrow>
+      <Eyebrow className="mt-6">Quest History</Eyebrow>
       <Card variant="soft" className="mt-2">
         <p className="text-[13px] text-text-secondary">
           Past quests will land here once you start your first walk.

@@ -6,7 +6,7 @@ export default function MapScreen() {
   return (
     <ScreenContainer>
       <div className="py-4">
-        <Eyebrow>// Map</Eyebrow>
+        <Eyebrow>Map</Eyebrow>
         <h1 className="font-display text-[26px] font-semibold text-text-primary">
           The cartographer&apos;s view
         </h1>

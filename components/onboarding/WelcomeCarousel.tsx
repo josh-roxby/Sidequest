@@ -18,7 +18,7 @@ export function WelcomeCarousel({ finish }: WelcomeCarouselProps) {
   const stepRef = useRef<HTMLDivElement | null>(null);
 
   const go = useCallback(
-    (n: number) => setIndex((i) => Math.max(0, Math.min(lastIndex, n))),
+    (n: number) => setIndex(Math.max(0, Math.min(lastIndex, n))),
     [lastIndex],
   );
 

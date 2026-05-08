@@ -22,7 +22,7 @@ export default async function ProfileScreen() {
     <ScreenContainer>
       <div className="flex items-center justify-between py-4">
         <div>
-          <Eyebrow>// Profile</Eyebrow>
+          <Eyebrow>Profile</Eyebrow>
           <h1 className="font-display text-[26px] font-semibold text-text-primary">
             Your trail
           </h1>
@@ -55,7 +55,7 @@ export default async function ProfileScreen() {
       </Card>
 
       <div className="mt-6 flex items-end justify-between">
-        <Eyebrow>// Badges</Eyebrow>
+        <Eyebrow>Badges</Eyebrow>
         <p className="text-[11px] text-text-secondary">0 / 32 collected</p>
       </div>
       <Card variant="soft" className="mt-2">
@@ -68,7 +68,7 @@ export default async function ProfileScreen() {
         </div>
       </Card>
 
-      <Eyebrow className="mt-6">// Lifetime Stats</Eyebrow>
+      <Eyebrow className="mt-6">Lifetime Stats</Eyebrow>
       <Card variant="soft" className="mt-2 divide-y divide-border">
         {[
           { label: "Quests completed", value: "0" },

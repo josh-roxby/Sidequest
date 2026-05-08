@@ -28,7 +28,7 @@ export default async function LandingPage() {
           <div className="flex items-center gap-3">
             <CompassMark size={48} />
             <div>
-              <Eyebrow>// Side Quest</Eyebrow>
+              <Eyebrow>Side Quest</Eyebrow>
               <p className="font-display text-[22px] font-semibold leading-tight text-text-primary">
                 Every walk holds a story.
               </p>

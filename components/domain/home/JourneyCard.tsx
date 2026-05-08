@@ -18,7 +18,7 @@ export function JourneyCard({ level, title, xp, xpToNext }: JourneyCardProps) {
   const value = xpToNext === 0 ? 0 : Math.min(1, xp / xpToNext);
   return (
     <Card variant="lg" hero>
-      <Eyebrow className="mb-3">// Your Journey</Eyebrow>
+      <Eyebrow className="mb-3">Your Journey</Eyebrow>
       <div className="flex items-center gap-4">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-sage-light shadow-pop">
           <Illustration

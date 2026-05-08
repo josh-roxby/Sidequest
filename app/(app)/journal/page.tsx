@@ -8,7 +8,7 @@ export default function JournalScreen() {
     <ScreenContainer>
       <div className="flex items-end justify-between py-4">
         <div>
-          <Eyebrow>// Journal</Eyebrow>
+          <Eyebrow>Journal</Eyebrow>
           <h1 className="font-display text-[26px] font-semibold text-text-primary">
             A book of your wanders
           </h1>

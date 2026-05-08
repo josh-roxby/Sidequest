@@ -29,7 +29,7 @@ export function InspirationCard({ quote, attribution }: InspirationCardProps) {
           </svg>
         </div>
         <div className="min-w-0 flex-1">
-          <Eyebrow className="mb-1.5">// Today&apos;s Inspiration</Eyebrow>
+          <Eyebrow className="mb-1.5">Today&apos;s Inspiration</Eyebrow>
           <p className="font-display text-[15px] italic leading-snug text-text-primary">
             “{quote}”
           </p>

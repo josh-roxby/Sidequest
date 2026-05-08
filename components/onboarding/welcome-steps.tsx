@@ -31,7 +31,7 @@ function StepVisual({ children }: { children: React.ReactNode }) {
 export const welcomeSteps: WelcomeStep[] = [
   {
     id: "welcome",
-    eyebrow: "// Side Quest",
+    eyebrow: "Side Quest",
     title: "Every walk holds a story.",
     body:
       "A peaceful adventure journal for the real world. Drop a pin, take a wander, and turn ordinary walks into small acts of curiosity.",
@@ -43,7 +43,7 @@ export const welcomeSteps: WelcomeStep[] = [
   },
   {
     id: "explore",
-    eyebrow: "// The Map",
+    eyebrow: "The Map",
     title: "Let the map guide you.",
     body:
       "We&apos;ll plot a gentle loop within your chosen radius — never just there-and-back, always a fresh route home.",
@@ -73,7 +73,7 @@ export const welcomeSteps: WelcomeStep[] = [
   },
   {
     id: "quests",
-    eyebrow: "// Side Quests",
+    eyebrow: "Side Quests",
     title: "A small task for the road.",
     body:
       "Find something purple. Photograph an unusual cloud. Quests are tiny prompts that turn the route into something to notice.",
@@ -85,7 +85,7 @@ export const welcomeSteps: WelcomeStep[] = [
   },
   {
     id: "progress",
-    eyebrow: "// Earn the map",
+    eyebrow: "Earn the map",
     title: "Reveal your world, one walk at a time.",
     body:
       "Every step uncovers a little more of the map. Earn shields, level up, and look back on a journal of where you&apos;ve been.",
@@ -101,7 +101,7 @@ export const welcomeSteps: WelcomeStep[] = [
   },
   {
     id: "ready",
-    eyebrow: "// Ready when you are",
+    eyebrow: "Ready when you are",
     title: "Pick your starting point.",
     body:
       "We&apos;ll set up your home pin next, then you&apos;re off. Your data lives in your account — you&apos;re in control of it.",

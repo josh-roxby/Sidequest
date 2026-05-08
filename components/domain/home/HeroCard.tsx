@@ -26,7 +26,7 @@ export function HeroCard({
         />
       </div>
       <div className="p-5">
-        <Eyebrow className="mb-2">// Today</Eyebrow>
+        <Eyebrow className="mb-2">Today</Eyebrow>
         <h2 className="font-display text-[22px] font-semibold leading-snug text-text-primary">
           {greeting}
         </h2>
