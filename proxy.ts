@@ -14,7 +14,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Skip Next internals and static assets.
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Skip Next internals, static assets, and `/api/*`. API routes
+    // handle their own auth and don't need the session-refresh /
+    // redirect logic; this also keeps `/api/healthz` reachable when
+    // Supabase env wiring is broken.
+    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
