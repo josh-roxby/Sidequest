@@ -9,9 +9,9 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 /** Base card surface — see design doc §4.1.
- *  - `soft` (default): 24px radius
- *  - `lg`: 28px radius, used for hero blocks (home hero, current quest, profile hero)
- */
+ *  Radii driven by the global tokens (`--radius-xl` = soft,
+ *  `--radius-2xl` = lg) so a single change in `globals.css` updates
+ *  every card. */
 export function Card({
   variant = "soft",
   hero = false,
@@ -24,7 +24,7 @@ export function Card({
       {...rest}
       className={cn(
         "border border-border bg-[rgba(255,255,255,0.92)] backdrop-blur-[8px] shadow-soft",
-        variant === "lg" ? "rounded-[28px]" : "rounded-[24px]",
+        variant === "lg" ? "rounded-2xl" : "rounded-xl",
         hero ? "p-5" : "p-4",
         className,
       )}

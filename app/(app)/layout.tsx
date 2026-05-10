@@ -1,6 +1,5 @@
 import { BottomNav } from "@/components/shell/BottomNav";
 import { PhoneFrame } from "@/components/shell/PhoneFrame";
-import { StatusBar } from "@/components/shell/StatusBar";
 
 export default function AppShellLayout({
   children,
@@ -9,8 +8,12 @@ export default function AppShellLayout({
 }) {
   return (
     <PhoneFrame>
-      <StatusBar />
-      <main className="relative">{children}</main>
+      <main
+        className="relative"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
+        {children}
+      </main>
       <BottomNav />
     </PhoneFrame>
   );
