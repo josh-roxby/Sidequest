@@ -23,3 +23,28 @@ export function required(name: string): string {
   }
   return value;
 }
+
+/** Auth-disabled mode: when `NEXT_PUBLIC_AUTH_DISABLED` is truthy, the
+ *  proxy skips session refresh / route protection, and `getCurrentUser`
+ *  returns a demo user. Lets the UI render end-to-end without a Supabase
+ *  project wired up — useful for design/preview environments. Off by
+ *  default; production behaviour is unchanged unless you opt in. */
+export function isAuthDisabled(): boolean {
+  const v = process.env.NEXT_PUBLIC_AUTH_DISABLED;
+  return v === "1" || v === "true";
+}
+
+/** Stand-in user returned from `getCurrentUser` while auth is disabled.
+ *  Shape matches the bits of `@supabase/supabase-js` `User` we actually
+ *  read in pages — id, email, user_metadata. Onboarding pre-completed so
+ *  /home renders instead of being kicked back to /welcome. */
+export const DEMO_USER = {
+  id: "demo-user",
+  email: "wanderer@example.com",
+  user_metadata: {
+    display_name: "Demo Wanderer",
+    onboarding_completed: true,
+  },
+} as const;
+
+export type DemoUser = typeof DEMO_USER;

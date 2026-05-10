@@ -1,6 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { required } from "@/lib/env";
+import { isAuthDisabled, required } from "@/lib/env";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
@@ -12,6 +12,14 @@ function startsWithAny(pathname: string, prefixes: string[]) {
 }
 
 export async function updateSession(request: NextRequest) {
+  // Auth-disabled mode: skip session refresh and all the redirect
+  // logic, render every route as-is. Pages get DEMO_USER from
+  // getCurrentUser. Useful for previewing UI without a Supabase
+  // project wired up. See lib/env.ts for the flag.
+  if (isAuthDisabled()) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
