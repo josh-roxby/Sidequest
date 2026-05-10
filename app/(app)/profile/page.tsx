@@ -4,13 +4,11 @@ import { Eyebrow } from "@/components/primitives/Eyebrow";
 import { ProgressBar } from "@/components/primitives/ProgressBar";
 import { ShieldBadge } from "@/components/marks/ShieldBadge";
 import { ScreenContainer } from "@/components/shell/ScreenContainer";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { isAuthDisabled } from "@/lib/env";
 
 export default async function ProfileScreen() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return null;
 
   const displayName =
@@ -85,14 +83,20 @@ export default async function ProfileScreen() {
         ))}
       </Card>
 
-      <form action="/auth/signout" method="post" className="mt-6">
-        <button
-          type="submit"
-          className="w-full rounded-2xl border border-border bg-[rgba(255,255,255,0.7)] px-5 py-3 text-sm font-medium text-text-primary"
-        >
-          Sign out
-        </button>
-      </form>
+      {isAuthDisabled() ? (
+        <p className="mt-6 rounded-2xl border border-border bg-gold-faint px-4 py-3 text-center text-[12px] text-gold-deep">
+          Auth disabled — sign-out wired up but unavailable in preview mode.
+        </p>
+      ) : (
+        <form action="/auth/signout" method="post" className="mt-6">
+          <button
+            type="submit"
+            className="w-full rounded-2xl border border-border bg-[rgba(255,255,255,0.7)] px-5 py-3 text-sm font-medium text-text-primary"
+          >
+            Sign out
+          </button>
+        </form>
+      )}
     </ScreenContainer>
   );
 }

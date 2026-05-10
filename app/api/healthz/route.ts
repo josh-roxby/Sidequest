@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAuthDisabled } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +12,17 @@ export const dynamic = "force-dynamic";
  *  Public on purpose: no secrets in the response, and the proxy lets
  *  /api/* through without auth gating. */
 export function GET() {
+  const authDisabled = isAuthDisabled();
   const env = {
     hasSupabaseUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
     hasSupabaseAnonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+    authDisabled,
   };
 
-  const ok = env.hasSupabaseUrl && env.hasSupabaseAnonKey;
+  // In auth-disabled preview mode, missing Supabase env is expected
+  // and the deploy is still considered "ok" — pages render with a
+  // demo user. In normal mode, both Supabase vars are required.
+  const ok = authDisabled || (env.hasSupabaseUrl && env.hasSupabaseAnonKey);
 
   return NextResponse.json(
     {
@@ -24,7 +30,7 @@ export function GET() {
       service: "side-quest",
       timestamp: new Date().toISOString(),
       commit: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
-      env: env,
+      env,
     },
     { status: ok ? 200 : 503 },
   );

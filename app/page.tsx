@@ -5,14 +5,15 @@ import { Eyebrow } from "@/components/primitives/Eyebrow";
 import { CompassMark } from "@/components/marks/CompassMark";
 import { Landscape } from "@/components/illustrations/Landscape";
 import { PhoneFrame } from "@/components/shell/PhoneFrame";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
+import { isAuthDisabled } from "@/lib/env";
 
 export default async function LandingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) {
+  const user = await getCurrentUser();
+  // Only auto-redirect signed-in real users. In auth-disabled preview
+  // mode we want the landing page to actually render so it can be
+  // reviewed.
+  if (user && !isAuthDisabled()) {
     redirect(user.user_metadata?.onboarding_completed ? "/home" : "/welcome");
   }
 
@@ -41,16 +42,18 @@ export default async function LandingPage() {
           </p>
 
           <div className="mt-auto space-y-2 pt-8">
-            <Link href="/signup" className="block">
+            <Link href={isAuthDisabled() ? "/home" : "/signup"} className="block">
               <Button variant="primary" fullWidth>
-                Begin a journey
+                {isAuthDisabled() ? "Open the app (preview)" : "Begin a journey"}
               </Button>
             </Link>
-            <Link href="/login" className="block">
-              <Button variant="secondary" fullWidth>
-                I already have an account
-              </Button>
-            </Link>
+            {isAuthDisabled() ? null : (
+              <Link href="/login" className="block">
+                <Button variant="secondary" fullWidth>
+                  I already have an account
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>

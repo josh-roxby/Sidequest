@@ -6,13 +6,10 @@ import { HeroCard } from "@/components/domain/home/HeroCard";
 import { JourneyCard } from "@/components/domain/home/JourneyCard";
 import { InspirationCard } from "@/components/domain/home/InspirationCard";
 import { Button } from "@/components/primitives/Button";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
 
 export default async function HomePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return null;
 
   const initials =
