@@ -4,15 +4,15 @@ Live punch list, organised by the release phases in
 [`docs/PRD.md`](./docs/PRD.md) §15. `README.md` stays lean; this is the
 authoritative "what's left".
 
-**Legend:** `[x]` done · `[ ]` outstanding · `[~]` exists but must be
-replaced or reworked
+Docs: [PRD](./docs/PRD.md) · [Data pipeline](./docs/data-pipeline.md) ·
+[Repo review](./docs/repo-review.md) · [Fog of war](./docs/fog-of-war.md)
 
-Companion docs: [PRD](./docs/PRD.md) · [Repo review](./docs/repo-review.md) ·
-[Fog of war](./docs/fog-of-war.md)
+**Standing constraints** (PRD §3): **C1** zero third-party spend to MVP ·
+**C2** we own the GIS · **C3** no chains, ever · **C4** no invented history.
 
 ---
 
-## Done (carried forward from the prototype)
+## Done
 
 ### Foundations
 - [x] Next 16 App Router + React 19 + TypeScript strict + Tailwind v4
@@ -23,33 +23,32 @@ Companion docs: [PRD](./docs/PRD.md) · [Repo review](./docs/repo-review.md) ·
 
 ### Auth
 - [x] Supabase browser / server / middleware clients with session rotation
-- [x] `proxy.ts` (Next 16 convention) with correct matcher excluding `/api/*`
-- [x] Route protection + onboarding gate redirect matrix
-- [x] `/auth/callback`, `/auth/signout`, `/login`, `/signup`
-- [x] `/welcome` 5-step onboarding carousel
+- [x] `proxy.ts` (Next 16 convention), matcher excluding `/api/*`
+- [x] Route protection + onboarding redirect matrix
+- [x] `/auth/callback`, `/auth/signout`, `/login`, `/signup`, `/welcome`
 - [x] `NEXT_PUBLIC_AUTH_DISABLED` preview mode with `DEMO_USER`
 
 ### Schema
 - [x] `profiles` / `user_settings` / `quests` with RLS on every table
 - [x] Auto-profile trigger, `updated_at` triggers
-- [x] One-active-quest-per-user partial unique index *(pattern carries to `runs`)*
+- [x] One-active-quest partial unique index *(pattern carries to `walks`)*
 
 ### UI
-- [x] Shell: `PhoneFrame`, `BottomNav`, `ScreenContainer`
-- [x] Primitives: `Card`, `Button`, `Eyebrow`, `ProgressBar`, `Pill`
-- [x] Marks + illustrations (subject to the strip-back below)
-- [x] Screen scaffolds: landing, home, map, quests, journal, profile
+- [x] Shell, primitives, marks, illustrations, six screen scaffolds
 
 ### Infra & docs
 - [x] CI: audit → lint → type-check → build on PR
-- [x] `/api/healthz` probe
-- [x] `docs/fog-of-war.md` — H3 storage architecture *(adopted by the PRD as-is)*
-- [x] `docs/PRD.md` — full product requirements
+- [x] `/api/healthz`
+- [x] `docs/fog-of-war.md` — H3 territory architecture *(adopted as-is)*
+- [x] `docs/PRD.md` v0.2 — tiers, zero-spend, own GIS, curated corpus, lore
+- [x] `docs/data-pipeline.md` — the Ireland dataset build
 - [x] `docs/repo-review.md` — full repo review
+- [x] Source licence audit — **SMR / NIAH / Logainm CC BY (clear);
+      Dúchas CC BY-NC (commercially blocked)**
 
 ---
 
-## Phase v0.5 — Foundations & strip-back
+## Phase v0.5 — Foundations
 
 *No new user-facing features. Make the repo honest and the data model right.*
 
@@ -62,262 +61,289 @@ Companion docs: [PRD](./docs/PRD.md) · [Repo review](./docs/repo-review.md) ·
       — `/profile` badge grid rendered from nothing
       *(`/journal` already does this correctly — copy its pattern)*
 - [ ] Delete `components/shell/StatusBar.tsx` (fake iOS chrome under the real one)
-- [ ] Retire `hooks/use-project-storage.ts` (territory goes to IndexedDB, not localStorage)
+- [ ] Retire `hooks/use-project-storage.ts` (territory goes to IndexedDB)
 - [ ] Remove `leaflet`, `react-leaflet`, `@types/leaflet`, `styles/map.css`
-- [ ] Either commit `SideQuestDesign.md` or remove the four references to it
-      (`app/globals.css`, `PhoneFrame.tsx`, `MapBottomCard.tsx`, this file)
+- [ ] Commit `SideQuestDesign.md` or remove the four references to it
 - [ ] Reconcile `README.md`'s `main`/`dev` branch story with reality
+- [ ] Purge "run" from code and copy — the entity is `walks`, invisible in UI
 
 ### Strip-back, tier two — blocked on the aesthetic decision (PRD Q5)
 - [ ] Reduce `FlowerMedallion` / `ShieldBadge` / `Pins` / `Landscape` /
       `Backpack` to a swappable `<Icon>` / `<Badge>` interface over an asset
-      map, so art direction is a directory swap not an SVG edit
+      map — art direction becomes a directory swap, not an SVG edit
 - [ ] Decide whether `PhoneFrame`'s desktop phone silhouette stays
-- [ ] Re-decide the palette values in `:root` *(keep the structure — it's right)*
-- [ ] Hold the painted-asset pipeline until the direction is set
+- [ ] Re-decide the `:root` palette values *(keep the structure — it's right)*
+- [ ] Hold the painted-asset pipeline until direction is set
 
 ### Database
-- [ ] Enable PostGIS (`create extension postgis`) — **blocks everything spatial**
-- [ ] Enable `pg_trgm` for name search
-- [ ] Migrate `quests` → `sidequests` + `sidequest_objectives` + `runs` +
-      `run_objectives` (PRD §10)
-- [ ] `pois` + `poi_categories` + `countries` tables with GiST indexes
-- [ ] `explored_cells`, `poi_visits`
+- [ ] Enable PostGIS — **blocks everything spatial**
+- [ ] Enable `pg_trgm` (name search + chain name matching)
+- [ ] Migrate `quests` → `quests` + `quest_objectives` + `walks` +
+      `walk_objectives`, with `tier` on quests (PRD §10)
+- [ ] `pois`, `poi_categories`, `poi_lore`, `countries`, `zones` + GiST indexes
+- [ ] `explored_cells`, `user_zones`, `poi_visits`
 - [ ] `collections`, `collection_items`
 - [ ] `unlock_rules`, `user_unlocks`
-- [ ] Store polylines as encoded strings, not `jsonb` arrays of pairs
-- [ ] RLS for every new table
-- [ ] **RLS test for the `sidequests` visibility policy** (own OR in a
-      non-private collection) — the one non-trivial policy in the system
-- [ ] Account deletion cascade + data export (GDPR)
+- [ ] `chain_denylist`, `chain_allowlist`, `reports`, `pipeline_runs`,
+      `admin_audit`
+- [ ] Polylines as encoded strings, not `jsonb` arrays of pairs
+- [ ] RLS on every new table
+- [ ] **RLS test for quest visibility** (published OR own OR in a non-private
+      collection) — the one non-trivial policy in the system
+- [ ] Account deletion cascade + JSON data export (GDPR)
 
-### Map layer
-- [ ] Add `maplibre-gl`; build `<QuestMap>` wrapper
-- [ ] Port the hard-won iOS/Leaflet lessons: NaN coord guards, `getBounds()`
+### Map — we build it (C2)
+- [ ] Add `maplibre-gl` + `pmtiles`; build `<QuestMap>` wrapper
+- [ ] `planetiler`/`tilemaker` → Ireland `.pmtiles`, **z0–14 only**, trimmed
+      layer set; overzoom to z18 in MapLibre
+- [ ] Host the archive on Supabase Storage (range requests); verify size
+      against the free tier
+- [ ] First custom country-locked style
+- [ ] Port the iOS/Leaflet lessons: NaN coord guards, `getBounds()`
       avoidance, `requestAnimationFrame` defer on pin set, z-index isolation
-- [ ] Keep `IllustratedMap` behind a flag as `<MapPlaceholder>` until the
-      MapLibre style lands, then delete it
+- [ ] Keep `IllustratedMap` behind a flag until the style lands, then delete
 
-### POI data — the long pole, start early
-- [ ] Finalise the taxonomy in PRD §9 (groups, categories, rarity weights)
-- [ ] Geofabrik Ireland extract → tag filter → `osm2pgsql` → `pois`
-- [ ] Wikidata / Wikipedia enrichment (descriptions, images)
-- [ ] `quality_score` computation
-- [ ] Per-POI `completion_radius_m` overrides for large sites
-- [ ] Monthly refresh job
-- [ ] **ODbL / CC BY-SA licensing review before any public launch** (PRD Q7)
-
-### Routing
-- [ ] Stand up self-hosted Valhalla with the Ireland extract
-- [ ] Repoint `lib/routing.ts`; keep straight-line fallback as a *surfaced*
-      last resort, never silently presented as a route
-- [ ] Add fallback-rate telemetry (currently unmeasurable)
-- [ ] Terrain/gradient-adjusted duration to replace the flat 5 km/h
+### Pipeline — passes 0–3 (`docs/data-pipeline.md`)
+- [ ] Local Postgres+PostGIS and Valhalla in Docker
+- [ ] Pass 0: Geofabrik Ireland extract via `osmium` + `osm2pgsql`
+- [ ] Pass 0: SMR + NIAH from data.gov.ie via `ogr2ogr`
+- [ ] **EPSG:2157 → 4326 reprojection test against a known control point**
+- [ ] Pass 0: Logainm via the Gaois API, cached
+- [ ] Pass 1: taxonomy mapping table + unmapped-category review queue
+- [ ] Pass 2: dedupe on proximity + fuzzy name + shared identifier, with
+      source precedence and provenance kept as a list
+- [ ] Pass 3: reachability — public-way proximity, access tags, public-land
+      polygons, Valhalla walking distance for borderline cases
+- [ ] `pipeline/` in-repo so a full rebuild is one command
 
 ### Auth gaps
 - [ ] Enforce email verification before app access
-- [ ] Password reset (`resetPasswordForEmail` + `/auth/update-password`)
-- [ ] Magic-link sign-in
-- [ ] Google + Apple OAuth
-- [ ] Display-name field on signup *(the DB trigger already reads it)*
-- [ ] Friendly error mapping for Supabase auth errors
+- [ ] Password reset; magic-link sign-in; Google + Apple OAuth
+- [ ] Display-name field on signup *(the trigger already reads it)*
+- [ ] Friendly Supabase auth error mapping
 
 ### Testing
-- [ ] Add Vitest; unit-test `lib/geo.ts`, the H3 quantiser, the scorer
-- [ ] Add Playwright for the auth + onboarding + run flows
+- [ ] Vitest — `lib/geo.ts`, H3 quantiser, tier duration model, chain scorer
+- [ ] Playwright — auth, onboarding, walk flow
 - [ ] Wire both into CI
+
+---
+
+## Phase v0.75 — The dataset
+
+*Prove the pipeline and the review workload on a pilot region before national
+scale.*
+
+### Pipeline — passes 4–8
+- [ ] Pass 4: visibility — class allowlist + description language analysis
+      (`no visible trace`, `site of`, `levelled` → excluded)
+- [ ] Pass 5: **chain exclusion** — `chain_confidence` from brand tags, name
+      frequency, shared domains, operator counts, forecourt/supermarket
+      polygons; publish `<0.35`, review `0.35–0.70`, auto-exclude `>0.70`
+- [ ] Seed the denylist empirically: national name-frequency analysis, review
+      the top 200 by location count
+- [ ] Name normalisation incl. trailing-placename stripping
+      ("Costa Coffee Galway" → "costa coffee")
+- [ ] Allowlist for genuine local multi-site independents
+- [ ] Pass 6: zones — townland boundaries, Logainm names, meanings, hierarchy
+- [ ] Pass 6: tales — SMR, NIAH prose, Logainm placename, Wikidata
+- [ ] **Publish check rejecting any NC-licensed body text** (Dúchas guard)
+- [ ] Wikipedia + Dúchas as outbound links only, never embedded
+- [ ] Wikimedia images — per-image licence stored, or no image
+- [ ] Pass 7: `quality_score`, `lore_richness`, `availability_confidence`
+- [ ] Pass 8: review + publish to Supabase
+
+### Corpus
+- [ ] Start-anchor grid (~1,500 nationally)
+- [ ] Offline builder: annulus candidates → scoring → Valhalla loop →
+      tier tolerance ±20% → safety validation → simplify → stage as draft
+- [ ] Shape-quest fallback for low-density areas
+- [ ] Build and review the **pilot region** (proposed Clare + Galway city)
+- [ ] **Measure the review workload** before national scale
+
+### Admin curation console (`/admin`)
+- [ ] `is_admin` **boolean column on `profiles`**, service-role writable only
+      — **never `user_metadata`** (user-writable via `updateUser`)
+- [ ] Seed migration granting admin to Josh's account id only
+- [ ] Enforcement in **all three** places: proxy redirect, server-side check
+      in every route handler and server action, RLS on admin tables
+- [ ] Chain review queue + deny/allow list management
+- [ ] Point review: geometry, category, radius, closure reports
+- [ ] Tale editor with source, licence and attribution fields
+- [ ] Quest review on a map: publish / reject / edit objectives
+- [ ] Pipeline run trigger + monitoring with per-pass diffs
+- [ ] Reports queue
+- [ ] Append-only `admin_audit` on every action
 
 ---
 
 ## Phase v1 — The loop
 
-*Done when a stranger in Ireland can sign up, walk a generated quest, and see
-their map change, with no help.*
+*Done when a stranger in Ireland can sign up, walk a Stroll, learn what their
+townland's name means, and see their map change — with no help.*
 
 ### Location capture (PRD §8.2) — highest-risk funnel step
 - [ ] Priming screen; **never** call geolocation on page load
-- [ ] First-class "pick a place on the map instead" alternative
-- [ ] `navigator.permissions.query` denied-state detection + recovery copy
-- [ ] Accuracy gate — reject fixes worse than 100 m for generation
-- [ ] Persist `last_location` so a returning map opens in the right place
-- [ ] Saved named locations ("home", "mum's")
-- [ ] Jitter filter (max jump per sample) on `useLiveLocation`
+- [ ] Equally prominent "pick a place on the map instead"
+- [ ] `navigator.permissions.query` denied detection + recovery copy
+- [ ] Accuracy gate — reject fixes worse than 100 m
+- [ ] Persist `last_location`; saved named locations
+- [ ] Max-jump jitter filter on `useLiveLocation`
 
 ### Country lock (PRD §8.3)
-- [ ] Natural Earth admin-0 → `countries` table
-- [ ] Local PostGIS reverse-resolve on first fix → `profiles.home_country`
-- [ ] Camera `maxBounds`; country polygon as the board, out-of-bounds treatment
-- [ ] Explicit country-switch prompt when a fix lands elsewhere — never silent
+- [ ] `countries` table; local PostGIS reverse-resolve — no geocoding service
+- [ ] Camera `maxBounds`; country polygon as the board
+- [ ] Explicit country-switch prompt — never silent
 
-### Map (PRD §8.4)
-- [ ] Custom country-locked MapLibre style — ours, minimal labels
-- [ ] Pins: current location, objectives, discovered POIs, hinted POIs
-- [ ] **One shared overlay primitive** with popover / modal / tooltip modes —
-      focus trap, dismiss, safe areas, reduced motion solved once
-- [ ] Trail rendering: out vs return, walked vs remaining
-- [ ] Styled (not stock) attribution that still satisfies the licence
+### Tiers (PRD §7)
+- [ ] Tier selection as the primary user choice
+- [ ] Duration model: terrain/gradient-adjusted pace + per-category dwell
+- [ ] ±20% tolerance enforced at build time
+- [ ] **Tier duration accuracy metric** — actual vs target, per tier
 
-### Generation (PRD §8.5) — the heart; give it the most time
-- [ ] Server-side generation endpoint, idempotent by seed
-- [ ] Annulus candidate query via `ST_DWithin`
-- [ ] Scoring: rarity × quality × visit-penalty × **new-territory gain**
-- [ ] Valhalla matrix call to rank candidates in one request
-- [ ] Loop routing with perpendicular return corridor
-      *(reuse `midpointWaypoints` — it's already exactly this)*
-- [ ] Secondary objectives from POIs within ~150 m of the polyline, cap 3
-- [ ] Douglas–Peucker simplification before persisting
-- [ ] **Shape-quest fallback** for sparse areas — never fail to generate
-- [ ] Non-walkable origin snapping (250 m) with a plain message if impossible
-- [ ] `generator_version` stamped on every sidequest
-- [ ] Reroll with anchor exclusion list; log reroll depth
-- [ ] Per-user rate limit; p95 < 1.5 s
-
-### Preview & run (PRD §8.6–8.8)
-- [ ] Preview modal: route, objectives, distance, duration, difficulty
+### Quest selection & preview (PRD §8.5)
+- [ ] Spatial "quests near me" query filtered by tier
+- [ ] Rank by unvisited anchors, lore richness, new territory
+- [ ] "Start is 200 m away" connector display
+- [ ] Reroll through the candidate list; log reroll depth
+- [ ] Preview modal with route, objectives, distance, duration
 - [ ] **Terrain and safety honesty** — unpaved, no pavement, steep, stiles,
       finishes after sunset
+
+### Map surfaces (PRD §8.4)
+- [ ] Pins: current location, objectives, discovered points, hinted points
+- [ ] **One shared overlay primitive** with popover / modal / tooltip modes —
+      focus trap, dismiss, safe areas, reduced motion solved once
+- [ ] Tooltips must work on tap, not hover only
+- [ ] Trail: out vs return, walked vs remaining
+- [ ] Styled attribution that still satisfies ODbL
+
+### Walking (PRD §8.7–8.9)
 - [ ] Start / pause / resume / abandon; abandoning keeps unlocked tiles
-- [ ] One active run per user, enforced in the database
-- [ ] Live position, progress by nearest-point-on-line projection
+- [ ] One active walk per user, enforced in the database
+- [ ] Live position; progress by nearest-point-on-line projection
 - [ ] Objective geofence: 40 m default, 15 s dwell
 - [ ] **Server-side re-verification** of every completion
+- [ ] Optional objectives (food stops) never gate completion
 - [ ] Implied-speed plausibility check → flag, don't block
-- [ ] Offline: cache route + objectives + POI metadata at start; sync on reconnect
-- [ ] `navigator.wakeLock` during an active run
-- [ ] Foreground-return gap-fill along the routed line (bounded)
+- [ ] Offline: cache route, objectives, points and tales at start
+- [ ] `navigator.wakeLock`; bounded foreground-return gap-fill
 - [ ] One-time honest explanation of the foreground-only limitation
 
-### Fog of war (PRD §8.10, `docs/fog-of-war.md`)
+### Territory (PRD §8.10, `docs/fog-of-war.md`)
 - [ ] `h3-js` + `lib/fog/h3.ts` quantiser (res 11)
 - [ ] `lib/fog/local-store.ts` IndexedDB store
 - [ ] Canvas overlay with soft reveal
-- [ ] `explored_cells` + `append_explored` RPC returning new-cell count
-- [ ] End-of-run sync + app-load hydration (paginated for heavy users)
-- [ ] Per-country scoping
-- [ ] Derived region stats via `cellToParent(cell, 8)` — never stored twice
+- [ ] `append_explored` RPC returning the new-cell count
+- [ ] End-of-walk sync + paginated app-load hydration
+- [ ] Per-country scoping; region stats derived via `cellToParent(cell, 8)`
+- [ ] **Townland zones**: coverage calculation, unlock threshold (PRD Q4),
+      "explored 14 townlands in Co. Clare" with Irish name and meaning
 
 ### Progression (PRD §8.11)
-- [ ] XP award: base + objectives + new territory + first-visit category bonus
-- [ ] `poi_visits` driving category counts with honest country denominators
+- [ ] XP: base + objectives + new territory + first-visit category bonus
+- [ ] Category counts with honest post-pass-3/4 denominators
 - [ ] `unlock_rules` as data: `category_count`, `category_sweep`,
-      `quest_count`, `territory`, `distance`, `collection`
-- [ ] Server-side evaluation after each run
+      `tier_count`, `zone_count`, `zone_sweep`, `territory`, `distance`,
+      `collection`, `lore`
+- [ ] Server-side evaluation after each walk
 - [ ] **Retroactive evaluation when a rule is inserted**
-- [ ] Progression screen: categories, territory, badges
-- [ ] No streaks, no decay, no expiry
+- [ ] Progression screen; no streaks, no decay, no expiry
+
+### Tales (PRD §8.12)
+- [ ] Tale popover on points, expandable, visible attribution
+- [ ] **Every published lore row carries a source** — enforced by constraint
+- [ ] Tale open rate metric
 
 ### History
-- [ ] Chronological run list from real data
-- [ ] Detail view: route map, objectives, stats
-- [ ] Category filter; name search via `pg_trgm`
-- [ ] **Per-run track deletion** (the only replayable path we store)
-- [ ] Fog on the history hero map; not on per-run thumbnails
+- [ ] Chronological list from real data; detail with route, objectives, tales
+- [ ] Filter by category and tier; name search via `pg_trgm`
+- [ ] **Per-walk track deletion** — the only replayable path we store
+- [ ] Fog on the history hero map, not on thumbnails
 
-### Collections (PRD §8.12)
-- [ ] Create; save a completed quest into one
-- [ ] User-controlled ordering
-- [ ] Visibility: private (default) / unlisted / public
-- [ ] Stable slug URLs, server-rendered with link-preview metadata
-- [ ] Viewable signed-out with a sign-up prompt to walk it
-- [ ] Walking someone else's collection creates *your* runs against *their* sidequests
-- [ ] Per-viewer completion state ("3 of 8")
+### Collections (PRD §8.13)
+- [ ] Create; save a completed quest into one; user-controlled ordering
+- [ ] Private (default) / unlisted / public
+- [ ] Stable slug URLs, server-rendered with link previews
+- [ ] Viewable signed-out with a signup prompt
+- [ ] Walking someone's collection creates *your* walks against *their* quests
+- [ ] Per-viewer completion ("3 of 8")
 - [ ] Report / takedown path — required the moment anything is public
 
-### PWA
-- [ ] Manifest + icon set + apple-touch-icon
-- [ ] Service worker: app shell + active run cache
-- [ ] Install prompt after the **first completed run**, never before
-- [ ] iOS manual "Add to Home Screen" instructions (`beforeinstallprompt` doesn't fire)
-
-### Production hardening
-- [ ] Vercel project + env wiring
-- [ ] `not-found.tsx` and `error.tsx` boundaries
-- [ ] Analytics for the funnel in PRD §14
-- [ ] Dependabot / Renovate
-- [ ] Preview deployments on PR
+### PWA & hardening
+- [ ] Manifest + icon set; service worker (shell + active quest + tales)
+- [ ] Install prompt after the **first completed quest**; iOS manual steps
+- [ ] Vercel env wiring; `not-found.tsx` and `error.tsx`
+- [ ] Funnel analytics (PRD §14); Dependabot; preview deploys
 
 ### Accessibility
 - [ ] `aria-label` audit for every icon-only button
-- [ ] ≥44 px touch targets verified
-- [ ] Tooltips must work on tap, not hover only
-- [ ] Reduced-motion respected by map transitions and fog reveals
+- [ ] ≥44 px touch targets
+- [ ] Reduced motion respected by map transitions and fog reveals
 - [ ] WCAG AA contrast audit against the final palette
 
 ---
 
 ## Phase v1.5 — Depth
 
+- [ ] **Live on-demand generation** — Valhalla on a small VPS. The first
+      deliberate spend, against known demand
 - [ ] 3D building `fill-extrusion` + `raster-dem` terrain, capability-gated
-- [ ] PMTiles self-host migration when tile spend becomes visible
-- [ ] Public collection discovery surface *(PRD Q4 — decide first)*
-- [ ] Optional photos attached to runs (journal feature, **not** verification)
-      — Supabase Storage, signed URLs, 1024 px max, EXIF stripped
+- [ ] Public collection discovery surface *(PRD Q6 — decide first)*
+- [ ] Photos on walks — Storage, signed URLs, 1024 px, EXIF stripped
+- [ ] Offline basemap (PMTiles makes this unusually easy — one cacheable file)
 - [ ] Territory compaction: res-8 parent rows with 343-bit child bitmaps
-- [ ] Second country (GB or FR) — a data operation, not a code change
+- [ ] Second country — a data operation, not a code change
 - [ ] Seasonal / time-of-day quest variation
-- [ ] Multiple saved start pins
 
 ---
 
-## Phase v2 — Intelligence and reach
+## Phase v2 — Reach
 
-- [ ] LLM narrative layer over the procedural plan — titles, flavour,
-      objective prompts. Cached per sidequest. **The model never chooses
-      where you walk, only how it's described.**
-- [ ] On-demand Overpass gap-fill for sparse areas
+- [ ] LLM-assisted lore drafting **under human review** — compresses sourced
+      text only, **never originates a fact** (C4)
+- [ ] `/admin/media`: batch generation with **hard per-day caps**, review,
+      approve/reject, publish to Storage, attach to points and categories
 - [ ] Notifications: opt-in, one category, frequency-capped, never nagging
-- [ ] Offline basemap tiles
 - [ ] Native shell (Capacitor) **only if** evidence shows foreground-only
-      tile capture is costing completions
-- [ ] iNaturalist classification for nature objectives
-- [ ] Friend leaderboards / social — currently an explicit non-goal
-
-### Admin: media generation page — deferred, Josh's account only
-> Deliberately not started. Security model decided up front (PRD §8.14) so
-> nobody improvises it later.
-
-- [ ] `is_admin` **boolean column on `profiles`**, default false, writable
-      only by the service role
-      — **never** `user_metadata`: that is user-writable via `updateUser`
-- [ ] Seed migration granting admin to Josh's account id only
-- [ ] Enforcement in **all three** places: proxy redirect, server-side check
-      in every admin route handler and server action, and RLS on admin tables.
-      Middleware alone is not access control.
-- [ ] `/admin` shell + `/admin/media`
-- [ ] `media_assets` table: kind, storage path, prompt, model, status
-- [ ] Batch generation queue, server-side, with **hard per-day caps** so a
-      bug cannot run up a bill
-- [ ] Review → approve/reject → publish to Supabase Storage
-- [ ] Attach approved media to POI / category / collection records
-- [ ] Append-only `admin_audit` table for every admin action
+      capture is costing completions
+- [ ] Heritage-body partnerships (PRD §16)
+- [ ] Approach UCD re a commercial Dúchas licence (PRD Q10)
 
 ---
 
-## Open decisions
+## Open questions
 
-Tracked in PRD §16. Summary:
+PRD §17. Summary:
 
 | # | Question | Needed by |
 |---|---|---|
-| Q1 | Confirm Ireland as the launch country | v0.5 |
+| Q1 | Confirm Ireland + the v0.75 pilot region | v0.5 |
 | Q2 | Fog at H3 res 11 or res 12? | v1 |
-| Q3 | Show the tile count at res 11 (big, noisy) or res 9 (meaningful)? | v1 |
-| Q4 | Do public collections need a browse surface, or is link-sharing enough? | v1.5 |
+| Q3 | Tile count at res 11 (big, noisy) or res 9 (meaningful)? | v1 |
+| Q4 | Townland unlock threshold — 15% coverage? | v1 |
 | Q5 | **Aesthetic direction** — blocks strip-back tier two | v1 |
-| Q6 | Is foreground-only tile capture acceptable, or is a native shell forced? | v1.5 |
-| Q7 | ODbL share-alike posture on derived POI data | pre-launch |
-| Q8 | Re-walk the same sidequest for progression? *(proposed: yes, count POIs once)* | v1 |
+| Q6 | Public collections: browse surface, or link-sharing only? | v1.5 |
+| Q7 | ODbL share-alike posture on the derived dataset | pre-launch |
+| Q8 | Re-walk a quest for progression? *(proposed: yes, count points once)* | v1 |
+| Q9 | Keep "Sidequest" as both the app and the 90-min tier? | v1 |
+| Q10 | Approach UCD about a commercial Dúchas licence? | v1.5 |
+| Q11 | Corpus target ≈ 12,000 quests — right? | v0.75 |
+| Q12 | Is foreground-only tile capture acceptable? | v1.5 |
 
-Settled by the PRD, recorded here so they don't get re-litigated:
+Settled, recorded so they aren't re-litigated:
 
 | Decision | Outcome |
 |---|---|
-| Map renderer | **MapLibre GL JS** — Leaflet can't do vector/pitch/3D; Mapbox locks the vendor |
-| Tile source | **MapTiler** for v1, **PMTiles self-host** as the cost escape hatch |
-| Routing | **Self-hosted Valhalla** — pedestrian costing, isochrones, matrix, map-matching in one binary |
-| POI source | **OSM ingested into our own PostGIS**, never a third-party API on the request path |
-| Tiling | **H3 hexagons, res 11 canonical.** Circles can't be counted; square grids distort with latitude |
-| Sidequest vs run | **Split.** A sidequest is durable and shareable; a run is one person's attempt |
-| Generation | **Server-side, procedural, seeded.** LLM is a narrative layer on top in v2, never the planner |
-| Objective verification | **Server-verified geofence.** Photos are a journal feature, not proof |
-| Launch scope | **One country, properly** |
+| Duration tiers | **Trot 15m · Stroll 45m · Sidequest 1.5h · Adventure 3h**, ±20% |
+| "Run" | **Retired.** The attempt is a `walk`, and it never appears in the UI |
+| Quest source | **Pre-built curated corpus** for v1; live generation is v1.5 |
+| Map renderer | **MapLibre GL JS** — Leaflet can't do vector/pitch/3D |
+| Tiles | **Self-built PMTiles**, z0–14 with overzoom, on Supabase Storage. £0 |
+| Routing | **Valhalla offline**, corpus pre-built. No runtime routing cost |
+| Places data | **OSM + Irish national open data in our own PostGIS.** Never a third-party places API |
+| Chains | **Excluded in the pipeline**, multi-signal, with a human review band |
+| Lore | **Sourced and cited only.** Dúchas is CC BY-NC → link out, never embed |
+| Tiling | **H3 res 11** for fog; **townlands** for named zones |
+| Quest vs walk | **Split** — it's what makes quests shareable and collectable |
+| MVP spend | **£0 recurring** |

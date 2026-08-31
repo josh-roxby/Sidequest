@@ -1,10 +1,19 @@
 # Side Quest
 
-Turn a walk into a generated adventure. Share your location, see your country
-as a stylised map, and get a **sidequest** — a walking loop anchored to real
-places worth seeing. Walking it reveals map territory permanently, advances
-category progression ("visit 5 castles"), and writes a permanent history.
-Save quests into shareable collections.
+Turn a walk into a local adventure. Share your location, see Ireland as a
+stylised map we built ourselves, pick how long you have — **Trot (15m),
+Stroll (45m), Sidequest (1.5h), Adventure (3h)** — and get a walking loop
+anchored to real places worth knowing about.
+
+**Nothing on the map is a chain.** Every café, pub and restaurant is
+independent, by pipeline rule. Every point can tell you its **tale** —
+sourced, cited history and Irish placename lore, never invented. Walking
+reveals map territory permanently, unlocks townlands, advances category
+progression, and fills a personal history. Quests curate into shareable
+collections.
+
+Two constraints shape everything: **no third-party service spend to reach
+MVP**, and **we own the data**.
 
 **Start here:** [`docs/PRD.md`](./docs/PRD.md) — the full product
 requirements, data model, and architecture decisions.
@@ -21,6 +30,7 @@ visual scaffolds and several still render placeholder data — see
 | Doc | What it covers |
 |---|---|
 | [`docs/PRD.md`](./docs/PRD.md) | Product requirements, features, data model, architecture, release plan |
+| [`docs/data-pipeline.md`](./docs/data-pipeline.md) | How the Ireland dataset gets built — sources, licences, refinement passes, chain exclusion |
 | [`docs/repo-review.md`](./docs/repo-review.md) | Full code review, security audit, strip-back plan, order of work |
 | [`docs/fog-of-war.md`](./docs/fog-of-war.md) | H3 territory storage architecture |
 | [`TODO.md`](./TODO.md) | Live punch list by release phase |
@@ -33,15 +43,18 @@ visual scaffolds and several still render placeholder data — see
 - Fraunces (display) + Plus Jakarta Sans (body) via `next/font`
 - Lucide React for system icons
 
-Decided, not yet implemented (rationale in PRD §11):
+Decided, not yet implemented (rationale in PRD §11). Every line is
+self-hosted or free-tier — **£0 recurring to MVP**:
 
-- **Map:** MapLibre GL JS, MapTiler tiles, PMTiles self-host as the cost
-  escape hatch. *Leaflet is currently a dependency and is being removed.*
-- **Routing:** self-hosted Valhalla. *Currently points at the public OSRM
-  demo, which is not for production.*
-- **POI data:** OSM ingested into our own PostGIS, never a third-party API on
-  the request path.
-- **Territory:** H3 hexagons, resolution 11.
+- **Map:** MapLibre GL JS rendering vector tiles we build ourselves, shipped
+  as one PMTiles archive on Supabase Storage. *Leaflet is currently a
+  dependency and is being removed.*
+- **Routing:** Valhalla in Docker, run **offline** to pre-build the quest
+  corpus. No routing server in production. *Currently points at the public
+  OSRM demo, which is not for production.*
+- **Places:** OpenStreetMap plus Irish national open data (SMR, NIAH,
+  Logainm) ingested into our own PostGIS. Never a third-party places API.
+- **Territory:** H3 hexagons at res 11 for fog; **townlands** for named zones.
 
 ## Getting started
 
@@ -71,7 +84,14 @@ release line described in earlier revisions is not currently in use.
 
 ## Licensing note
 
-Map and POI data will be OpenStreetMap-derived (ODbL: attribution and
-share-alike), with Wikidata (CC0) and Wikipedia (CC BY-SA) enrichment.
-Attribution is mandatory and the share-alike posture needs review before any
-public launch — see PRD §11.4 and §13.
+Licences verified 2026-08-31 (full register in
+[`docs/data-pipeline.md`](./docs/data-pipeline.md) §2):
+
+- **OpenStreetMap** — ODbL. Attribution and database share-alike. The
+  share-alike posture on our derived dataset needs legal review pre-launch.
+- **Archaeological Survey of Ireland (SMR)**, **NIAH**, **Logainm** —
+  CC BY 4.0 / data.gov.ie open. Commercial use fine with attribution.
+- **Wikidata** — CC0.
+- **Wikipedia** — CC BY-SA. Link out, don't embed.
+- **Dúchas / Schools' Collection** — **CC BY-NC 4.0: non-commercial only.**
+  Link out, never embed. A publish check enforces this.

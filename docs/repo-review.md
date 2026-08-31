@@ -5,7 +5,7 @@
 | **Date** | 2026-08-31 |
 | **Commit** | `84f0d71` on `claude/geo-adventure-sidequest-prd-8zhqgm` |
 | **Scope** | Full read of every source file. ~1,400 lines of app/component code. |
-| **Companion** | [`PRD.md`](./PRD.md) |
+| **Companion** | [`PRD.md`](./PRD.md) · [`data-pipeline.md`](./data-pipeline.md) |
 
 ---
 
@@ -107,7 +107,7 @@ Problems, all consequences of the domain change:
 | Issue | Detail |
 |---|---|
 | **No PostGIS** | Coordinates are bare `double precision` columns. There is no way to ask "POIs within 2 km" efficiently. This is the single most important upgrade — everything in generation depends on it. |
-| **`quests` conflates two things** | It is simultaneously the quest definition and the attempt record. The PRD splits these into `sidequests` (durable, shareable) and `runs` (per-user attempt). Without that split, collections and sharing are impossible. |
+| **`quests` conflates two things** | It is simultaneously the quest definition and the attempt record. The PRD splits these into `quests` (durable, shareable, tier-typed) and `walks` (one person's attempt). Without that split, collections and sharing are impossible. |
 | **Polylines as `jsonb` arrays** | `route jsonb` holding `[[lat,lng],…]`. Should be an encoded polyline string — 10–50× smaller and the format every mapping library reads natively. |
 | **Word-bank columns on the row** | `action` / `item` / `descriptor` / `prompt_text` are the old generator's output shape baked into the schema. Replaced by `sidequest_objectives`. |
 | **No `pois`, no territory, no collections, no unlocks** | The entire PRD data model beyond auth is absent. Expected — noting it for completeness. |
@@ -346,10 +346,15 @@ Same for: the primitives' APIs, the shell composition, and the
 
 Deliberately minimal — this pass is planning, not refactoring.
 
-- `docs/PRD.md` — new, the full product requirements document.
-- `docs/repo-review.md` — new, this document.
-- `TODO.md` — rewritten against the PRD's scope and phases, including the
-  admin media-generation page as a deferred, gated item.
+- `docs/PRD.md` — the full product requirements document (now at v0.2:
+  duration tiers, zero third-party spend, we own the GIS, a curated quest
+  corpus, the no-chains rule, and the lore layer).
+- `docs/data-pipeline.md` — how the Ireland dataset gets built: source
+  register with verified licences, eight refinement passes, the chain
+  exclusion engine, availability handling.
+- `docs/repo-review.md` — this document.
+- `TODO.md` — rewritten against the PRD's phases, including the admin
+  curation console (v0.75) and the deferred media-generation page (v2).
 - `README.md` — updated to describe the actual product and current state.
 - `Te.txt` — deleted.
 
@@ -364,15 +369,21 @@ their own commits.
 1. **Decide the aesthetic** (PRD Q5). It blocks the strip-back's second tier
    and nothing else — so it can run in parallel with 2–4.
 2. **Strip-back, tier one** (§6). Half a day. Makes the repo honest.
-3. **PostGIS + schema migration** to the `sidequests`/`runs`/`pois` model
-   (PRD §10). Everything downstream depends on it.
-4. **POI ingestion pipeline** + Ireland loaded and categorised (PRD §9,
-   §11.4). This is the long pole and should start early — it's a data
-   problem, not a code problem, and data problems take longer than expected.
-5. **MapLibre swap** + a first custom country-locked style (PRD §11.2, §8.3).
-6. **Valhalla stood up**, `lib/routing.ts` repointed (PRD §11.3).
-7. **Generation service** — candidate scoring, loop routing, composition
-   (PRD §8.5). The heart of the product; give it the most time.
+3. **PostGIS + schema migration** to the `quests`/`walks`/`pois`/`zones`
+   model (PRD §10). Everything downstream depends on it.
+4. **The data pipeline** — passes 0–3 for Ireland
+   ([`data-pipeline.md`](./data-pipeline.md)). This is the long pole and
+   should start early: it's a data problem, not a code problem, and data
+   problems take longer than expected. The reachability and visibility
+   passes are what make the dataset worth having.
+5. **MapLibre swap** + self-built PMTiles basemap and a first custom
+   country-locked style (PRD §11.2, §8.3).
+6. **Valhalla in Docker locally** for the offline corpus build (PRD §11.3).
+   Note this is *not* a production service — `lib/routing.ts` stops calling
+   a router at runtime entirely.
+7. **Passes 4–8 and the corpus build** for a pilot region, plus the admin
+   curation console (PRD §8.14). The heart of the product; give it the most
+   time, and measure the review workload before scaling nationally.
 8. **Location priming + capture** (PRD §8.2). Highest-risk funnel step.
 9. **Run flow** — trail, live position, server-verified objectives (§8.6–8.8).
 10. **Fog of war** end to end (§8.10, `fog-of-war.md`).
