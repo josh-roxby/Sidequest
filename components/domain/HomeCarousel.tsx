@@ -58,7 +58,7 @@ export function HomeCarousel({ cards, loading }: { cards: HomeCard[]; loading: b
         // Negative margin on the right only. Bleeding both edges was what
         // pushed the first card flush against the screen; this keeps the left
         // on the page gutter and lets the row run off to the right.
-        className="gesture -mr-4 flex min-h-0 flex-1 snap-x snap-mandatory gap-2 overflow-x-auto pr-4"
+        className="no-bar gesture -mr-4 flex min-h-0 flex-1 snap-x snap-mandatory gap-2 overflow-x-auto pr-4"
         style={{ scrollbarWidth: "none", touchAction: "pan-x", scrollPaddingLeft: 0 }}
       >
         {cards.map((c) => (

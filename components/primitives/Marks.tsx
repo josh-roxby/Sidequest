@@ -5,7 +5,7 @@
 export type MarkName =
   | "map" | "quest" | "journal" | "you" | "grid" | "pack" | "tale" | "badge"
   | "flag" | "info" | "compass" | "home" | "plus" | "target" | "layers"
-  | "leaf" | "star" | "note" | "friends"
+  | "leaf" | "star" | "note" | "friends" | "user" | "point" | "center"
   | "trot" | "stroll" | "sidequest" | "adventure"
   | "fort" | "sacred" | "ancient" | "water" | "green" | "height" | "built" | "table";
 
@@ -29,7 +29,14 @@ const PATHS: Record<MarkName, React.ReactNode> = {
   // A page with a folded corner. Deliberately unlike the point circle and the
   // outpost flag, because on the map these three must never be confused.
   note:    <><path d="M3 2.5h6.5L13 6v7.5H3Z" /><path d="M9.5 2.5V6H13" /><path d="M5.5 8.5h5M5.5 11h3" /></>,
-  friends: <><circle cx="6" cy="6" r="2.6" /><path d="M2 13.5c0-2.2 1.8-3.6 4-3.6s4 1.4 4 3.6" /><path d="M11 4.2a2.6 2.6 0 0 1 0 5.1M12 13.5c0-1.6-.6-2.8-1.6-3.4" /></>,
+  // One person for you, three for everyone else. The count is the meaning, so
+  // the two must never be the same drawing at different sizes.
+  user:    <><circle cx="8" cy="5.4" r="2.9" /><path d="M2.8 14c0-2.6 2.3-4.3 5.2-4.3s5.2 1.7 5.2 4.3" /></>,
+  friends: <><circle cx="8" cy="5" r="2.3" /><path d="M4.4 12.6c0-2 1.6-3.3 3.6-3.3s3.6 1.3 3.6 3.3" /><circle cx="2.9" cy="7.2" r="1.7" /><path d="M.6 13c0-1.5.9-2.5 2.3-2.6" /><circle cx="13.1" cy="7.2" r="1.7" /><path d="M15.4 13c0-1.5-.9-2.5-2.3-2.6" /></>,
+  // The app's own points. A diamond in a ring, so it reads as one family with
+  // the quest mark while never being mistaken for a community point.
+  point:   <><circle cx="8" cy="8" r="6.2" /><path d="M8 4.4 11.6 8 8 11.6 4.4 8z" /></>,
+  center:  <><circle cx="8" cy="8" r="3" /><path d="M8 1v2.4M8 12.6V15M1 8h2.4M12.6 8H15" /></>,
   home:    <><path d="M2.5 7.5 8 2.5l5.5 5" /><path d="M4 7v6.5h8V7" /></>,
   plus:    <><path d="M8 3v10M3 8h10" /></>,
   target:  <><circle cx="8" cy="8" r="5" /><path d="M8 1v2M8 13v2M1 8h2M13 8h2" /></>,

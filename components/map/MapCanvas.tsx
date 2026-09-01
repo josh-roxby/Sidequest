@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   hexCentre, hexCorners, hexesInRect, hexKey, hexNoise,
-  levelForScale, majorityRevealed, sizeForLevel,
+  levelForScale, majorityRevealed, sizeForLevel, tileStrength,
 } from "@/lib/map/hex";
 import { IRELAND, WORLD_HALF_X, WORLD_HALF_Y } from "@/lib/map/ireland";
 
@@ -11,7 +11,7 @@ export interface MapMarker {
   /** World coordinates, metres. */
   x: number;
   y: number;
-  kind: "point" | "objective" | "objective-done" | "you" | "note";
+  kind: "point" | "objective" | "objective-done" | "you" | "note" | "community";
   label?: string;
 }
 
@@ -22,6 +22,8 @@ export interface MapCanvasProps {
   /** Hexes holding an available quest, drawn with a rust outline. */
   questTiles?: [number, number][];
   onMarker?: (id: string) => void;
+  /** Recentre target, in world metres. */
+  home?: { x: number; y: number };
   /** Preview mode: no gestures, no compass, no hit testing. Used where the map
    *  is illustration rather than a thing to drive. */
   interactive?: boolean;
@@ -50,7 +52,7 @@ const REVEAL_RADIUS = 900;    // world metres of cleared ground around origin
  *  underneath a drag. */
 export function MapCanvas({
   markers = [], trail = [], questTiles = [], onMarker,
-  interactive = true, initialScale = 1,
+  interactive = true, initialScale = 1, home = { x: 0, y: 0 },
 }: MapCanvasProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -137,7 +139,10 @@ export function MapCanvas({
       ctx.stroke();
     }
 
-    const hexes = hexesInRect(minX, minY, maxX, maxY, hexSize);
+    const strength = tileStrength(c.scale);
+    const hexes = strength.fill <= 0.02 && strength.stroke <= 0.02
+      ? []
+      : hexesInRect(minX, minY, maxX, maxY, hexSize);
     for (const hx of hexes) {
       const { x, y } = hexCentre(hx, hexSize);
       const n = hexNoise(hx);
@@ -152,17 +157,23 @@ export function MapCanvas({
 
       if (!revealed) {
         ctx.fillStyle = fog;
-        ctx.globalAlpha = 0.72;
+        ctx.globalAlpha = 0.72 * strength.fill;
         ctx.fill();
         ctx.globalAlpha = 1;
       } else if (level === 0 && n > 0.86) {
         ctx.fillStyle = green;
+        ctx.globalAlpha = strength.fill;
         ctx.fill();
+        ctx.globalAlpha = 1;
       }
 
-      ctx.strokeStyle = rule;
-      ctx.lineWidth = 1 / c.scale;
-      ctx.stroke();
+      if (strength.stroke > 0.02) {
+        ctx.strokeStyle = rule;
+        ctx.globalAlpha = strength.stroke;
+        ctx.lineWidth = 1 / c.scale;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
 
       if (questSet.has(hexKey(hx))) {
         ctx.strokeStyle = rust;
@@ -196,23 +207,13 @@ export function MapCanvas({
       ctx.translate(m.x, m.y);
       ctx.rotate(c.bearing);
       ctx.scale(1 / c.scale, 1 / c.scale);
+      // Markers carry the same glyphs as the buttons that filter them. A
+      // separate drawing language for the canvas means learning the legend
+      // twice, so a note on the map is the note icon in a ring.
       if (m.kind === "you") {
         ctx.fillStyle = rust;
         ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = surface; ctx.lineWidth = 2.5; ctx.stroke();
-      } else if (m.kind === "note") {
-        // A page with its corner turned. Distinct in silhouette from the point
-        // circle and the outpost flag, which is what matters at 12px.
-        ctx.fillStyle = surface;
-        ctx.strokeStyle = ink;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(-6, -8); ctx.lineTo(2, -8); ctx.lineTo(6, -4);
-        ctx.lineTo(6, 8); ctx.lineTo(-6, 8); ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(2, -8); ctx.lineTo(2, -4); ctx.lineTo(6, -4);
-        ctx.stroke();
       } else if (m.kind === "objective-done") {
         ctx.fillStyle = field;
         ctx.fillRect(-5, -5, 10, 10);
@@ -220,11 +221,14 @@ export function MapCanvas({
         ctx.strokeStyle = ink; ctx.lineWidth = 2;
         ctx.strokeRect(-5, -5, 10, 10);
       } else {
+        const accent = m.kind === "note" ? ink : m.kind === "community" ? rust : field;
         ctx.fillStyle = surface;
-        ctx.beginPath(); ctx.arc(0, 0, 11, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = field; ctx.lineWidth = 1.5; ctx.stroke();
-        ctx.fillStyle = field;
-        ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = accent; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.strokeStyle = accent; ctx.fillStyle = accent; ctx.lineWidth = 1.4;
+        if (m.kind === "note") glyphNote(ctx);
+        else if (m.kind === "community") glyphPeople(ctx);
+        else glyphDiamond(ctx);
       }
       ctx.restore();
     }
@@ -339,6 +343,29 @@ export function MapCanvas({
     if (hit) onMarker(hit.id);
   }, [markers, onMarker, toWorld]);
 
+  /** Recentre on the walker, easing position and zoom together. Snaps under
+   *  reduced motion, for the same reason the compass does. */
+  const recentre = useCallback(() => {
+    const c = cam.current;
+    const from = { x: c.x, y: c.y, scale: c.scale };
+    const to = { x: home.x, y: home.y, scale: 1.4 };
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      cam.current = { ...c, ...to }; invalidate(); return;
+    }
+    const start = performance.now();
+    const step = (t: number) => {
+      const k = Math.min(1, (t - start) / 520);
+      const e = 1 - Math.pow(1 - k, 3);
+      c.x = from.x + (to.x - from.x) * e;
+      c.y = from.y + (to.y - from.y) * e;
+      c.scale = from.scale + (to.scale - from.scale) * e;
+      invalidate();
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [home.x, home.y, invalidate]);
+
   /** Ease the bearing back to north. Short, and skipped under reduced motion,
    *  because a slow spin of the whole map is disorienting rather than nice. */
   const resetNorth = useCallback(() => {
@@ -374,16 +401,14 @@ export function MapCanvas({
         onContextMenu={(e) => e.preventDefault()}
       />
       {interactive ? (
+      <div className="absolute flex flex-col gap-1.5"
+        style={{ right: "var(--gutter)", top: "calc(env(safe-area-inset-top) + var(--gutter))" }}>
       <button
         type="button"
         onClick={resetNorth}
         aria-label={`Reset orientation to north. Currently ${Math.round((-bearing * 180) / Math.PI)} degrees`}
-        className="absolute flex h-10 w-10 items-center justify-center border border-rule bg-surface active:bg-field-soft"
-        style={{
-          right: "var(--gutter)",
-          top: "calc(env(safe-area-inset-top) + var(--gutter))",
-          borderRadius: "var(--r-full)",
-        }}
+        className="flex h-10 w-10 items-center justify-center border border-rule bg-surface active:bg-field-soft"
+        style={{ borderRadius: "var(--r-full)" }}
       >
         <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden
           style={{ transform: `rotate(${-bearing}rad)`, transition: "transform 60ms linear" }}>
@@ -391,7 +416,47 @@ export function MapCanvas({
           <path d="M9 15.5 L6.4 9 L9 10.4 L11.6 9 Z" fill="var(--stone)" />
         </svg>
       </button>
+      <button
+        type="button"
+        onClick={recentre}
+        aria-label="Centre on my location"
+        className="flex h-10 w-10 items-center justify-center border border-rule bg-surface text-field active:bg-field-soft"
+        style={{ borderRadius: "var(--r-full)" }}
+      >
+        <svg width="17" height="17" viewBox="0 0 16 16" aria-hidden fill="none"
+          stroke="currentColor" strokeWidth="1.6" strokeLinecap="square">
+          <circle cx="8" cy="8" r="3" />
+          <path d="M8 1v2.4M8 12.6V15M1 8h2.4M12.6 8H15" />
+        </svg>
+      </button>
+      </div>
       ) : null}
     </div>
   );
+}
+
+/* Canvas glyphs, drawn in marker space at the same 16px proportions as the
+   SVG marks so the two read as one set. */
+function glyphNote(ctx: CanvasRenderingContext2D) {
+  ctx.beginPath();
+  ctx.moveTo(-4, -5); ctx.lineTo(1.5, -5); ctx.lineTo(4, -2.5);
+  ctx.lineTo(4, 5); ctx.lineTo(-4, 5); ctx.closePath();
+  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-2, 0.5); ctx.lineTo(2, 0.5);
+  ctx.moveTo(-2, 2.8); ctx.lineTo(0.8, 2.8);
+  ctx.stroke();
+}
+
+function glyphPeople(ctx: CanvasRenderingContext2D) {
+  ctx.beginPath(); ctx.arc(0, -2.6, 1.9, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 2.4, 3.1, Math.PI, 0); ctx.stroke();
+  ctx.beginPath(); ctx.arc(-4.6, -0.8, 1.3, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(4.6, -0.8, 1.3, 0, Math.PI * 2); ctx.stroke();
+}
+
+function glyphDiamond(ctx: CanvasRenderingContext2D) {
+  ctx.beginPath();
+  ctx.moveTo(0, -4.2); ctx.lineTo(4.2, 0); ctx.lineTo(0, 4.2); ctx.lineTo(-4.2, 0);
+  ctx.closePath();
+  ctx.stroke();
 }

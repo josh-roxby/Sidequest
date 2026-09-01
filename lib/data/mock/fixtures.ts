@@ -1,6 +1,7 @@
 import type {
-  ActivityEvent, Badge, CategoryProgress, Challenge, Collectible, CommunityQuest,
-  Friend, FriendQuest, HomeCard, Note, Point, Quest, Tale, Territory, WalkRecord,
+  ActivityEvent, Badge, CategoryProgress, Challenge, Collectible, CommunityPoint,
+  CommunityQuest, Friend, FriendQuest, HomeCard, Note, Point, Quest, Tale,
+  Territory, WalkRecord,
 } from "../types";
 
 /** Real Clare townlands, real category mix, distances that actually fall
@@ -354,4 +355,17 @@ export const CHALLENGES: Challenge[] = [
   { id: "c-2", title: "A townland neither of you has", line: "Pick one on the map and both walk it this week." },
   { id: "c-3", title: "Same walk, different day", line: "Walk Aoife's mill races and compare notes.", friend: "Aoife" },
   { id: "c-4", title: "Furthest from home", line: "Whoever reaches the furthest new tile by Sunday." },
+];
+
+
+export const COMMUNITY_POINTS: CommunityPoint[] = [
+  { id: "cp-1", title: "The clapper bridge", author: "Niamh",
+    description: "Flat slabs across the stream below the ford. Older than the road beside it.",
+    x: 0.38, y: 0.47, status: "approved", createdAt: "2026-08-19" },
+  { id: "cp-2", title: "Bench with the view", author: "Aoife",
+    description: "Someone put a bench at the top of the boreen. Best seat in the parish.",
+    x: 0.72, y: 0.24, status: "approved", createdAt: "2026-08-11" },
+  { id: "cp-3", title: "Old forge door", author: "Josh",
+    description: "Green door, horseshoe still nailed above it.",
+    x: 0.55, y: 0.63, status: "pending", createdAt: "2026-08-30" },
 ];

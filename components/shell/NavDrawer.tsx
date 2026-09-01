@@ -64,7 +64,7 @@ export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () =>
         >
           <Mark name="home" size={16} />
         </Link>
-        <SmallLink href="/profile" label="Profile" mark="you" pathname={pathname} onGo={onDismiss} />
+        <SmallLink href="/profile" label="Profile" mark="user" pathname={pathname} onGo={onDismiss} />
         <SmallLink href="/friends" label="Friends" mark="friends" pathname={pathname} onGo={onDismiss} />
         </div>
       }
@@ -137,7 +137,7 @@ export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () =>
 function SmallLink({
   href, label, mark, pathname, onGo,
 }: {
-  href: string; label: string; mark: "you" | "friends"; pathname: string; onGo: () => void;
+  href: string; label: string; mark: "user" | "friends"; pathname: string; onGo: () => void;
 }) {
   const on = pathname === href;
   return (

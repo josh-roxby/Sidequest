@@ -5,7 +5,7 @@ import { Card } from "@/components/primitives/Card";
 import { Field } from "@/components/primitives/Field";
 import { Mark } from "@/components/primitives/Marks";
 import { ShapeChip } from "@/components/primitives/ShapeChip";
-import { Tabs } from "@/components/primitives/Tabs";
+import { Tabs, TabPanel } from "@/components/primitives/Tabs";
 import { Data, Label } from "@/components/primitives/Text";
 import { EmptyState, Skeleton } from "@/components/primitives/States";
 import { Screen, ScreenHead } from "@/components/shell/Screen";
@@ -46,6 +46,7 @@ export default function FriendsScreen() {
         ]}
       />
 
+      <TabPanel value={tab}>
       <div className="mt-4">
         {tab === "friends" ? (
           friends.loading ? (
@@ -146,6 +147,7 @@ export default function FriendsScreen() {
           </div>
         ) : null}
       </div>
+      </TabPanel>
 
       <div className="mt-6">
         <ReferralTile />

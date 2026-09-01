@@ -1,12 +1,15 @@
-import type { DataSource, Note, Quest, Tale, Tier, WalkDetail } from "../types";
+import type {
+  CommunityPoint, DataSource, Note, Quest, Tale, Tier, WalkDetail,
+} from "../types";
 import {
   ACTIVITY, BADGES, CATEGORIES, CHALLENGES, COLLECTIBLES, COMMUNITY,
-  FRIEND_QUESTS, FRIENDS, HOME_CARDS, NOTES, POINTS, QUESTS, REQUESTS, TALES,
-  TERRITORY, WALKS,
+  COMMUNITY_POINTS, FRIEND_QUESTS, FRIENDS, HOME_CARDS, NOTES, POINTS, QUESTS,
+  REQUESTS, TALES, TERRITORY, WALKS,
 } from "./fixtures";
 
-/** Notes written this session. Mock only: real ones land in Postgres. */
+/** Written this session. Mock only: real ones land in Postgres. */
 const written: Note[] = [];
+const proposed: CommunityPoint[] = [];
 
 /** Artificial latency, so loading and skeleton states are visible during
  *  development rather than theoretical. Raise it to inspect a skeleton, set
@@ -43,6 +46,20 @@ export const mockSource: DataSource = {
   getFriendRequests: () => settle("getFriendRequests", REQUESTS),
   getFriendQuests: () => settle("getFriendQuests", FRIEND_QUESTS),
   getChallenges: () => settle("getChallenges", CHALLENGES),
+
+  getCommunityPoints: () =>
+    settle("getCommunityPoints", [...COMMUNITY_POINTS, ...proposed]),
+  addCommunityPoint: (p) => {
+    const created: CommunityPoint = {
+      ...p,
+      id: `cp-${Date.now()}`,
+      // Never approved on submission. See the note on CommunityPoint.status.
+      status: "pending",
+      createdAt: new Date().toISOString().slice(0, 10),
+    };
+    proposed.push(created);
+    return settle("addCommunityPoint", created);
+  },
 
   getWalkDetail: (id: string) => {
     const walk = WALKS.find((w) => w.id === id) ?? null;

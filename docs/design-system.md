@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 1.8 |
+| Version | 1.9 |
 | Date | 2026-08-31 |
 | Status | Locked. 1.2 replaces both nav forms with a single button, adds the canvas map and the hex tiling, and sets the interaction hygiene rules. |
 | Supersedes | The cream / sage / lavender token set in `app/globals.css` |
@@ -432,12 +432,16 @@ The point under the fingers stays pinned while zooming and turning, which is
 the difference between a map that feels attached to your hand and one that
 slides around under it.
 
-**E-1-1 North reset.** A round compass button sits `--gutter` from the top
+**E-1-1 Recentre.** A round target button under the compass eases position and
+zoom back to the walker together over 520ms. Moving one without the other
+lands you looking at the right place from the wrong height.
+
+**E-1-2 North reset.** A round compass button sits `--gutter` from the top
 right, its needle showing current bearing. Tapping it eases back to north over
 320ms. Under reduced motion it snaps, because a slow spin of the entire map is
 disorienting rather than pleasant.
 
-**E-1-2 The canvas owns its gestures.** `touch-action: none` on the canvas and
+**E-1-3 The canvas owns its gestures.** `touch-action: none` on the canvas and
 `overscroll-behavior: none` on the document, so the browser never competes
 with a drag by scrolling the page or zooming the document underneath.
 
@@ -453,11 +457,20 @@ observed rather than polled, and every camera change coalesces into one
 Pointy-top hexagons in axial coordinates, rounded in cube space so the seams
 never gap. Base circumradius 90m.
 
-**E-3-1 Resolution follows zoom.** The camera runs from 0.0008 to 4, which is
-enough to hold the whole island on a phone and still see a field boundary.
-Across that range a fixed hex size is either a solid mat of hairlines or four
-tiles filling the screen, so the drawn size steps by powers of two to keep an
-on-screen hex around 64px at any scale.
+**E-3-1 Resolution follows zoom, then stops.** The camera runs from 0.0008 to
+4, which is enough to hold the whole island on a phone and still see a field
+boundary. Across that range a fixed hex size is either a solid mat of hairlines
+or four tiles filling the screen, so the drawn size steps by powers of two to
+keep an on-screen hex around 64px.
+
+Subdivision stops at **level 5**. Past that the hexes are so large that they
+stop describing territory and start being a second, competing map. Instead the
+layer fades across the last two levels: hairlines go first and fastest, fill
+lingers. Fully zoomed out you see the island and the colour of what you have
+walked, with no lattice over the country.
+
+The order matters. At a distance the colour of walked ground is the useful
+signal and the grid lines are pure noise, so the noise leaves first.
 
 **E-3-2 A coarse tile is only clear when most of its ground is.** A single
 revealed field must not clear a forty kilometre tile. Each coarse hex is
@@ -485,10 +498,17 @@ it, which is the point of having a tiling at all.
 
 ### E-4 Markers
 
+**E-4-1 Canvas markers carry the same glyphs as the buttons that filter them.**
+A separate drawing language for the canvas means learning the legend twice, so
+a note on the map is the note icon in a ring, a community point is the three
+person icon in a ring, and an app point is the diamond in a ring.
+
 | Marker | Treatment |
 |---|---|
 | You | `--rust` disc, 7px, `--surface` ring |
-| Point | `--surface` disc with a `--field` ring and centre |
+| Point | `--surface` disc, `--field` ring, diamond glyph |
+| Note | `--surface` disc, `--ink` ring, note glyph |
+| Community point | `--surface` disc, `--rust` ring, three person glyph |
 | Objective, pending | Hollow `--ink` square |
 | Objective, done | Filled `--field` square |
 | Trail, out leg | 3px solid `--map-trail` |
@@ -724,6 +744,8 @@ Rules that stop the app feeling like a web page.
 - **Prose is text.** Tale bodies, place descriptions and the About page opt
   back in with `.selectable`, because those are the things a person might
   reasonably want to quote.
+- **No scrollbars.** Every scrolling surface carries `.no-bar`. A scrollbar is
+  chrome nobody designed; content running to the edge is the signal.
 - **No tap highlight.** `-webkit-tap-highlight-color: transparent` globally;
   press feedback is the 0.97 scale, which we control.
 - **No rubber band.** `overscroll-behavior: none` on the document, so a pull
@@ -916,7 +938,21 @@ ticker, which is why the constraint has to hold at both sizes.
 never where they are. The feed carries badges, quests, tales and joins, and no
 coordinate ever reaches it.
 
-**Q-4 Friends are not a social network.** No feed of theirs to scroll, no
+**Q-4 Anyone can add a point, nobody can publish one.** A community point is a
+claim about a real place on other people's maps, so it goes to review before it
+appears for anyone else. Your own pending points stay visible to you, marked as
+waiting.
+
+This is not moderation as a backstop, it is the default. A map of real places
+that anyone can write on stops being a map worth trusting, and that trust is
+the only thing this dataset has that a search engine does not.
+
+Notes are the opposite and are kept deliberately separate: a note is yours,
+nobody else ever sees it, and it saves immediately. Collapsing the two into one
+add flow would blur the difference, and the difference is the reason the second
+one is worth anything.
+
+**Q-5 Friends are not a social network.** No feed of theirs to scroll, no
 follower count, no way to see where anyone is. What a friend gives you is a
 route worth stealing and a reason to go this week. Challenges are between the
 two of you and nothing is scored, published or ranked.

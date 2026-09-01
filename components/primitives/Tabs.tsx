@@ -17,7 +17,7 @@ export function Tabs({
   onChange: (id: string) => void;
 }) {
   return (
-    <div role="tablist" className="flex items-center gap-1 overflow-x-auto">
+    <div role="tablist" className="no-bar flex items-center gap-1 overflow-x-auto">
       {items.map((t) => {
         const on = t.id === value;
         return (
@@ -49,6 +49,30 @@ export function Tabs({
 /** Square checkbox, filled field when done. Used for quest objectives, which
  *  are read at a glance rather than toggled, so the row is not a control
  *  unless onChange is supplied. */
+/** The panel under a tab row. Slides in on every change, so switching tabs
+ *  reads as travelling through one surface rather than as a page swap.
+ *
+ *  Keyed on the tab id, so React remounts it and the animation runs each time.
+ *  Deliberately one direction rather than mirroring the direction you moved:
+ *  knowing that needs the previous index during render, and every way of
+ *  keeping it there is either a ref read during render or a state write in an
+ *  effect. A consistent slide costs nothing and cannot go wrong. */
+export function TabPanel({
+  value, children,
+}: {
+  value: string; children: React.ReactNode;
+}) {
+  return (
+    <div
+      key={value}
+      role="tabpanel"
+      style={{ animation: "sq-slide-l var(--dur-frame) var(--ease-out)" }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function Check({ done, label, value }: { done: boolean; label: string; value?: string }) {
   return (
     <div className="flex items-center gap-2.5 border-b border-rule py-2.5 last:border-b-0">

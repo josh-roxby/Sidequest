@@ -79,13 +79,37 @@ export function hexNoise(h: Axial, seed = 1): number {
 /** Base resolution, in world metres. Every coarser level is this doubled. */
 export const BASE_HEX = 90;
 
+/** The tiling stops subdividing here.
+ *
+ *  Past this the hexes are so large that they stop describing territory and
+ *  start being a second, competing map. Beyond MAX_LEVEL the grid holds its
+ *  size and fades out instead, so a fully zoomed out view shows the island and
+ *  the colour of what you have walked, not a lattice over the whole country. */
+export const MAX_LEVEL = 5;
+
 /** Which hex size to draw at a given zoom, so an on-screen hex stays around
  *  64px whatever the scale. Without this the tile layer is either a solid mat
  *  of hairlines when zoomed out, or four hexes filling the screen when zoomed
- *  in. */
+ *  in. Clamped at MAX_LEVEL. */
 export function levelForScale(scale: number, targetPx = 64): number {
   const wanted = targetPx / scale;
-  return Math.max(0, Math.round(Math.log2(wanted / BASE_HEX)));
+  const raw = Math.round(Math.log2(wanted / BASE_HEX));
+  return Math.max(0, Math.min(MAX_LEVEL, raw));
+}
+
+/** How present the tile layer is at a given zoom, 0 to 1.
+ *
+ *  Full strength close in, then fading through the last two levels so the grid
+ *  leaves before it can turn into visual noise. Fill fades more slowly than
+ *  stroke: the colour of walked ground is the useful signal at a distance, the
+ *  hairlines are not. */
+export function tileStrength(scale: number): { stroke: number; fill: number } {
+  const wanted = 64 / scale;
+  const raw = Math.log2(wanted / BASE_HEX);
+  if (raw <= MAX_LEVEL - 2) return { stroke: 1, fill: 1 };
+  // Two levels of fade above the clamp, then nothing.
+  const over = Math.min(1, (raw - (MAX_LEVEL - 2)) / 3);
+  return { stroke: Math.max(0, 1 - over * 1.4), fill: Math.max(0, 1 - over * 0.75) };
 }
 
 export function sizeForLevel(level: number): number {

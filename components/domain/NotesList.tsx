@@ -34,9 +34,13 @@ export function NotesList() {
       {list.map((n) => (
         <Card key={n.id}>
           <div className="flex items-baseline justify-between gap-3">
-            <Link href={`/history/${n.walkId}`} className="min-w-0">
-              <Label style={{ fontSize: 9 }}>{n.questTitle}</Label>
-            </Link>
+            {n.walkId ? (
+              <Link href={`/history/${n.walkId}`} className="min-w-0">
+                <Label style={{ fontSize: 9 }}>{n.questTitle}</Label>
+              </Link>
+            ) : (
+              <Label style={{ fontSize: 9 }} className="min-w-0">On the map</Label>
+            )}
             <Data className="shrink-0 text-[10px] uppercase text-mute">{n.createdAt}</Data>
           </div>
           <p className="selectable t-body mt-1.5 text-ink">{n.text}</p>

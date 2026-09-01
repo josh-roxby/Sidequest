@@ -28,6 +28,8 @@ export const supabaseSource: DataSource = {
   getWalkDetail: notWired("getWalkDetail"),
   getNotes: notWired("getNotes"),
   addNote: notWired("addNote"),
+  getCommunityPoints: notWired("getCommunityPoints"),
+  addCommunityPoint: notWired("addCommunityPoint"),
 };
 
 function notWired(name: string) {

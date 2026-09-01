@@ -130,8 +130,10 @@ export interface CategoryProgress {
 
 export interface Note {
   id: string;
-  walkId: string;
-  questTitle: string;
+  /** Null when the note was written outside a walk. Notes belong to the map
+   *  first and to a walk only if there was one. */
+  walkId: string | null;
+  questTitle: string | null;
   text: string;
   /** Metres along the route when it was written, and where that was. Pinned at
    *  submission rather than at typing, so the pin marks where you actually
@@ -139,6 +141,23 @@ export interface Note {
   atM: number;
   x: number;
   y: number;
+  createdAt: string;
+}
+
+export type PointStatus = "pending" | "approved" | "rejected";
+
+export interface CommunityPoint {
+  id: string;
+  title: string;
+  description: string;
+  author: string;
+  x: number;
+  y: number;
+  /** Nothing a person adds appears on anyone else's map until it is approved.
+   *  A map of real places that anyone can write on is a map that stops being
+   *  worth trusting, so review is the default rather than a moderation
+   *  backstop. Your own pending points stay visible to you. */
+  status: PointStatus;
   createdAt: string;
 }
 
@@ -285,4 +304,8 @@ export interface DataSource {
   getWalkDetail(id: string): Promise<WalkDetail | null>;
   getNotes(): Promise<Note[]>;
   addNote(note: Omit<Note, "id" | "createdAt">): Promise<Note>;
+  getCommunityPoints(): Promise<CommunityPoint[]>;
+  addCommunityPoint(
+    p: Omit<CommunityPoint, "id" | "createdAt" | "status">,
+  ): Promise<CommunityPoint>;
 }

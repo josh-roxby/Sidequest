@@ -43,7 +43,7 @@ export function TaleCarousel({ cards, plate }: { cards: Lore[]; plate?: string }
       <div
         ref={trackRef}
         onScroll={onScroll}
-        className="gesture -mx-4 flex snap-x snap-mandatory overflow-x-auto scroll-smooth px-4"
+        className="no-bar gesture -mx-4 flex snap-x snap-mandatory overflow-x-auto scroll-smooth px-4"
         style={{ scrollbarWidth: "none", touchAction: "pan-x" }}
         aria-roledescription="carousel"
       >

@@ -117,6 +117,14 @@ data with auth off and no database.
 - [x] Activity feed, reachable from the drawer ticker
 - [x] Friends: list, their quests, requests, challenges, referral
 - [x] Profile and friends squares in the drawer header
+- [x] Tile layer stops subdividing at level 5 and fades out, so a zoomed out
+      map shows the island rather than a lattice
+- [x] Recentre control beside the compass
+- [x] Canvas markers use the same glyphs as the buttons that filter them
+- [x] Add to the map: notes, and community points that go to review
+- [x] Home band fixed to the nav button height
+- [x] Tab panels slide, and no scrolling surface shows a scrollbar
+- [ ] Admin review queue for community points, alongside the media console
 - [ ] Unlock a point for real from a live position rather than a fixture flag
 - [ ] Tile counts in the dock computed from the camera rather than passed in
 

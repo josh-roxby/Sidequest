@@ -4,10 +4,11 @@ import { MapCanvas, type MapMarker } from "@/components/map/MapCanvas";
 import { Frame } from "@/components/shell/Frame";
 import { Action } from "@/components/primitives/Action";
 import { MapDock } from "@/components/map/MapDock";
+import { MapAdd } from "@/components/map/MapAdd";
 import { Plate } from "@/components/primitives/Plate";
 import { Data, Label } from "@/components/primitives/Text";
 import { Skeleton, StatusStrip } from "@/components/primitives/States";
-import { data, type Point } from "@/lib/data";
+import { data, type CommunityPoint, type Note, type Point } from "@/lib/data";
 import { hexAt } from "@/lib/map/hex";
 import { useAsync } from "@/hooks/use-async";
 
@@ -20,11 +21,15 @@ export default function MapScreen() {
   const territory = useAsync(() => data.getTerritory(), []);
   const points = useAsync(() => data.getPointsNearby(), []);
   const quests = useAsync(() => data.getQuests("stroll"), []);
-  const notes = useAsync(() => data.getNotes(), []);
+  const [refresh, setRefresh] = useState(0);
+  const notes = useAsync(() => data.getNotes(), [refresh]);
+  const cpoints = useAsync(() => data.getCommunityPoints(), [refresh]);
+  const [openNote, setOpenNote] = useState<Note | null>(null);
+  const [openCp, setOpenCp] = useState<CommunityPoint | null>(null);
   const [open, setOpen] = useState<Point | null>(null);
   const [tale, setTale] = useState(false);
   const [layers, setLayers] = useState<Record<string, boolean>>({
-    fog: true, trail: true, points: true, quests: true, notes: true,
+    fog: true, trail: true, points: true, quests: true, notes: true, community: true,
   });
 
   const markers = useMemo<MapMarker[]>(() => {
@@ -34,8 +39,11 @@ export default function MapScreen() {
     const noteMarks = (notes.data ?? []).map((n) => ({
       id: `note-${n.id}`, x: toWorld(n.x), y: toWorld(n.y), kind: "note" as const,
     }));
-    return [{ id: "you", x: 0, y: 0, kind: "you" as const }, ...pts, ...noteMarks];
-  }, [points.data, notes.data]);
+    const cpMarks = (cpoints.data ?? []).map((c) => ({
+      id: `cp-${c.id}`, x: toWorld(c.x), y: toWorld(c.y), kind: "community" as const,
+    }));
+    return [{ id: "you", x: 0, y: 0, kind: "you" as const }, ...pts, ...noteMarks, ...cpMarks];
+  }, [points.data, notes.data, cpoints.data]);
 
   const trail = useMemo<[number, number][]>(
     () => (quests.data?.[0]?.path ?? []).map(([x, y]) => [toWorld(x), toWorld(y)]),
@@ -58,10 +66,20 @@ export default function MapScreen() {
       <MapCanvas
         markers={markers.filter((m) =>
           m.kind === "you"
-          || (m.kind === "note" ? layers.notes : layers.points))}
+          || (m.kind === "note" && layers.notes)
+          || (m.kind === "community" && layers.community)
+          || (m.kind === "point" && layers.points))}
         trail={layers.trail ? trail : []}
         questTiles={layers.quests ? questTiles : []}
         onMarker={(id) => {
+          if (id.startsWith("note-")) {
+            setOpenNote((notes.data ?? []).find((n) => `note-${n.id}` === id) ?? null);
+            return;
+          }
+          if (id.startsWith("cp-")) {
+            setOpenCp((cpoints.data ?? []).find((c) => `cp-${c.id}` === id) ?? null);
+            return;
+          }
           const p = (points.data ?? []).find((x) => x.id === id);
           if (p) setOpen(p);
         }}
@@ -92,6 +110,18 @@ export default function MapScreen() {
         </div>
       ) : null}
 
+      {/* Add sits at the head of the dock row: it is the one control here that
+          changes the map rather than filtering it. */}
+      <div className="absolute z-30 flex"
+        style={{ left: "var(--gutter)",
+                 bottom: "calc(var(--gutter) + env(safe-area-inset-bottom) + 52px)" }}>
+        <MapAdd
+          quests={quests.data ?? []}
+          at={{ x: 0.5, y: 0.5 }}
+          onAdded={() => setRefresh((n) => n + 1)}
+        />
+      </div>
+
       <MapDock
         region={territory.data?.county ?? "In view"}
         tilesInView={{ revealed: territory.data?.tiles ?? 0, total: 4200 }}
@@ -104,6 +134,7 @@ export default function MapScreen() {
           { label: "Parish bounds", progress: 14, target: 25 },
         ]}
         notes={notes.data ?? []}
+        onNote={(id) => setOpenNote((notes.data ?? []).find((n) => n.id === id) ?? null)}
         layers={layers}
         onLayer={(k, on) => setLayers((l) => ({ ...l, [k]: on }))}
         onPoint={(id) => {
@@ -168,6 +199,51 @@ export default function MapScreen() {
                 ))}
               </div>
             </div>
+          </div>
+        ) : null}
+      </Frame>
+
+      <Frame
+        open={openNote !== null}
+        onDismiss={() => setOpenNote(null)}
+        label={openNote?.questTitle ?? "On the map"}
+        title="Your note"
+      >
+        {openNote ? (
+          <div className="flex flex-col gap-3">
+            <p className="selectable t-body text-ink">{openNote.text}</p>
+            <div className="flex flex-col gap-1 border-t border-rule pt-3">
+              <Data className="text-[11px] uppercase text-stone">
+                Written {openNote.createdAt}
+              </Data>
+              <Data className="text-[11px] uppercase text-mute">
+                {openNote.questTitle
+                  ? `On ${openNote.questTitle}`
+                  : "Not attached to a quest"}
+              </Data>
+            </div>
+          </div>
+        ) : null}
+      </Frame>
+
+      <Frame
+        open={openCp !== null}
+        onDismiss={() => setOpenCp(null)}
+        label={openCp?.status === "approved" ? "Community point" : "Waiting on review"}
+        title={openCp?.title ?? ""}
+      >
+        {openCp ? (
+          <div className="flex flex-col gap-3">
+            <p className="selectable t-body text-ink">{openCp.description}</p>
+            <Data className="text-[11px] uppercase text-mute">
+              Added by {openCp.author} · {openCp.createdAt}
+            </Data>
+            {openCp.status !== "approved" ? (
+              <p className="t-small border-l-2 border-rust pl-3 text-stone">
+                Only you can see this one. It appears for everyone once it has
+                been reviewed.
+              </p>
+            ) : null}
           </div>
         ) : null}
       </Frame>

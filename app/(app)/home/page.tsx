@@ -39,10 +39,10 @@ export default function HomeScreen() {
         <RankHeader initials="JD" name="Josh" rank={8} leaves={420} stars={12} />
       </div>
 
-      {/* Fixed height rather than flexible. Cards hold their ratio off a known
-          height, so a card is the same size on every phone instead of swelling
-          on a tall one. The band below absorbs the difference. */}
-      <div className="h-[196px] shrink-0 sm:h-[232px]">
+      {/* The shelf absorbs the leftover height now that the band below is
+          fixed. Clamped so a card never grows past a sensible width on a tall
+          screen. */}
+      <div className="min-h-[180px] max-h-[260px] flex-1 sm:min-h-[210px]">
         <HomeCarousel cards={cards.data ?? []} loading={cards.loading} />
       </div>
 
@@ -70,14 +70,15 @@ export default function HomeScreen() {
         ))}
       </nav>
 
-      {/* The countryside runs along the foot and down into the strip beside
-          the nav button, which is the space the update ticker used to hold.
-          Updates now live only in the drawer, where scrolling text belongs.
-          This takes whatever height is left and collapses on a short screen
-          rather than pushing the grid off the bottom. */}
+      {/* Exactly one nav button tall, so it reads as a band along the foot
+          rather than as a panel. It fills the strip the nav button leaves and
+          stops level with it. */}
       <div
-        className="-mx-4 min-h-[72px] flex-1 overflow-hidden pt-3"
-        style={{ paddingRight: "calc(var(--tile) + var(--gutter))" }}
+        className="-mx-4 shrink-0 overflow-hidden"
+        style={{
+          height: "calc(var(--tile) + var(--gutter) * 2 + env(safe-area-inset-bottom))",
+          paddingRight: "calc(var(--tile) + var(--gutter))",
+        }}
       >
         <HillsBand />
       </div>
