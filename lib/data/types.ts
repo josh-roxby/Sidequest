@@ -135,6 +135,10 @@ export interface Tale {
   kind: Lore["kind"];
   title: string;
   readAt: string | null;
+  /** Three to five cards, read one at a time. Each carries its own source, so
+   *  a tale assembled from four different archives stays honest card by card
+   *  rather than collapsing into one unattributed paragraph. */
+  cards: Lore[];
 }
 
 export interface DataSource {
@@ -147,4 +151,5 @@ export interface DataSource {
   getCollectibles(): Promise<Collectible[]>;
   getBadges(): Promise<Badge[]>;
   getTales(): Promise<Tale[]>;
+  getTale(id: string): Promise<Tale | null>;
 }

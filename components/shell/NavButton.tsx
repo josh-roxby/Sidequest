@@ -8,10 +8,13 @@ import { getTaught, getTaughtServer, markTaught, subscribeTaught } from "@/lib/t
 import { cn } from "@/lib/cn";
 
 /** Release before this and it is a tap: the drawer opens. Reach it and the
- *  shortcut fan takes over. A full second is deliberately long: it removes any
- *  ambiguity between a thumb tap and a deliberate hold, which is what made the
- *  shorter threshold unreliable. */
-const HOLD_MS = 1000;
+ *  shortcut fan takes over.
+ *
+ *  Ambiguity between the two is no longer a risk at any threshold, because the
+ *  tap runs off the native click rather than off pointerup. That frees this
+ *  number to be tuned purely on feel, and half a second is where a deliberate
+ *  hold stops feeling like a wait. */
+const HOLD_MS = 500;
 /** Tile pitch: one tile plus one gap. The three shortcut tiles sit on this
  *  lattice around the anchor, forming a 2×2 with the button at bottom-right. */
 const CELL = 64;
@@ -162,7 +165,7 @@ export function NavButton() {
 
         {!taught && !quads ? (
           <p className="t-data pointer-events-none absolute bottom-1 right-full mr-3 whitespace-nowrap text-right text-[10px] uppercase leading-[1.5] text-mute">
-            Tap for all<br />Hold 1s and drag
+            Tap for all<br />Hold and drag
           </p>
         ) : null}
 

@@ -92,7 +92,10 @@ data with auth off and no database.
 - [ ] Tale reader as its own route rather than a frame on the map
 - [ ] Collections
 - [ ] Left-handed mirror setting for the nav button and its lattice
-- [ ] Tale reader as its own route, so a tale can be linked to
+- [x] Tale reader as its own route at `/tales/[id]`, a swipeable carousel of
+      three to five sourced cards with a share action
+- [ ] Story-shaped share image for tales, rendered server side, so a shared
+      tale looks like something rather than a link
 - [ ] Wire Tales and Badges to real progression rather than fixtures once
       the rules engine exists
 - [ ] Full pass on empty, loading, error and offline states per

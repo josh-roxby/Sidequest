@@ -5,6 +5,7 @@
 export type MarkName =
   | "map" | "quest" | "journal" | "you" | "grid" | "pack" | "tale" | "badge"
   | "flag" | "info" | "compass"
+  | "trot" | "stroll" | "sidequest" | "adventure"
   | "fort" | "sacred" | "ancient" | "water" | "green" | "height" | "built" | "table";
 
 const PATHS: Record<MarkName, React.ReactNode> = {
@@ -20,6 +21,12 @@ const PATHS: Record<MarkName, React.ReactNode> = {
   flag:    <><path d="M4 14V2.5" /><path d="M4 3h8l-2 2.5L12 8H4z" /></>,
   info:    <><rect x="2.5" y="2.5" width="11" height="11" /><path d="M8 7v4" /><rect x="7.25" y="4.5" width="1.5" height="1.5" fill="currentColor" stroke="none" /></>,
   compass: <><rect x="2.5" y="2.5" width="11" height="11" /><path d="M8 4.5l1.8 3.5L8 11.5 6.2 8z" /></>,
+  // The four lengths, drawn as the shape of the walk itself: a there and back,
+  // a small loop, a loop with something on it, a loop over a hill.
+  trot:      <><path d="M3 8h10" /><rect x="1.5" y="6.5" width="3" height="3" /><rect x="11.5" y="6.5" width="3" height="3" /></>,
+  stroll:    <><circle cx="8" cy="8" r="4.5" /><rect x="6.5" y="12" width="3" height="3" /></>,
+  sidequest: <><circle cx="8" cy="9" r="4.5" /><rect x="6.5" y="1.5" width="3" height="3" /><path d="M8 4.5v0" /><rect x="10.5" y="7.5" width="3" height="3" /></>,
+  adventure: <><path d="M2 12.5l3.5-5 2.5 3.5 2-3 4 4.5z" /><circle cx="8" cy="4" r="1.8" /></>,
   fort:    <><path d="M2.5 13.5V6l2-1.5V6h7V4.5L13.5 6v7.5z" /><path d="M6.5 13.5V10h3v3.5" /></>,
   sacred:  <><path d="M8 2v12M4.5 5.5h7" /><rect x="2.5" y="9.5" width="11" height="4" /></>,
   ancient: <><rect x="3" y="6" width="3" height="7.5" /><rect x="10" y="6" width="3" height="7.5" /><path d="M2 3.5h12v2.5H2z" /></>,

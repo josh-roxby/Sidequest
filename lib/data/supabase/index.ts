@@ -17,6 +17,7 @@ export const supabaseSource: DataSource = {
   getCollectibles: notWired("getCollectibles"),
   getBadges: notWired("getBadges"),
   getTales: notWired("getTales"),
+  getTale: notWired("getTale"),
 };
 
 function notWired(name: string) {

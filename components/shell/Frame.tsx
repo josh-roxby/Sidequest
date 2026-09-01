@@ -12,6 +12,9 @@ interface FrameProps {
    *  docs/design-system.md §B-1. */
   ratio?: "square" | "tall";
   action?: React.ReactNode;
+  /** Bodies scroll by default. Pass false when the content sizes itself to the
+   *  frame instead, as the nav drawer does. */
+  scroll?: boolean;
   children: React.ReactNode;
 }
 
@@ -22,7 +25,7 @@ interface FrameProps {
  *  single decision that most separates this from a drawer, and it ties every
  *  frame visually to the block it was opened from. */
 export function Frame({
-  open, onDismiss, label, title, ratio = "square", action, children,
+  open, onDismiss, label, title, ratio = "square", action, scroll = true, children,
 }: FrameProps) {
   const ref = useRef<HTMLDivElement>(null);
   const restoreTo = useRef<HTMLElement | null>(null);
@@ -102,7 +105,9 @@ export function Frame({
           <h2 className="t-h2 mt-1 text-ink">{title}</h2>
         </header>
 
-        <div className={cn("min-h-0 flex-1 overflow-y-auto px-4 py-3.5")}>{children}</div>
+        <div className={cn("min-h-0 flex-1 px-4 py-3.5", scroll ? "overflow-y-auto" : "overflow-hidden")}>
+          {children}
+        </div>
 
         {/* The dismiss is flush to the frame's bottom-right corner. Because
             the frame is inset 8px, it lands at exactly right:8 bottom:8 —

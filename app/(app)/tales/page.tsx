@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { Card } from "@/components/primitives/Card";
 import { Data, Label } from "@/components/primitives/Text";
 import { EmptyState, Skeleton } from "@/components/primitives/States";
@@ -35,7 +36,9 @@ export default function TalesScreen() {
 
           <div className="flex flex-col gap-2">
             {list.map((t) => (
-              <Card key={t.id} className={cn(!t.readAt && "border-dashed")}>
+              <Link key={t.id} href={`/tales/${t.id}`} className="block active:scale-[0.99]"
+                style={{ transitionDuration: "var(--dur-tap)" }}>
+              <Card className={cn(!t.readAt && "border-dashed")}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <Label style={{ fontSize: 9 }}>{t.kind}</Label>
@@ -48,7 +51,11 @@ export default function TalesScreen() {
                     {t.readAt ?? "Unread"}
                   </Data>
                 </div>
+                <Data className="mt-2 block text-[10px] uppercase text-field">
+                  {t.cards.length} cards
+                </Data>
               </Card>
+              </Link>
             ))}
           </div>
         </>

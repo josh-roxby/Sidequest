@@ -42,8 +42,8 @@ get broken by accident.
 Two more worth knowing before you build a screen.
 
 - **Navigation is one button.** A 56px square in the thumb corner on every
-  screen. Release under 1s and the square drawer opens (a `Frame`, so its
-  dismiss lands back on the same square). Hold past 1s and three tiles fan out
+  screen. Release under 0.5s and the square drawer opens (a `Frame`, so its
+  dismiss lands back on the same square). Hold past 0.5s and three tiles fan out
   to drag to: up-left Map, up Quests, left Badges. Nothing is hold-only.
   **Tap runs off the native `click`, hold runs off pointer events.** Moving the
   tap onto pointerup is what previously made it unreliable.

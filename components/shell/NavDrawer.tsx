@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Mark } from "@/components/primitives/Marks";
-import { Tooltip } from "@/components/primitives/Tooltip";
 import { Frame } from "./Frame";
 import { DESTS } from "@/lib/nav";
 import { cn } from "@/lib/cn";
@@ -13,16 +12,20 @@ import { cn } from "@/lib/cn";
  *  the square the nav button occupied. Tap the button to open, tap the same
  *  spot to close: the thumb never travels. docs/design-system.md §B-4.
  *
- *  Bento rather than a flat grid: the two destinations you reach for on every
- *  session get twice the target, the other six sit beneath as a 3×2. */
+ *  Bento rather than a flat grid: the two destinations you reach for in every
+ *  session get double the target, the other six sit beneath as a 3×2.
+ *
+ *  Nothing scrolls. The tile rows divide whatever height the square gives them
+ *  rather than carrying fixed heights, so the grid holds its proportions on a
+ *  small phone instead of overflowing and turning the drawer into a list. */
 export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () => void }) {
   const pathname = usePathname();
   const [primary, secondary] = [DESTS.slice(0, 2), DESTS.slice(2)];
 
   return (
-    <Frame open={open} onDismiss={onDismiss} label="Go to" title="Side Quest">
-      <div className="flex flex-col gap-2">
-        <div className="grid grid-cols-2 gap-2">
+    <Frame open={open} onDismiss={onDismiss} label="Go to" title="Side Quest" scroll={false}>
+      <div className="flex h-full flex-col gap-2">
+        <div className="grid min-h-0 flex-[1.15] grid-cols-2 gap-2">
           {primary.map((d) => {
             const on = pathname === d.href;
             return (
@@ -32,7 +35,7 @@ export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () =>
                 onClick={onDismiss}
                 aria-current={on ? "page" : undefined}
                 className={cn(
-                  "flex h-[86px] flex-col justify-between border p-3 active:scale-[0.98]",
+                  "flex flex-col justify-between border p-3 active:scale-[0.98]",
                   on ? "border-field bg-field text-field-ink" : "border-rule bg-surface text-ink",
                 )}
                 style={{ borderRadius: "var(--r-md)", transitionDuration: "var(--dur-tap)" }}
@@ -42,7 +45,7 @@ export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () =>
                   <span className="block text-[12px] font-semibold uppercase tracking-[0.06em]">
                     {d.label}
                   </span>
-                  <span className={cn("block text-[10px]", on ? "opacity-75" : "text-stone")}>
+                  <span className={cn("block text-[10px] leading-tight", on ? "opacity-75" : "text-stone")}>
                     {d.blurb}
                   </span>
                 </span>
@@ -51,40 +54,33 @@ export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () =>
           })}
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid min-h-0 flex-[2] grid-cols-3 grid-rows-2 gap-2">
           {secondary.map((d) => {
             const on = pathname === d.href;
             return (
-              <div key={d.href} className="relative">
-                <Link
-                  href={d.href}
-                  onClick={onDismiss}
-                  aria-current={on ? "page" : undefined}
-                  className={cn(
-                    "flex h-[68px] flex-col items-center justify-center gap-1.5 border active:scale-[0.98]",
-                    on ? "border-field bg-field text-field-ink" : "border-rule bg-surface text-stone",
-                  )}
-                  style={{ borderRadius: "var(--r-md)", transitionDuration: "var(--dur-tap)" }}
-                >
-                  <Mark name={d.mark} size={17} />
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.06em]">
-                    {d.label}
-                  </span>
-                </Link>
-                {/* The label alone cannot say what Outposts or Tales are, and
-                    a six-tile grid has no room for a subtitle. The tooltip is
-                    the explanation, never the only route: tapping the tile
-                    still just goes there. */}
-                <Tooltip text={`${d.label}. ${d.blurb}.`} side="bottom"
-                  className="absolute right-1 top-1">
-                  <span aria-label={`What is ${d.label}?`}
-                    className={cn("flex h-4 w-4 items-center justify-center border text-[9px] leading-none",
-                      on ? "border-field-ink/50 text-field-ink" : "border-rule text-mute")}
-                    style={{ borderRadius: "var(--r-full)" }}>
-                    ?
-                  </span>
-                </Tooltip>
-              </div>
+              <Link
+                key={d.href}
+                href={d.href}
+                onClick={onDismiss}
+                aria-current={on ? "page" : undefined}
+                className={cn(
+                  "flex min-h-0 flex-col items-center justify-center gap-1 border px-1 text-center active:scale-[0.98]",
+                  on ? "border-field bg-field text-field-ink" : "border-rule bg-surface text-stone",
+                )}
+                style={{ borderRadius: "var(--r-md)", transitionDuration: "var(--dur-tap)" }}
+              >
+                <Mark name={d.mark} size={17} />
+                <span className="text-[9px] font-semibold uppercase leading-none tracking-[0.06em]">
+                  {d.label}
+                </span>
+                {/* The blurb replaces the tooltip that used to sit here. A
+                    question mark on every tile is a control the user has to
+                    dismiss before they can do the thing they opened the drawer
+                    for; the answer fits on the tile, so it belongs on it. */}
+                <span className={cn("text-[8px] leading-tight", on ? "opacity-70" : "text-mute")}>
+                  {d.blurb}
+                </span>
+              </Link>
             );
           })}
         </div>

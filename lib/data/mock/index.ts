@@ -1,4 +1,4 @@
-import type { DataSource, Quest, Tier } from "../types";
+import type { DataSource, Quest, Tale, Tier } from "../types";
 import { BADGES, CATEGORIES, COLLECTIBLES, POINTS, QUESTS, TALES, TERRITORY, WALKS } from "./fixtures";
 
 /** Artificial latency, so loading and skeleton states are visible during
@@ -28,4 +28,5 @@ export const mockSource: DataSource = {
   getCollectibles: () => settle("getCollectibles", COLLECTIBLES),
   getBadges: () => settle("getBadges", BADGES),
   getTales: () => settle("getTales", TALES),
+  getTale: (id: string) => settle<Tale | null>("getTale", TALES.find((t) => t.id === id) ?? null),
 };

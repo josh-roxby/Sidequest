@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 1.3 |
+| Version | 1.4 |
 | Date | 2026-08-31 |
 | Status | Locked. 1.2 replaces both nav forms with a single button, adds the canvas map and the hex tiling, and sets the interaction hygiene rules. |
 | Supersedes | The cream / sage / lavender token set in `app/globals.css` |
@@ -258,13 +258,23 @@ the map be the whole screen.
 
 ### C-2 Tap: the drawer
 
-Release before **1000ms** and it is a tap. Opens a square drawer, the same `Frame` every other modal surface uses, so it
+Release before **500ms** and it is a tap. Opens a square drawer, the same `Frame` every other modal surface uses, so it
 inherits the scrim, the focus trap, Escape, and the dismiss control at the
 anchor. Tap the button to open, tap the same square to close. The thumb does
 not travel.
 
 Contents are a bento rather than a flat grid. The two destinations reached for
 in every session get double-height tiles; the other six sit beneath as a 3×2.
+
+**C-2-1 Nothing in the drawer scrolls.** The rows divide whatever height the
+square gives them rather than carrying fixed heights, so the grid holds its
+proportions on a small phone instead of overflowing. A drawer that scrolls has
+stopped being a map of the app and become a list.
+
+**C-2-2 The blurb sits on the tile.** Each small tile carries its own one-line
+explanation. An earlier pass put a question mark on every tile opening a
+tooltip, which made the user dismiss a control before doing the thing they
+opened the drawer for. When the answer fits on the tile, it belongs on it.
 
 ```
 ┌───────────────────────────────┐
@@ -287,14 +297,14 @@ in every session get double-height tiles; the other six sit beneath as a 3×2.
 
 ### C-3 Hold and drag: the shortcut
 
-Reach **1000ms** without releasing and three tiles fan onto the lattice
-around the button, forming a 2×2 with the button at bottom-right. Keep the
-thumb down, drag toward the one you want, release.
+Reach **500ms** without releasing and three tiles fan onto the lattice around
+the button, forming a 2×2 with the button at bottom-right. Keep the thumb
+down, drag toward the one you want, release.
 
-A full second is deliberately long. A shorter threshold has to guess whether
-a slow thumb tap was a hold, and it guesses wrong often enough that tapping
-stops feeling reliable. At a second there is no ambiguity in either
-direction.
+Ambiguity between tap and hold is no longer a risk at any threshold, because
+the tap runs off the native click rather than off pointerup (C-3-4). That
+frees the number to be tuned purely on feel, and half a second is where a
+deliberate hold stops feeling like a wait.
 
 | Position | Destination |
 |---|---|
@@ -565,7 +575,21 @@ Square checkboxes at 16px, `--r-sm`, filling `--field` when complete, with a
 hairline divider between rows and an optional mono value on the right for
 counted objectives.
 
-### I-5 Tooltips
+### I-5 Carousel
+
+Used for tales, which are three to five cards read one at a time.
+
+Built on native scroll snap rather than a transform track. Scroll snap gives
+real momentum, respects the platform's own overscroll feel, and keeps every
+card in the accessibility tree and reachable by keyboard, none of which a
+transform track with hidden slides does. Arrows scroll the same container, so
+position has one source of truth.
+
+Below the track: a previous arrow, progress dots where the active dot widens
+rather than changes colour alone, a mono `n / total`, and a next arrow.
+Arrow keys work.
+
+### I-6 Tooltips
 
 Custom, never the native `title` attribute: that needs a hover no phone has,
 and it renders in OS chrome we cannot style.
@@ -576,11 +600,11 @@ text, `--r-sm`, scaling in from the edge it is anchored to over
 
 A tooltip is always an explanation and never the only route to information.
 Anything a person must read in order to use a control belongs in the
-control's own label. They are used on the six small drawer tiles, where the
-label alone cannot say what Outposts or Tales are and the grid has no room
-for a subtitle, and on the two count chips in the rank header.
+control's own label. They are used on the two count chips in the rank header, where the number
+alone cannot say what a leaf or a star is. They are deliberately not used in
+the nav drawer: see C-2-2.
 
-### I-6 Locked territory
+### I-7 Locked territory
 
 On the map, unreached ground that is gated rather than merely unexplored gets
 a dashed `--rust` outline over diagonal hatching, with a round lock marker at
