@@ -1,28 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { Archivo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const fraunces = Fraunces({
+const archivo = Archivo({
   subsets: ["latin"],
-  variable: "--font-fraunces",
-  weight: ["500", "600", "700"],
+  variable: "--font-archivo",
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const jakarta = Plus_Jakarta_Sans({
+// Every number in the app is set in this face. docs/design-system.md §A-2-1.
+const mono = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-jakarta",
-  weight: ["400", "500", "600", "700"],
+  variable: "--font-mono",
+  weight: ["400", "500", "700"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "Side Quest",
-  description: "Every walk holds a story.",
+  description: "Pick how long you have. Get a walk worth taking.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F8F7F2",
+  themeColor: "#F4F2EC",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -30,7 +31,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${jakarta.variable}`}>
+    <html lang="en-IE" className={`${archivo.variable} ${mono.variable}`}>
       <body>{children}</body>
     </html>
   );

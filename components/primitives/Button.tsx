@@ -1,61 +1,32 @@
-"use client";
-import { forwardRef } from "react";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "toggleOn";
+type ButtonTone = "solid" | "outline" | "quiet";
 
-interface BaseProps {
-  variant?: Variant;
-  fullWidth?: boolean;
-  leadingIcon?: React.ReactNode;
-  trailingIcon?: React.ReactNode;
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  tone?: ButtonTone;
 }
 
-interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    BaseProps {}
-
-const variantClass: Record<Variant, string> = {
-  primary:
-    "bg-primary text-white shadow-key hover:bg-primary-dark active:bg-primary-dark",
-  secondary:
-    "bg-[rgba(255,255,255,0.7)] text-text-primary border border-border hover:bg-card",
-  ghost: "bg-transparent text-primary hover:bg-sage-light/60",
-  toggleOn:
-    "bg-sage-light text-primary border border-primary-light",
+const TONE: Record<ButtonTone, string> = {
+  solid:   "bg-ink text-surface border-ink",
+  outline: "bg-surface text-ink border-ink active:bg-field-soft",
+  quiet:   "bg-transparent text-stone border-rule active:bg-surface-2",
 };
 
-/** Primary system button — see design doc §4.2.
- *  Always `rounded-2xl` (16px), 14px vertical padding, weight 500, 200ms state. */
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  {
-    variant = "primary",
-    fullWidth = false,
-    leadingIcon,
-    trailingIcon,
-    className,
-    children,
-    ...rest
-  },
-  ref,
-) {
+/** Square button. Inline, in rows, in toolbars. Never full width, so it can
+ *  never be mistaken for the action pill. */
+export function Button({ tone = "outline", className, ...rest }: ButtonProps) {
   return (
     <button
-      ref={ref}
-      {...rest}
+      type="button"
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-medium",
-        "transition-[background-color,transform,box-shadow] duration-200 ease-out",
-        "active:scale-[0.97]",
-        "disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed",
-        fullWidth && "w-full",
-        variantClass[variant],
+        "rounded-none border px-3.5 text-[12px] font-semibold uppercase tracking-[0.05em]",
+        "inline-flex items-center justify-center gap-1.5",
+        "transition-transform active:scale-[0.97] disabled:opacity-45",
+        TONE[tone],
         className,
       )}
-    >
-      {leadingIcon ? <span className="shrink-0">{leadingIcon}</span> : null}
-      <span>{children}</span>
-      {trailingIcon ? <span className="shrink-0">{trailingIcon}</span> : null}
-    </button>
+      style={{ height: "var(--btn-h)", transitionDuration: "var(--dur-tap)" }}
+      {...rest}
+    />
   );
-});
+}

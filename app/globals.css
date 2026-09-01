@@ -1,131 +1,155 @@
 @import "tailwindcss";
 
 /* ====================================================================
- * Side Quest design tokens — see SideQuestDesign.md §2 for the spec.
- * Values mirror that doc; component code references these names rather
- * than hex literals so palette tweaks are one-file affairs.
+ * Side Quest — field survey tokens.
+ * Authoritative spec: docs/design-system.md §A. Component code reads
+ * these names, never hex literals, so re-skinning is one block.
  * ================================================================== */
 
 :root {
-  /* Base */
-  --bg:           #F8F7F2;
-  --card:         #FFFFFF;
-  --border:       #E7E4D8;
+  /* ground */
+  --paper:      #F4F2EC;
+  --surface:    #FBFAF6;
+  --surface-2:  #EDEAE1;
 
-  /* Greens (primary) */
-  --primary:        #5E7D61;
-  --primary-dark:   #4F6D52;
-  --primary-light:  #7D9B80;
-  --primary-soft:   #AFC3B0;
+  /* ink */
+  --ink:        #16181A;
+  --stone:      #6E6F69;   /* secondary text — 4.5:1 on paper, AA */
+  --mute:       #8A8B85;   /* 3.1:1 — labels ≥11px/600 only, never sentences */
+  --rule:       #D6D2C6;
 
-  /* Accents */
-  --lavender:       #B8A7D1;
-  --lavender-deep:  #9B86B8;
-  --lavender-soft:  #E5DEF0;
-  --gold-soft:      #D8BE85;
-  --gold-deep:      #B89A5F;
-  --gold-faint:     #F4ECD9;
-  --sage:           #D7E2D2;
-  --sage-light:     #EAF0E5;
+  /* action */
+  --field:      #2E4034;
+  --field-ink:  #FBFAF6;
+  --field-soft: #E3E8E2;
 
-  /* Text */
-  --text-primary:   #2F3A31;
-  --text-secondary: #667368;
-  --text-muted:     #98A098;
+  /* accent — unlocks, new territory, destructive. Nothing else. */
+  --rust:       #A8563B;
+  --rust-soft:  #F2E2DB;
 
-  /* Map specific */
-  --map-paper: #F4F1E8;
-  --map-park:  #D7E2D2;
-  --map-water: #C9D9D5;
+  /* map */
+  --map-paper:  #EFEDE5;
+  --map-fog:    #C9C6BC;
+  --map-water:  #CFD8D6;
+  --map-green:  #DEE4D7;
+  --map-trail:  #2E4034;
 
-  /* Shadows */
-  --shadow-soft:   0 4px 20px rgba(0, 0, 0, 0.05);
-  --shadow-lifted: 0 8px 28px rgba(47, 58, 49, 0.10);
-  --shadow-key:    0 6px 18px rgba(94, 125, 97, 0.28);
-  --shadow-pop:    0 4px 14px rgba(0, 0, 0, 0.10);
+  /* shape — there are exactly two. See design-system §A-3. */
+  --r-0:        0px;
+  --r-action:   999px;
 
-  /* Typography stacks (font-family vars are populated by next/font) */
-  --f-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  --f-body:    var(--font-jakarta), system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* spacing — --gutter is a constant, not a scale step */
+  --gutter:     8px;
+  --s-1:        4px;
+  --s-2:        8px;
+  --s-3:        12px;
+  --s-4:        16px;
+  --s-5:        20px;
+  --s-6:        24px;
+  --s-8:        32px;
+  --s-12:       48px;
 
-  /* Motion */
-  --ease-screen:  cubic-bezier(0.2, 0.7, 0.2, 1);
-  --dur-screen:   350ms;
-  --dur-state:    200ms;
-  --dur-progress: 700ms;
-  --dur-press:    100ms;
-  --dur-reveal:   500ms;
+  /* sizes */
+  --tile:       56px;
+  --tile-gap:   2px;
+  --block:      114px;
+  --action-h:   48px;
+  --btn-h:      40px;
+
+  /* motion */
+  --dur-tap:    90ms;
+  --dur-state:  180ms;
+  --dur-frame:  240ms;
+  --dur-reveal: 600ms;
+  --ease:       cubic-bezier(0.2, 0, 0, 1);
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+
+  --f-sans: var(--font-archivo), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 @theme inline {
-  --color-bg: var(--bg);
-  --color-card: var(--card);
-  --color-border: var(--border);
-
-  --color-primary: var(--primary);
-  --color-primary-dark: var(--primary-dark);
-  --color-primary-light: var(--primary-light);
-  --color-primary-soft: var(--primary-soft);
-
-  --color-lavender: var(--lavender);
-  --color-lavender-deep: var(--lavender-deep);
-  --color-lavender-soft: var(--lavender-soft);
-  --color-gold-soft: var(--gold-soft);
-  --color-gold-deep: var(--gold-deep);
-  --color-gold-faint: var(--gold-faint);
-  --color-sage: var(--sage);
-  --color-sage-light: var(--sage-light);
-
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted: var(--text-muted);
-
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-stone: var(--stone);
+  --color-mute: var(--mute);
+  --color-rule: var(--rule);
+  --color-field: var(--field);
+  --color-field-ink: var(--field-ink);
+  --color-field-soft: var(--field-soft);
+  --color-rust: var(--rust);
+  --color-rust-soft: var(--rust-soft);
   --color-map-paper: var(--map-paper);
-  --color-map-park: var(--map-park);
+  --color-map-fog: var(--map-fog);
   --color-map-water: var(--map-water);
+  --color-map-green: var(--map-green);
+  --color-map-trail: var(--map-trail);
 
-  --font-display: var(--f-display);
-  --font-sans: var(--f-body);
+  --font-sans: var(--f-sans);
+  --font-mono: var(--f-mono);
 
-  --shadow-soft: var(--shadow-soft);
-  --shadow-lifted: var(--shadow-lifted);
-  --shadow-key: var(--shadow-key);
-  --shadow-pop: var(--shadow-pop);
+  --radius-none: var(--r-0);
+  --radius-action: var(--r-action);
 
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 14px;
-  --radius-2xl: 16px;
+  --spacing-gutter: var(--gutter);
+  --spacing-tile: var(--tile);
+  --spacing-block: var(--block);
 }
 
 html, body {
-  background: var(--bg);
-  color: var(--text-primary);
-  font-family: var(--f-body);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-sans);
+  font-size: 15px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
+body { min-height: 100dvh; margin: 0; }
 
-body {
-  min-height: 100dvh;
+/* ---- type roles — docs/design-system.md §A-2 ---------------------- */
+
+.t-display { font-size: 28px; line-height: 32px; font-weight: 600; letter-spacing: -0.02em; }
+.t-h1      { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.015em; }
+.t-h2      { font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.t-body    { font-size: 15px; line-height: 22px; font-weight: 400; }
+.t-small   { font-size: 13px; line-height: 18px; font-weight: 400; }
+.t-label {
+  font-size: 11px; line-height: 12px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
 }
 
-/* Editorial voice — Fraunces only when explicitly opted in via .font-display
- * or by the design-system Heading components. Avoid mixing within a line
- * (see design doc §2.2). */
-.font-display {
-  font-family: var(--f-display);
-  font-feature-settings: "ss01", "ss02";
+/* Every number in the app is mono. docs/design-system.md §A-2-1. */
+.t-data, .t-data-lg, .t-data-xl {
+  font-family: var(--f-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
+.t-data    { font-size: 13px; line-height: 16px; letter-spacing: 0.02em; }
+.t-data-lg { font-size: 20px; line-height: 24px; letter-spacing: 0.01em; }
+.t-data-xl { font-size: 28px; line-height: 32px; }
 
-/* Section eyebrows — see design doc §2.2. */
-.eyebrow {
-  font-family: var(--f-body);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+/* ---- focus ------------------------------------------------------- */
+
+:focus-visible { outline: 2px solid var(--rust); outline-offset: -2px; }
+
+/* ---- motion ------------------------------------------------------ */
+
+@keyframes sq-frame-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes sq-rotate-step {
+  0%,   20%  { transform: rotate(0deg); }
+  25%,  45%  { transform: rotate(90deg); }
+  50%,  70%  { transform: rotate(180deg); }
+  75%,  95%  { transform: rotate(270deg); }
+  100%       { transform: rotate(360deg); }
+}
+@keyframes sq-hold-ring {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {

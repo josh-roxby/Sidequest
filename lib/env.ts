@@ -42,7 +42,7 @@ export const DEMO_USER = {
   id: "demo-user",
   email: "wanderer@example.com",
   user_metadata: {
-    display_name: "Demo Wanderer",
+    display_name: "Demo Walker",
     onboarding_completed: true,
   },
 } as const;

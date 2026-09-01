@@ -1,0 +1,112 @@
+"use client";
+import { useEffect, useRef } from "react";
+import { cn } from "@/lib/cn";
+
+interface FrameProps {
+  open: boolean;
+  onDismiss: () => void;
+  label: string;
+  title: string;
+  /** "square" for everything. "tall" only for reading surfaces: the tale
+   *  reader and the quest preview. There is no third size and no full sheet.
+   *  docs/design-system.md §B-1. */
+  ratio?: "square" | "tall";
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+/** Replaces every sheet, drawer, dialog and modal.
+ *
+ *  A square inset 8px from the left, right and bottom, scaling up from the
+ *  thumb corner rather than sliding from the bottom edge. That origin is the
+ *  single decision that most separates this from a drawer, and it ties every
+ *  frame visually to the block it was opened from. */
+export function Frame({
+  open, onDismiss, label, title, ratio = "square", action, children,
+}: FrameProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const restoreTo = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    restoreTo.current = document.activeElement as HTMLElement | null;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { onDismiss(); return; }
+      if (e.key !== "Tab" || !ref.current) return;
+      const f = ref.current.querySelectorAll<HTMLElement>(
+        'a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])',
+      );
+      if (f.length === 0) return;
+      const first = f[0];
+      const last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+
+    document.addEventListener("keydown", onKey);
+    ref.current?.querySelector<HTMLElement>("button,a[href],input")?.focus();
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      restoreTo.current?.focus();
+    };
+  }, [open, onDismiss]);
+
+  if (!open) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="Close"
+        tabIndex={-1}
+        onClick={onDismiss}
+        className="fixed inset-0 z-40 cursor-default"
+        style={{ background: "rgba(22,24,26,0.32)", transition: "opacity var(--dur-frame)" }}
+      />
+      <div
+        ref={ref}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="fixed z-50 flex flex-col overflow-hidden border border-ink bg-surface"
+        style={{
+          left: "var(--gutter)",
+          right: "var(--gutter)",
+          bottom: "calc(var(--gutter) + env(safe-area-inset-bottom))",
+          aspectRatio: ratio === "tall" ? "1 / 1.28" : "1 / 1",
+          maxHeight: "calc(100dvh - var(--s-12))",
+          transformOrigin: "bottom right",
+          animation: "sq-frame-in var(--dur-frame) var(--ease-out)",
+        }}
+      >
+        <header className="border-b border-rule px-4 pb-2.5 pt-3.5">
+          <p className="t-label text-stone">{label}</p>
+          <h2 className="t-h2 mt-1 text-ink">{title}</h2>
+        </header>
+
+        <div className={cn("min-h-0 flex-1 overflow-y-auto px-4 py-3.5")}>{children}</div>
+
+        {/* The dismiss is flush to the frame's bottom-right corner. Because
+            the frame is inset 8px, it lands at exactly right:8 bottom:8 —
+            the square the thumb block's bottom-right tile just vacated. The
+            thumb never moves. docs/design-system.md §B-4. */}
+        <footer
+          className="flex items-stretch border-t border-rule"
+          style={{ height: "var(--tile)" }}
+        >
+          <div className="flex flex-1 items-center px-2">{action}</div>
+          <button
+            type="button"
+            onClick={onDismiss}
+            aria-label="Close"
+            className="shrink-0 rounded-none border-0 bg-ink text-[18px] leading-none text-surface active:scale-[0.97]"
+            style={{ width: "var(--tile)", transitionDuration: "var(--dur-tap)" }}
+          >
+            ×
+          </button>
+        </footer>
+      </div>
+    </>
+  );
+}

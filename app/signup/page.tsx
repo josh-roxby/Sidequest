@@ -1,76 +1,41 @@
 import Link from "next/link";
-import { Card } from "@/components/primitives/Card";
-import { Button } from "@/components/primitives/Button";
-import { Eyebrow } from "@/components/primitives/Eyebrow";
-import { CompassMark } from "@/components/marks/CompassMark";
+import { Action } from "@/components/primitives/Action";
+import { Field } from "@/components/primitives/Field";
+import { Label } from "@/components/primitives/Text";
 import { PhoneFrame } from "@/components/shell/PhoneFrame";
 import { signup } from "./actions";
 
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; sent?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
 
   return (
     <PhoneFrame>
-      <div className="flex min-h-dvh flex-col px-6 py-10">
-        <div className="flex flex-1 flex-col justify-center">
-          <div className="mb-6 flex flex-col items-center gap-3">
-            <CompassMark size={56} />
-            <Eyebrow>Begin a journey</Eyebrow>
-            <h1 className="font-display text-[28px] font-semibold text-text-primary">
-              Create an account
-            </h1>
-          </div>
+      <form action={signup} className="flex min-h-dvh flex-col px-4"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + var(--s-8))",
+                 paddingBottom: "calc(env(safe-area-inset-bottom) + var(--s-8))" }}>
+        <Label>Ireland</Label>
+        <h1 className="t-h1 mt-2.5 text-ink">Create an account</h1>
 
-          {params.sent ? (
-            <Card variant="lg" hero>
-              <p className="text-[14px] text-text-primary">
-                Check your inbox for a confirmation link, then sign in.
-              </p>
-            </Card>
-          ) : (
-            <Card variant="lg" hero>
-              <form action={signup} className="flex flex-col gap-3">
-                <label className="flex flex-col gap-1 text-[13px]">
-                  <span className="text-text-secondary">Email</span>
-                  <input
-                    name="email"
-                    type="email"
-                    required
-                    className="rounded-2xl border border-border bg-card px-3 py-3 text-[14px] text-text-primary outline-none focus:border-primary-light"
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-[13px]">
-                  <span className="text-text-secondary">Password</span>
-                  <input
-                    name="password"
-                    type="password"
-                    required
-                    minLength={8}
-                    className="rounded-2xl border border-border bg-card px-3 py-3 text-[14px] text-text-primary outline-none focus:border-primary-light"
-                  />
-                </label>
-                {params.error ? (
-                  <p className="text-[12px] text-[color:#B85542]">{params.error}</p>
-                ) : null}
-                <Button type="submit" variant="primary" fullWidth className="mt-1">
-                  Create account
-                </Button>
-              </form>
-            </Card>
-          )}
+        <div className="mt-6 flex flex-col gap-4">
+          {/* The schema trigger already reads display_name from user metadata;
+              this is the field it was waiting for. */}
+          <Field label="Name" name="display_name" required autoComplete="name" />
+          <Field label="Email" name="email" type="email" required autoComplete="email" />
+          <Field label="Password" name="password" type="password" required minLength={8}
+            autoComplete="new-password" hint="At least 8 characters" error={params.error} />
+        </div>
 
-          <p className="mt-6 text-center text-[13px] text-text-secondary">
-            Already have one?{" "}
-            <Link href="/login" className="font-medium text-primary">
-              Sign in
-            </Link>
+        <div className="mt-auto flex flex-col gap-3 pt-8">
+          <Action type="submit">Create account</Action>
+          <p className="t-small text-center text-stone">
+            Already have one? <Link href="/login" className="font-semibold text-ink underline">Sign in</Link>
           </p>
         </div>
-      </div>
+      </form>
     </PhoneFrame>
   );
 }

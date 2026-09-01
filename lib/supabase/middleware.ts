@@ -4,7 +4,7 @@ import { isAuthDisabled, required } from "@/lib/env";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
-const APP_PATHS = ["/home", "/map", "/quests", "/journal", "/profile"];
+const APP_PATHS = ["/map", "/quests", "/journal", "/you"];
 const AUTH_PATHS = ["/login", "/signup"];
 
 function startsWithAny(pathname: string, prefixes: string[]) {
@@ -54,7 +54,7 @@ export async function updateSession(request: NextRequest) {
   const path = url.pathname;
   const isAppPath  = startsWithAny(path, APP_PATHS);
   const isAuthPath = startsWithAny(path, AUTH_PATHS);
-  const isWelcome  = path.startsWith("/welcome");
+  const isWelcome  = path.startsWith("/start");
 
   // 1. Anonymous users can't reach app paths or /welcome.
   if (!user && (isAppPath || isWelcome)) {
@@ -72,7 +72,7 @@ export async function updateSession(request: NextRequest) {
     //    itself).
     if (!onboarded && isAppPath) {
       const redirect = url.clone();
-      redirect.pathname = "/welcome";
+      redirect.pathname = "/start";
       redirect.search = "";
       return NextResponse.redirect(redirect);
     }
@@ -81,7 +81,7 @@ export async function updateSession(request: NextRequest) {
     //    or /login or /signup.
     if (onboarded && (isWelcome || isAuthPath)) {
       const redirect = url.clone();
-      redirect.pathname = "/home";
+      redirect.pathname = "/map";
       redirect.search = "";
       return NextResponse.redirect(redirect);
     }
@@ -90,7 +90,7 @@ export async function updateSession(request: NextRequest) {
     //    /signup into /welcome (post-signup case).
     if (!onboarded && isAuthPath) {
       const redirect = url.clone();
-      redirect.pathname = "/welcome";
+      redirect.pathname = "/start";
       redirect.search = "";
       return NextResponse.redirect(redirect);
     }

@@ -1,20 +1,11 @@
-import { BottomNav } from "@/components/shell/BottomNav";
+import { ThumbBlock } from "@/components/shell/ThumbBlock";
 import { PhoneFrame } from "@/components/shell/PhoneFrame";
 
-export default function AppShellLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <PhoneFrame>
-      <main
-        className="relative"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
-        {children}
-      </main>
-      <BottomNav />
+      <main className="relative min-h-dvh">{children}</main>
+      <ThumbBlock />
     </PhoneFrame>
   );
 }

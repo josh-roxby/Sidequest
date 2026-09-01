@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { Card } from "@/components/primitives/Card";
-import { Button } from "@/components/primitives/Button";
-import { Eyebrow } from "@/components/primitives/Eyebrow";
-import { CompassMark } from "@/components/marks/CompassMark";
+import { Action } from "@/components/primitives/Action";
+import { Field } from "@/components/primitives/Field";
+import { Label } from "@/components/primitives/Text";
 import { PhoneFrame } from "@/components/shell/PhoneFrame";
 import { login } from "./actions";
 
+/** Styled, reachable directly, and required by nothing. Auth is off for this
+ *  phase, so no route redirects here. Switching it on is one env var and no
+ *  screen changes. docs/ux-loops.md §J. */
 export default async function LoginPage({
   searchParams,
 }: {
@@ -15,55 +17,26 @@ export default async function LoginPage({
 
   return (
     <PhoneFrame>
-      <div className="flex min-h-dvh flex-col px-6 py-10">
-        <div className="flex flex-1 flex-col justify-center">
-          <div className="mb-6 flex flex-col items-center gap-3">
-            <CompassMark size={56} />
-            <Eyebrow>Welcome back</Eyebrow>
-            <h1 className="font-display text-[28px] font-semibold text-text-primary">
-              Sign in
-            </h1>
-          </div>
+      <form action={login} className="flex min-h-dvh flex-col px-4"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + var(--s-8))",
+                 paddingBottom: "calc(env(safe-area-inset-bottom) + var(--s-8))" }}>
+        <Label>Welcome back</Label>
+        <h1 className="t-h1 mt-2.5 text-ink">Sign in</h1>
 
-          <Card variant="lg" hero>
-            <form action={login} className="flex flex-col gap-3">
-              <input type="hidden" name="next" value={params.next ?? "/home"} />
-              <label className="flex flex-col gap-1 text-[13px]">
-                <span className="text-text-secondary">Email</span>
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  className="rounded-2xl border border-border bg-card px-3 py-3 text-[14px] text-text-primary outline-none focus:border-primary-light"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-[13px]">
-                <span className="text-text-secondary">Password</span>
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  className="rounded-2xl border border-border bg-card px-3 py-3 text-[14px] text-text-primary outline-none focus:border-primary-light"
-                />
-              </label>
-              {params.error ? (
-                <p className="text-[12px] text-[color:#B85542]">{params.error}</p>
-              ) : null}
-              <Button type="submit" variant="primary" fullWidth className="mt-1">
-                Sign in
-              </Button>
-            </form>
-          </Card>
+        <input type="hidden" name="next" value={params.next ?? "/map"} />
+        <div className="mt-6 flex flex-col gap-4">
+          <Field label="Email" name="email" type="email" required autoComplete="email" />
+          <Field label="Password" name="password" type="password" required minLength={8}
+            autoComplete="current-password" error={params.error} />
+        </div>
 
-          <p className="mt-6 text-center text-[13px] text-text-secondary">
-            New here?{" "}
-            <Link href="/signup" className="font-medium text-primary">
-              Create an account
-            </Link>
+        <div className="mt-auto flex flex-col gap-3 pt-8">
+          <Action type="submit">Sign in</Action>
+          <p className="t-small text-center text-stone">
+            New here? <Link href="/signup" className="font-semibold text-ink underline">Create an account</Link>
           </p>
         </div>
-      </div>
+      </form>
     </PhoneFrame>
   );
 }
