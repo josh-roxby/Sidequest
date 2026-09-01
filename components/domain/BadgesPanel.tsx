@@ -53,7 +53,7 @@ export function BadgesPanel() {
             <div className="grid grid-cols-2 gap-2">
               {collected.map((i) => (
                 <Card key={i.id} inset={false} className="overflow-hidden">
-                  <Plate ratio="1/1" label={i.category} className="border-0 border-b border-rule" />
+                  <Plate ratio="1/1" plate={i.plate} label={i.category} className="border-0 border-b border-rule" />
                   <div className="p-2.5">
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-[11px] font-semibold uppercase leading-tight tracking-[0.04em] text-ink">

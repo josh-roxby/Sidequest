@@ -55,6 +55,10 @@ export interface Point {
   /** Normalised 0–1 position on the placeholder map surface. */
   x: number;
   y: number;
+  /** Artwork key. Resolves to a file in the media folder, see lib/media.ts.
+   *  Absent means the slot shows its placeholder, which is the honest state
+   *  for a record whose plate has not been drawn. */
+  plate?: string;
 }
 
 export interface Objective {
@@ -108,6 +112,14 @@ export interface Quest {
    *  passes. Vague on purpose: it sets expectations without spoiling the walk,
    *  and a food stop is always listed as a maybe because it might be shut. */
   encounters: Encounter[];
+  /** Artwork key. Resolves to a file in the media folder, see lib/media.ts.
+   *  Absent means the slot shows its placeholder, which is the honest state
+   *  for a record whose plate has not been drawn. */
+  plate?: string;
+  /** Square crop for a quest list card, which renders at 72px and cannot use a
+   *  landscape hero without losing the subject to the sides. Nothing renders
+   *  QuestCard today, so no artwork is registered for it. */
+  thumb?: string;
 }
 
 export interface Territory {
@@ -189,6 +201,10 @@ export interface Collectible {
   foundAt: string;
   townland: string;
   count: number;
+  /** Artwork key. Resolves to a file in the media folder, see lib/media.ts.
+   *  Absent means the slot shows its placeholder, which is the honest state
+   *  for a record whose plate has not been drawn. */
+  plate?: string;
 }
 
 export interface Badge {
@@ -199,6 +215,10 @@ export interface Badge {
   earnedAt: string | null;
   progress: number;
   target: number;
+  /** Artwork key. Resolves to a file in the media folder, see lib/media.ts.
+   *  Absent means the slot shows its placeholder, which is the honest state
+   *  for a record whose plate has not been drawn. */
+  plate?: string;
 }
 
 export interface Tale {
@@ -213,6 +233,10 @@ export interface Tale {
    *  a tale assembled from four different archives stays honest card by card
    *  rather than collapsing into one unattributed paragraph. */
   cards: Lore[];
+  /** Artwork key. Resolves to a file in the media folder, see lib/media.ts.
+   *  Absent means the slot shows its placeholder, which is the honest state
+   *  for a record whose plate has not been drawn. */
+  plate?: string;
 }
 
 export interface CommunityQuest {

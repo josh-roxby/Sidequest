@@ -82,14 +82,19 @@ docs/           PRD, design system, UX loops, reface plan, data pipeline
 
 ## Commands
 
-Illustration lives in `/public/plates/` and is referenced by key, never
-inlined as SVG path data, so the whole layer can be swapped without touching
-a component. Every slot holds its own space before the asset exists.
+Every image the app renders lives in `/public/plates/` and is referenced by
+key, never inlined as SVG path data, so the whole layer can be swapped without
+touching a component. Dropping `<key>.png` into that folder is the entire
+process: `png`, `webp`, `jpg` and `svg` all resolve, the app icon and the
+maskable icon come from there too, and a key with no file holds its slot at the
+right ratio rather than breaking. `lib/media.ts` owns the folder and the
+naming; `docs/media-manifest.json` is the register of every key.
 
 ```bash
 npm run dev
 npm run lint
 npm run type-check
+npm run media       # which plates have landed, which are still waiting
 npm run build
 ```
 

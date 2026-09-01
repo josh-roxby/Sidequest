@@ -19,7 +19,7 @@ export const TERRITORY: Territory = {
 
 export const POINTS: Point[] = [
   {
-    id: "p-cahercalla", blurb: "An earthen ring on the rise, banks still standing.", visited: true, tags: ["Upstanding remains", "From a boreen", "Free", "Ringfort"], name: "Cahercalla", nameGa: "Cathair Cala",
+    plate: "poi-cahercalla", id: "p-cahercalla", blurb: "An earthen ring on the rise, banks still standing.", visited: true, tags: ["Upstanding remains", "From a boreen", "Free", "Ringfort"], name: "Cahercalla", nameGa: "Cathair Cala",
     category: "Ringfort", group: "fort", townland: "Cahercalla Beg",
     x: 0.68, y: 0.34,
     lore: [
@@ -32,7 +32,7 @@ export const POINTS: Point[] = [
     ],
   },
   {
-    id: "p-dysert", blurb: "A hermitage, a round tower stump and a carved high cross.", visited: false, tags: ["High cross", "Monastic", "Car park", "12th century"], name: "Dysert O'Dea", nameGa: "Díseart Uí Dheá",
+    plate: "poi-dysert", id: "p-dysert", blurb: "A hermitage, a round tower stump and a carved high cross.", visited: false, tags: ["High cross", "Monastic", "Car park", "12th century"], name: "Dysert O'Dea", nameGa: "Díseart Uí Dheá",
     category: "Monastic site", group: "sacred", townland: "Dysert",
     x: 0.31, y: 0.62,
     lore: [
@@ -45,7 +45,7 @@ export const POINTS: Point[] = [
     ],
   },
   {
-    id: "p-inchiquin", blurb: "A west facing lough shore that fills and empties through the rock.", visited: true, tags: ["Lough shore", "West facing", "Good at dusk", "Level ground"], name: "Inchiquin Lough", nameGa: "Loch Inse Uí Chuinn",
+    plate: "poi-inchiquin", id: "p-inchiquin", blurb: "A west facing lough shore that fills and empties through the rock.", visited: true, tags: ["Lough shore", "West facing", "Good at dusk", "Level ground"], name: "Inchiquin Lough", nameGa: "Loch Inse Uí Chuinn",
     category: "Lough shore", group: "water", townland: "Inchiquin",
     x: 0.52, y: 0.78,
     lore: [
@@ -55,7 +55,7 @@ export const POINTS: Point[] = [
     ],
   },
   {
-    id: "p-ballykeel", blurb: "A flat stone in a field where mass was said in secret.", visited: false, tags: ["Mass rock", "Penal era", "Field path", "Hard to spot"], name: "Ballykeel mass rock", nameGa: "An Baile Caol",
+    plate: "poi-ballykeel", id: "p-ballykeel", blurb: "A flat stone in a field where mass was said in secret.", visited: false, tags: ["Mass rock", "Penal era", "Field path", "Hard to spot"], name: "Ballykeel mass rock", nameGa: "An Baile Caol",
     category: "Mass rock", group: "sacred", townland: "Ballykeel",
     x: 0.19, y: 0.24,
     lore: [
@@ -65,7 +65,7 @@ export const POINTS: Point[] = [
     ],
   },
   {
-    id: "p-toonagh", blurb: "A ruined corn mill with its wheel pit and race intact.", visited: true, tags: ["Mill race", "c. 1840", "Roadside", "Limestone"], name: "Toonagh mill", category: "Mill", group: "built",
+    plate: "poi-toonagh", id: "p-toonagh", blurb: "A ruined corn mill with its wheel pit and race intact.", visited: true, tags: ["Mill race", "c. 1840", "Roadside", "Limestone"], name: "Toonagh mill", category: "Mill", group: "built",
     nameGa: "Tuathanach", townland: "Toonagh", x: 0.79, y: 0.68,
     lore: [
       { kind: "architecture", title: "Corn mill, c. 1840",
@@ -77,7 +77,7 @@ export const POINTS: Point[] = [
 
 export const QUESTS: Quest[] = [
   {
-    id: "q-cloonanaha",
+    plate: "quest-cloonanaha", thumb: "quest-thumb-cloonanaha", id: "q-cloonanaha",
     encounters: [
       { kind: "point", label: "A ringfort", detail: "Banks still standing, on the rise" },
       { kind: "terrain", label: "A stream crossing", detail: "Stepping stones, dry in summer" },
@@ -95,7 +95,7 @@ export const QUESTS: Quest[] = [
     path: [[0.16, 0.72], [0.3, 0.6], [0.44, 0.55], [0.6, 0.42], [0.68, 0.34], [0.62, 0.5], [0.4, 0.66], [0.16, 0.72]],
   },
   {
-    id: "q-dysert",
+    plate: "quest-dysert", thumb: "quest-thumb-dysert", id: "q-dysert",
     encounters: [
       { kind: "point", label: "A hermitage and a high cross" },
       { kind: "terrain", label: "A stretch of boreen", detail: "No pavement for 300m" },
@@ -111,7 +111,7 @@ export const QUESTS: Quest[] = [
     path: [[0.2, 0.8], [0.24, 0.72], [0.31, 0.62], [0.42, 0.6], [0.38, 0.74], [0.2, 0.8]],
   },
   {
-    id: "q-toonagh",
+    plate: "quest-toonagh", thumb: "quest-thumb-toonagh", id: "q-toonagh",
     encounters: [
       { kind: "point", label: "A ruined corn mill" },
       { kind: "terrain", label: "The mill race", detail: "Straight cut channel, easy to spot" },
@@ -126,7 +126,7 @@ export const QUESTS: Quest[] = [
     path: [[0.64, 0.78], [0.72, 0.72], [0.79, 0.68], [0.7, 0.82], [0.64, 0.78]],
   },
   {
-    id: "q-inchiquin",
+    plate: "quest-inchiquin", thumb: "quest-thumb-inchiquin", id: "q-inchiquin",
     encounters: [
       { kind: "point", label: "A lough shore" },
       { kind: "point", label: "A ringfort on the way back" },
@@ -169,34 +169,34 @@ export const CATEGORIES: CategoryProgress[] = [
 
 
 export const COLLECTIBLES: Collectible[] = [
-  { id: "c-1", name: "Ringfort bank", category: "Ringfort", group: "fort",
+  { plate: "collectible-ringfort-bank", id: "c-1", name: "Ringfort bank", category: "Ringfort", group: "fort",
     foundAt: "2026-08-28", townland: "Cahercalla Beg", count: 3 },
-  { id: "c-2", name: "Holy well cup", category: "Holy well", group: "sacred",
+  { plate: "collectible-holy-well-cup", id: "c-2", name: "Holy well cup", category: "Holy well", group: "sacred",
     foundAt: "2026-08-26", townland: "Toonagh", count: 1 },
-  { id: "c-3", name: "Mill race stone", category: "Mill", group: "built",
+  { plate: "collectible-mill-race-stone", id: "c-3", name: "Mill race stone", category: "Mill", group: "built",
     foundAt: "2026-08-26", townland: "Toonagh", count: 2 },
-  { id: "c-4", name: "Lough shore reed", category: "Lough shore", group: "water",
+  { plate: "collectible-lough-shore-reed", id: "c-4", name: "Lough shore reed", category: "Lough shore", group: "water",
     foundAt: "2026-08-21", townland: "Inchiquin", count: 4 },
 ];
 
 export const BADGES: Badge[] = [
-  { id: "b-1", label: "First light", description: "Finish your first walk",
+  { plate: "badge-first-light", id: "b-1", label: "First light", description: "Finish your first walk",
     group: "green", earnedAt: "2026-08-26", progress: 1, target: 1 },
-  { id: "b-2", label: "Rath finder", description: "Reach five ringforts",
+  { plate: "badge-rath-finder", id: "b-2", label: "Rath finder", description: "Reach five ringforts",
     group: "fort", earnedAt: null, progress: 3, target: 5 },
-  { id: "b-3", label: "Well read", description: "Read twenty tales",
+  { plate: "badge-well-read", id: "b-3", label: "Well read", description: "Read twenty tales",
     group: "sacred", earnedAt: null, progress: 7, target: 20 },
-  { id: "b-4", label: "Parish bounds", description: "Explore twenty five townlands",
+  { plate: "badge-parish-bounds", id: "b-4", label: "Parish bounds", description: "Explore twenty five townlands",
     group: "height", earnedAt: null, progress: 14, target: 25 },
-  { id: "b-5", label: "Long way round", description: "Walk one hundred kilometres",
+  { plate: "badge-long-way-round", id: "b-5", label: "Long way round", description: "Walk one hundred kilometres",
     group: "built", earnedAt: null, progress: 34, target: 100 },
-  { id: "b-6", label: "Turf cutter", description: "Cross three bogs",
+  { plate: "badge-turf-cutter", id: "b-6", label: "Turf cutter", description: "Cross three bogs",
     group: "green", earnedAt: null, progress: 0, target: 3 },
 ];
 
 export const TALES: Tale[] = [
   {
-    id: "t-1", pointId: "p-cahercalla", pointName: "Cahercalla",
+    plate: "tale-cahercalla", id: "t-1", pointId: "p-cahercalla", pointName: "Cahercalla",
     townland: "Cahercalla Beg", kind: "placename",
     title: "The stone fort of the landing place", readAt: "2026-08-28",
     cards: [
@@ -215,7 +215,7 @@ export const TALES: Tale[] = [
     ],
   },
   {
-    id: "t-2", pointId: "p-toonagh", pointName: "Toonagh mill",
+    plate: "tale-toonagh-mill", id: "t-2", pointId: "p-toonagh", pointName: "Toonagh mill",
     townland: "Toonagh", kind: "architecture",
     title: "A corn mill and its water", readAt: "2026-08-26",
     cards: [
@@ -231,7 +231,7 @@ export const TALES: Tale[] = [
     ],
   },
   {
-    id: "t-3", pointId: "p-inchiquin", pointName: "Inchiquin Lough",
+    plate: "tale-inchiquin", id: "t-3", pointId: "p-inchiquin", pointName: "Inchiquin Lough",
     townland: "Inchiquin", kind: "placename",
     title: "The lake of O'Quin's island", readAt: "2026-08-21",
     cards: [
@@ -247,7 +247,7 @@ export const TALES: Tale[] = [
     ],
   },
   {
-    id: "t-4", pointId: "p-dysert", pointName: "Dysert O'Dea",
+    plate: "tale-dysert", id: "t-4", pointId: "p-dysert", pointName: "Dysert O'Dea",
     townland: "Dysert", kind: "placename",
     title: "The hermitage of O'Dea", readAt: null,
     cards: [
@@ -267,34 +267,34 @@ export const TALES: Tale[] = [
 
 
 export const COMMUNITY: CommunityQuest[] = [
-  { id: "cq-1", title: "Castle ruins by rivers", author: "Niamh", townland: "Corofin",
+  { plate: "community-castle-ruins-by-rivers", id: "cq-1", title: "Castle ruins by rivers", author: "Niamh", townland: "Corofin",
     tier: "sidequest", shape: "loop", distanceM: 6200, walkers: 148 },
-  { id: "cq-2", title: "Three holy wells", author: "Padraig", townland: "Kilnaboy",
+  { plate: "community-three-holy-wells", id: "cq-2", title: "Three holy wells", author: "Padraig", townland: "Kilnaboy",
     tier: "stroll", shape: "loop", distanceM: 3100, walkers: 92 },
-  { id: "cq-3", title: "The mill races", author: "Aoife", townland: "Toonagh",
+  { plate: "community-the-mill-races", id: "cq-3", title: "The mill races", author: "Aoife", townland: "Toonagh",
     tier: "trot", shape: "line", distanceM: 1200, walkers: 64 },
-  { id: "cq-4", title: "Burren limestone walk", author: "Sean", townland: "Carran",
+  { plate: "community-burren-limestone-walk", id: "cq-4", title: "Burren limestone walk", author: "Sean", townland: "Carran",
     tier: "adventure", shape: "loop", distanceM: 11800, walkers: 211 },
-  { id: "cq-5", title: "Ringforts of the parish", author: "Maire", townland: "Dysert",
+  { plate: "community-ringforts-of-the-parish", id: "cq-5", title: "Ringforts of the parish", author: "Maire", townland: "Dysert",
     tier: "sidequest", shape: "loop", distanceM: 5900, walkers: 37 },
-  { id: "cq-6", title: "Lough shore at dusk", author: "Cillian", townland: "Inchiquin",
+  { plate: "community-lough-shore-at-dusk", id: "cq-6", title: "Lough shore at dusk", author: "Cillian", townland: "Inchiquin",
     tier: "stroll", shape: "line", distanceM: 2900, walkers: 118 },
 ];
 
 export const HOME_CARDS: HomeCard[] = [
-  { id: "hc-1", kind: "quest", ratio: "portrait", eyebrow: "Ready to walk",
+  { plate: "home-ready", id: "hc-1", kind: "quest", ratio: "portrait", eyebrow: "Ready to walk",
     title: "Cloonanaha Loop", body: "A ringfort on the rise, back down by the stream.",
     href: "/quests/q-cloonanaha" },
-  { id: "hc-2", kind: "update", ratio: "square", eyebrow: "New tale",
+  { plate: "home-tale", id: "hc-2", kind: "update", ratio: "square", eyebrow: "New tale",
     title: "Why forty thousand ringforts survived",
     body: "Breaking one was desperately unlucky, so farmers ploughed around them.",
     href: "/tales/t-1" },
-  { id: "hc-3", kind: "banner", ratio: "landscape", eyebrow: "Co. Clare",
+  { plate: "home-county", id: "hc-3", kind: "banner", ratio: "landscape", eyebrow: "Co. Clare",
     title: "2,318 townlands. You have 14.", href: "/badges" },
-  { id: "hc-4", kind: "community", ratio: "portrait", eyebrow: "From the community",
+  { plate: "home-community", id: "hc-4", kind: "community", ratio: "portrait", eyebrow: "From the community",
     title: "Castle ruins by rivers", body: "Eight quests, put together by Niamh.",
     href: "/quests?tab=community" },
-  { id: "hc-5", kind: "update", ratio: "square", eyebrow: "Close",
+  { plate: "home-close", id: "hc-5", kind: "update", ratio: "square", eyebrow: "Close",
     title: "Two ringforts from a badge", body: "Rath finder unlocks at five.",
     href: "/badges" },
 ];

@@ -1,9 +1,8 @@
 {
   "$schema": "sidequest.media.manifest/1",
   "project": "Side Quest",
-  "generated": "2026-08-31",
-  "notes": "Every image slot the app currently renders. Keys map to files at `path`; components reference them by key via <Plate plate=\"key\" />. Nothing is required for the app to run: every slot draws a bordered placeholder at the correct ratio until its file exists.",
-
+  "generated": "2026-09-01",
+  "notes": "Every image slot the app renders, and nothing else. Keys map to files in public/plates/: drop `<key>.png` in and the slot picks it up, no code change. png, webp, jpg and svg all resolve. A key with no file shows its placeholder at the correct ratio, so the folder can fill a plate at a time. Run `npm run media` to see what has landed and what is still waiting.",
   "style": {
     "direction": "Nineteenth century field survey plate. Hand drawn naturalist engraving.",
     "medium": "Ink line on paper. Cross hatching and stipple for tone, never soft shading or airbrush.",
@@ -25,20 +24,20 @@
     ],
     "palette_note": "If the tool insists on colour, use ink #16181A on paper #F4F2EC and nothing else."
   },
-
   "defaults": {
     "format": "png",
     "background": "transparent",
     "colour_mode": "monochrome",
     "seamless": false
   },
-
   "assets": [
     {
       "key": "app-mark",
       "path": "public/plates/app-mark.png",
       "slot": "app icon, replaces the CSS leaf in app/icon.tsx",
-      "ratio": "1:1", "width": 1024, "height": 1024,
+      "ratio": "1:1",
+      "width": 1024,
+      "height": 1024,
       "background": "paper",
       "priority": 1,
       "subject": "The app mark",
@@ -48,41 +47,21 @@
       "key": "app-mark-maskable",
       "path": "public/plates/app-mark-maskable.png",
       "slot": "maskable PWA icon",
-      "ratio": "1:1", "width": 1024, "height": 1024,
+      "ratio": "1:1",
+      "width": 1024,
+      "height": 1024,
       "background": "paper",
       "priority": 2,
       "subject": "The app mark, safe zone",
       "prompt": "The same leaf mark, scaled so the whole subject sits inside the centre 60 percent of the frame. Everything outside that is flat paper, because Android crops it to a circle or a squircle."
     },
-
-    {
-      "key": "hills-far",
-      "path": "public/plates/hills-far.png",
-      "slot": "home.band.far",
-      "ratio": "3:1", "width": 1620, "height": 540,
-      "seamless": "horizontal",
-      "priority": 1,
-      "subject": "Distant ridge line",
-      "prompt": "A far ridge of low Irish hills across the full width. Outline and the lightest possible hatching only. No foreground detail, no trees, no buildings. Reads as distance.",
-      "constraints": "MUST tile horizontally: the right edge has to butt against the left edge with no visible seam. The image scrolls in a loop. No sky, no ground fill, transparent above and below the ridge."
-    },
-    {
-      "key": "hills-near",
-      "path": "public/plates/hills-near.png",
-      "slot": "home.band.near",
-      "ratio": "3:1", "width": 1620, "height": 540,
-      "seamless": "horizontal",
-      "priority": 1,
-      "subject": "Near fields and hedgerows",
-      "prompt": "Nearer ground across the full width: field boundaries, a hedgerow, a gate, one or two hawthorns. More detail and heavier hatching than hills-far, since it travels faster and reads as closer.",
-      "constraints": "MUST tile horizontally with no seam. Transparent above and below. Keep the skyline low, roughly the bottom third, so it sits under the far ridge."
-    },
-
     {
       "key": "about-hero",
       "path": "public/plates/about-hero.png",
       "slot": "about page hero",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 1,
       "subject": "The decision",
       "prompt": "A figure standing at a field gate where a boreen forks, one hand on the top bar, deciding which way to go. Seen from behind or three quarters, face not visible. Irish countryside, stone wall, hawthorn."
@@ -91,7 +70,9 @@
       "key": "about-local",
       "path": "public/plates/about-local.png",
       "slot": "about, no chains section",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 2,
       "subject": "An independent shopfront",
       "prompt": "A small village cafe or pub front on an Irish street. Painted timber facade, hand painted fascia rendered as blank ink line with no readable lettering, a bicycle against the wall, one window box."
@@ -100,7 +81,9 @@
       "key": "about-tales",
       "path": "public/plates/about-tales.png",
       "slot": "about, tales section",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 2,
       "subject": "A high cross",
       "prompt": "An early medieval Irish high cross standing in a field, weathered, with interlace carving suggested rather than drawn in full. Long grass at the base, a leaning graveyard wall behind."
@@ -109,7 +92,9 @@
       "key": "about-collect",
       "path": "public/plates/about-collect.png",
       "slot": "about, collecting section",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 2,
       "subject": "A ringfort from ground level",
       "prompt": "A circular earthen ringfort bank seen from the field beside it, low and grassed over, with the outer ditch visible and a gap where cattle cross. Deliberately unspectacular: the point is that it looks like an ordinary bump until you know."
@@ -118,17 +103,20 @@
       "key": "about-map",
       "path": "public/plates/about-map.png",
       "slot": "about, territory section",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 2,
       "subject": "Mist lifting off fields",
       "prompt": "Low morning mist clearing off a patchwork of small irregular Irish fields with stone wall boundaries, seen from a rise. Hatching thins toward the cleared side to suggest the fog lifting."
     },
-
     {
       "key": "home-ready",
       "path": "public/plates/home-ready.png",
       "slot": "home card hc-1, ready to walk",
-      "ratio": "3:2", "width": 1620, "height": 1080,
+      "ratio": "3:2",
+      "width": 1620,
+      "height": 1080,
       "priority": 1,
       "subject": "A path leaving",
       "prompt": "A grass centred boreen running away from the viewer between stone walls, curving out of sight. Inviting, empty, early light."
@@ -137,7 +125,9 @@
       "key": "home-tale",
       "path": "public/plates/home-tale.png",
       "slot": "home card hc-2, new tale",
-      "ratio": "3:2", "width": 1620, "height": 1080,
+      "ratio": "3:2",
+      "width": 1620,
+      "height": 1080,
       "priority": 2,
       "subject": "Ringfort survey study",
       "prompt": "A ringfort drawn as a survey plate: the circular bank in plan at one side, a small section profile beside it, and a sketch of the fort in the landscape. Diagram lines with no numbers or labels."
@@ -146,7 +136,9 @@
       "key": "home-county",
       "path": "public/plates/home-county.png",
       "slot": "home card hc-3, county banner",
-      "ratio": "3:2", "width": 1620, "height": 1080,
+      "ratio": "3:2",
+      "width": 1620,
+      "height": 1080,
       "priority": 2,
       "subject": "Townland patchwork",
       "prompt": "An aerial three quarter view of small irregular fields divided by stone walls and hedgerows, the way townlands actually sit. A single boreen threading through."
@@ -155,7 +147,9 @@
       "key": "home-community",
       "path": "public/plates/home-community.png",
       "slot": "home card hc-4, from the community",
-      "ratio": "3:2", "width": 1620, "height": 1080,
+      "ratio": "3:2",
+      "width": 1620,
+      "height": 1080,
       "priority": 2,
       "subject": "A castle ruin above a river",
       "prompt": "A ruined tower house standing on a rise above a river bend, ivy on one wall, trees along the bank."
@@ -164,17 +158,20 @@
       "key": "home-close",
       "path": "public/plates/home-close.png",
       "slot": "home card hc-5, badge nearly earned",
-      "ratio": "3:2", "width": 1620, "height": 1080,
+      "ratio": "3:2",
+      "width": 1620,
+      "height": 1080,
       "priority": 3,
       "subject": "Three ringforts in a landscape",
       "prompt": "A wide landscape with three circular earthworks visible at different distances across the fields, drawn faintly so they read as things you would miss."
     },
-
     {
       "key": "quest-cloonanaha",
       "path": "public/plates/quest-cloonanaha.png",
       "slot": "quest hero, q-cloonanaha",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 1,
       "subject": "Cloonanaha Loop",
       "prompt": "A ringfort on a low rise with a stream in the foreground crossed by stepping stones, an old mass path running up toward it through rough grass."
@@ -183,7 +180,9 @@
       "key": "quest-dysert",
       "path": "public/plates/quest-dysert.png",
       "slot": "quest hero, q-dysert",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 2,
       "subject": "Dysert Round",
       "prompt": "A monastic site: the stump of a round tower, a ruined church gable, and a high cross in the field beyond, with a boreen running past."
@@ -192,7 +191,9 @@
       "key": "quest-toonagh",
       "path": "public/plates/quest-toonagh.png",
       "slot": "quest hero, q-toonagh",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 2,
       "subject": "Toonagh Mill",
       "prompt": "A ruined three bay stone corn mill with an empty wheel pit on the near elevation and a straight cut mill race running toward it through the grass."
@@ -201,54 +202,20 @@
       "key": "quest-inchiquin",
       "path": "public/plates/quest-inchiquin.png",
       "slot": "quest hero, q-inchiquin",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 2,
       "subject": "Inchiquin Shore",
       "prompt": "A lough shore looking west, reeds in the foreground, low limestone hills across the water, a tower house on the point."
     },
-
-    {
-      "key": "quest-thumb-cloonanaha",
-      "path": "public/plates/quest-thumb-cloonanaha.png",
-      "slot": "quest card thumbnail, q-cloonanaha",
-      "ratio": "1:1", "width": 1080, "height": 1080,
-      "priority": 2,
-      "subject": "Ringfort bank, close",
-      "prompt": "A tight square study of a grassed ringfort bank and its ditch. One object, centred, plenty of margin: this renders at 72 pixels."
-    },
-    {
-      "key": "quest-thumb-dysert",
-      "path": "public/plates/quest-thumb-dysert.png",
-      "slot": "quest card thumbnail, q-dysert",
-      "ratio": "1:1", "width": 1080, "height": 1080,
-      "priority": 3,
-      "subject": "High cross, close",
-      "prompt": "A tight square study of a weathered high cross, whole, centred, generous margin."
-    },
-    {
-      "key": "quest-thumb-toonagh",
-      "path": "public/plates/quest-thumb-toonagh.png",
-      "slot": "quest card thumbnail, q-toonagh",
-      "ratio": "1:1", "width": 1080, "height": 1080,
-      "priority": 3,
-      "subject": "Mill wheel pit, close",
-      "prompt": "A tight square study of an empty stone wheel pit in a mill wall, centred, generous margin."
-    },
-    {
-      "key": "quest-thumb-inchiquin",
-      "path": "public/plates/quest-thumb-inchiquin.png",
-      "slot": "quest card thumbnail, q-inchiquin",
-      "ratio": "1:1", "width": 1080, "height": 1080,
-      "priority": 3,
-      "subject": "Reeds and water, close",
-      "prompt": "A tight square study of lough shore reeds at the waterline, centred, generous margin."
-    },
-
     {
       "key": "community-castle-ruins-by-rivers",
       "path": "public/plates/community-castle-ruins-by-rivers.png",
       "slot": "community quest cq-1",
-      "ratio": "1:1", "width": 1080, "height": 1080,
+      "ratio": "1:1",
+      "width": 1080,
+      "height": 1080,
       "priority": 2,
       "subject": "Castle ruins by rivers",
       "prompt": "A square composition: a ruined tower house on a river bank, the water curving across the lower third."
@@ -257,7 +224,9 @@
       "key": "community-three-holy-wells",
       "path": "public/plates/community-three-holy-wells.png",
       "slot": "community quest cq-2",
-      "ratio": "1:1", "width": 1080, "height": 1080,
+      "ratio": "1:1",
+      "width": 1080,
+      "height": 1080,
       "priority": 2,
       "subject": "Three holy wells",
       "prompt": "A square composition: a stone lined holy well under a whitethorn hung with rags, a small cross slab beside it."
@@ -266,7 +235,9 @@
       "key": "community-the-mill-races",
       "path": "public/plates/community-the-mill-races.png",
       "slot": "community quest cq-3",
-      "ratio": "1:1", "width": 1080, "height": 1080,
+      "ratio": "1:1",
+      "width": 1080,
+      "height": 1080,
       "priority": 3,
       "subject": "The mill races",
       "prompt": "A square composition: a straight cut stone channel running away through grass toward a mill gable."
@@ -275,7 +246,9 @@
       "key": "community-burren-limestone-walk",
       "path": "public/plates/community-burren-limestone-walk.png",
       "slot": "community quest cq-4",
-      "ratio": "1:1", "width": 1080, "height": 1080,
+      "ratio": "1:1",
+      "width": 1080,
+      "height": 1080,
       "priority": 2,
       "subject": "Burren limestone walk",
       "prompt": "A square composition: bare limestone pavement with deep grikes, a few gentians and ferns in the cracks, a terraced hill beyond."
@@ -284,7 +257,9 @@
       "key": "community-ringforts-of-the-parish",
       "path": "public/plates/community-ringforts-of-the-parish.png",
       "slot": "community quest cq-5",
-      "ratio": "1:1", "width": 1080, "height": 1080,
+      "ratio": "1:1",
+      "width": 1080,
+      "height": 1080,
       "priority": 3,
       "subject": "Ringforts of the parish",
       "prompt": "A square composition: two circular earthworks in adjoining fields, a stone wall between them."
@@ -293,17 +268,20 @@
       "key": "community-lough-shore-at-dusk",
       "path": "public/plates/community-lough-shore-at-dusk.png",
       "slot": "community quest cq-6",
-      "ratio": "1:1", "width": 1080, "height": 1080,
+      "ratio": "1:1",
+      "width": 1080,
+      "height": 1080,
       "priority": 3,
       "subject": "Lough shore at dusk",
       "prompt": "A square composition: a low sun over a lough, reeds in silhouette, heavier hatching in the sky to carry the light."
     },
-
     {
       "key": "collectible-ringfort-bank",
       "path": "public/plates/collectible-ringfort-bank.png",
       "slot": "collectible c-1",
-      "ratio": "1:1", "width": 1080, "height": 1080,
+      "ratio": "1:1",
+      "width": 1080,
+      "height": 1080,
       "priority": 2,
       "subject": "Ringfort bank specimen",
       "prompt": "A single specimen study on blank ground, museum plate style: a cutaway section of a ringfort bank and ditch. One object, centred, nothing behind it."
@@ -312,7 +290,9 @@
       "key": "collectible-holy-well-cup",
       "path": "public/plates/collectible-holy-well-cup.png",
       "slot": "collectible c-2",
-      "ratio": "1:1", "width": 1080, "height": 1080,
+      "ratio": "1:1",
+      "width": 1080,
+      "height": 1080,
       "priority": 2,
       "subject": "Holy well cup specimen",
       "prompt": "A single specimen study on blank ground: a battered tin cup on a chain, of the kind left at a holy well."
@@ -321,7 +301,9 @@
       "key": "collectible-mill-race-stone",
       "path": "public/plates/collectible-mill-race-stone.png",
       "slot": "collectible c-3",
-      "ratio": "1:1", "width": 1080, "height": 1080,
+      "ratio": "1:1",
+      "width": 1080,
+      "height": 1080,
       "priority": 3,
       "subject": "Mill race stone specimen",
       "prompt": "A single specimen study on blank ground: a dressed limestone block worn smooth on one face by running water."
@@ -330,72 +312,20 @@
       "key": "collectible-lough-shore-reed",
       "path": "public/plates/collectible-lough-shore-reed.png",
       "slot": "collectible c-4",
-      "ratio": "1:1", "width": 1080, "height": 1080,
+      "ratio": "1:1",
+      "width": 1080,
+      "height": 1080,
       "priority": 3,
       "subject": "Lough reed specimen",
       "prompt": "A single specimen study on blank ground: one reed stem with its seed head, drawn as a botanical plate."
     },
-
-    {
-      "key": "badge-first-light",
-      "path": "public/plates/badge-first-light.png",
-      "slot": "badge b-1",
-      "ratio": "1:1", "width": 1024, "height": 1024,
-      "priority": 2,
-      "subject": "First light",
-      "prompt": "A badge device: a low sun breaking over a hill line, drawn as a compact emblem inside an implied circle. No ribbon, no banner, no text."
-    },
-    {
-      "key": "badge-rath-finder",
-      "path": "public/plates/badge-rath-finder.png",
-      "slot": "badge b-2",
-      "ratio": "1:1", "width": 1024, "height": 1024,
-      "priority": 2,
-      "subject": "Rath finder",
-      "prompt": "A badge device: a ringfort seen in plan as concentric circles with a single entrance gap. Compact emblem, no text."
-    },
-    {
-      "key": "badge-well-read",
-      "path": "public/plates/badge-well-read.png",
-      "slot": "badge b-3",
-      "ratio": "1:1", "width": 1024, "height": 1024,
-      "priority": 3,
-      "subject": "Well read",
-      "prompt": "A badge device: an open book with a well head rising from its pages. Compact emblem, no text."
-    },
-    {
-      "key": "badge-parish-bounds",
-      "path": "public/plates/badge-parish-bounds.png",
-      "slot": "badge b-4",
-      "ratio": "1:1", "width": 1024, "height": 1024,
-      "priority": 3,
-      "subject": "Parish bounds",
-      "prompt": "A badge device: a boundary stone with field walls radiating from it. Compact emblem, no text."
-    },
-    {
-      "key": "badge-long-way-round",
-      "path": "public/plates/badge-long-way-round.png",
-      "slot": "badge b-5",
-      "ratio": "1:1", "width": 1024, "height": 1024,
-      "priority": 3,
-      "subject": "Long way round",
-      "prompt": "A badge device: a worn boot sole with a looping path drawn round it. Compact emblem, no text."
-    },
-    {
-      "key": "badge-turf-cutter",
-      "path": "public/plates/badge-turf-cutter.png",
-      "slot": "badge b-6",
-      "ratio": "1:1", "width": 1024, "height": 1024,
-      "priority": 3,
-      "subject": "Turf cutter",
-      "prompt": "A badge device: a slean, the two sided turf spade, crossed with a stack of cut turf. Compact emblem, no text."
-    },
-
     {
       "key": "tale-cahercalla",
       "path": "public/plates/tale-cahercalla.png",
       "slot": "tale t-1 carousel",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 2,
       "subject": "Cathair Cala",
       "prompt": "A stone built ringfort on low ground near a river landing, drawn as a survey illustration with the bank and outer ditch clearly readable."
@@ -404,7 +334,9 @@
       "key": "tale-toonagh-mill",
       "path": "public/plates/tale-toonagh-mill.png",
       "slot": "tale t-2 carousel",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 3,
       "subject": "A corn mill and its water",
       "prompt": "An elevation study of a three bay stone corn mill with the wheel pit and head race drawn as an architectural survey would show them."
@@ -413,7 +345,9 @@
       "key": "tale-inchiquin",
       "path": "public/plates/tale-inchiquin.png",
       "slot": "tale t-3 carousel",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 3,
       "subject": "The lake of O'Quin's island",
       "prompt": "A lough with a wooded island, limestone shore, water level marks visible on the rock to suggest it fills and empties."
@@ -422,17 +356,20 @@
       "key": "tale-dysert",
       "path": "public/plates/tale-dysert.png",
       "slot": "tale t-4 carousel",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 3,
       "subject": "The hermitage of O'Dea",
       "prompt": "A hermitage site: a small ruined church, a round tower stump, and a high cross standing apart in the next field."
     },
-
     {
       "key": "poi-cahercalla",
       "path": "public/plates/poi-cahercalla.png",
       "slot": "point drawer, p-cahercalla",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 2,
       "subject": "Cahercalla",
       "prompt": "A ringfort's earthen bank seen from the field, higher on one side, cattle tracks crossing the low side."
@@ -441,7 +378,9 @@
       "key": "poi-dysert",
       "path": "public/plates/poi-dysert.png",
       "slot": "point drawer, p-dysert",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 3,
       "subject": "Dysert O'Dea",
       "prompt": "A ruined church gable and a carved high cross in the field beyond it."
@@ -450,7 +389,9 @@
       "key": "poi-inchiquin",
       "path": "public/plates/poi-inchiquin.png",
       "slot": "point drawer, p-inchiquin",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 3,
       "subject": "Inchiquin Lough",
       "prompt": "A west facing lough shore, reeds, low hills across the water."
@@ -459,7 +400,9 @@
       "key": "poi-ballykeel",
       "path": "public/plates/poi-ballykeel.png",
       "slot": "point drawer, p-ballykeel",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 3,
       "subject": "Ballykeel mass rock",
       "prompt": "A large flat topped boulder in a narrow field between two streams, a simple cross cut into its face, hard to pick out from the ground around it."
@@ -468,83 +411,13 @@
       "key": "poi-toonagh",
       "path": "public/plates/poi-toonagh.png",
       "slot": "point drawer, p-toonagh",
-      "ratio": "16:9", "width": 1920, "height": 1080,
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
       "priority": 3,
       "subject": "Toonagh mill",
       "prompt": "A rubble limestone mill with dressed quoins, the wheel pit on the north elevation, ivy taking the far gable."
-    },
-
-    {
-      "key": "category-fort",
-      "path": "public/plates/category-fort.png",
-      "slot": "category mark, fortified",
-      "ratio": "1:1", "width": 512, "height": 512,
-      "priority": 3,
-      "subject": "Fortified",
-      "prompt": "A single emblem on blank ground: a tower house in silhouette with its bawn wall. Very simple, readable at 48 pixels."
-    },
-    {
-      "key": "category-sacred",
-      "path": "public/plates/category-sacred.png",
-      "slot": "category mark, sacred",
-      "ratio": "1:1", "width": 512, "height": 512,
-      "priority": 3,
-      "subject": "Sacred",
-      "prompt": "A single emblem on blank ground: a high cross. Very simple, readable at 48 pixels."
-    },
-    {
-      "key": "category-ancient",
-      "path": "public/plates/category-ancient.png",
-      "slot": "category mark, ancient",
-      "ratio": "1:1", "width": 512, "height": 512,
-      "priority": 3,
-      "subject": "Ancient",
-      "prompt": "A single emblem on blank ground: a portal dolmen, two uprights and a capstone. Very simple, readable at 48 pixels."
-    },
-    {
-      "key": "category-water",
-      "path": "public/plates/category-water.png",
-      "slot": "category mark, water",
-      "ratio": "1:1", "width": 512, "height": 512,
-      "priority": 3,
-      "subject": "Water",
-      "prompt": "A single emblem on blank ground: a small waterfall over a rock step. Very simple, readable at 48 pixels."
-    },
-    {
-      "key": "category-green",
-      "path": "public/plates/category-green.png",
-      "slot": "category mark, green",
-      "ratio": "1:1", "width": 512, "height": 512,
-      "priority": 3,
-      "subject": "Green",
-      "prompt": "A single emblem on blank ground: an oak in full crown. Very simple, readable at 48 pixels."
-    },
-    {
-      "key": "category-height",
-      "path": "public/plates/category-height.png",
-      "slot": "category mark, elevation",
-      "ratio": "1:1", "width": 512, "height": 512,
-      "priority": 3,
-      "subject": "Elevation",
-      "prompt": "A single emblem on blank ground: a cairn on a summit. Very simple, readable at 48 pixels."
-    },
-    {
-      "key": "category-built",
-      "path": "public/plates/category-built.png",
-      "slot": "category mark, built",
-      "ratio": "1:1", "width": 512, "height": 512,
-      "priority": 3,
-      "subject": "Built",
-      "prompt": "A single emblem on blank ground: a stone arch bridge of one span. Very simple, readable at 48 pixels."
-    },
-    {
-      "key": "category-table",
-      "path": "public/plates/category-table.png",
-      "slot": "category mark, table",
-      "ratio": "1:1", "width": 512, "height": 512,
-      "priority": 3,
-      "subject": "Table",
-      "prompt": "A single emblem on blank ground: a cup and saucer beside a pint glass. Very simple, readable at 48 pixels."
     }
-  ]
+  ],
+  "folder": "public/plates"
 }

@@ -602,6 +602,16 @@ Nothing is drawn into a component as inline SVG path data: illustration lives
 in `/public/plates/` and is referenced by key, so the whole layer can be
 replaced without touching a component.
 
+One folder, and only that folder. A plate arrives by being named after its key
+and dropped in, with no import and no registration: `png`, `webp`, `jpg` and
+`svg` are tried in that order, so an export never has to be renamed on the way
+in. The app icon and the maskable icon resolve the same way, out of the same
+folder. A key with no file behind it holds its slot at the correct ratio and
+shows the placeholder, which is what lets the set land one plate at a time
+without a broken screen in between. `lib/media.ts` is the only place that knows
+the path or the file naming, `docs/media-manifest.json` registers every key the
+app asks for, and `npm run media` reports which of them have arrived.
+
 ---
 
 ## I. Patterns
@@ -783,6 +793,10 @@ Ratio 3:1. Rendered around 180px tall, so 540 stays crisp at 3× DPR. No sky:
 the paper shows through, so the band survives a palette change. Until the
 files exist the component draws its own ridge lines, so the layout is never
 waiting on art.
+
+Specified, not built. The band came out with the home animation and no
+component renders these two keys today, so they are held back from the media
+manifest rather than sitting in it as artwork nothing would show.
 
 The band takes whatever height Home has left and collapses to nothing on a
 short screen rather than pushing the grid off the bottom.

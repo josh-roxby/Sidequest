@@ -23,7 +23,7 @@ export function QuestCard({
     <Link href={`/quests/${quest.id}`} className="block active:scale-[0.99]"
       style={{ transitionDuration: "var(--dur-tap)" }}>
       <Card flag={flag} className="flex gap-3.5">
-        <Plate ratio="1/1" label={quest.townland} className="w-[72px] shrink-0" />
+        <Plate ratio="1/1" plate={quest.thumb} label={quest.townland} className="w-[72px] shrink-0" />
         <div className="min-w-0 flex-1">
           <h3 className="text-[13px] font-semibold uppercase tracking-[0.05em] text-ink">
             {quest.title}

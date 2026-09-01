@@ -152,7 +152,8 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
               )}
               style={{ borderRadius: "var(--r-md)", transitionDuration: "var(--dur-tap)" }}
             >
-              <Plate ratio="16/9" label={o.reached ? p?.category ?? "Waypoint" : "Locked"}
+              <Plate ratio="16/9" plate={o.reached ? p?.plate : undefined}
+                label={o.reached ? p?.category ?? "Waypoint" : "Locked"}
                 className="rounded-none border-0 border-b border-rule" />
               <div className="p-2.5">
                 <div className="flex items-center gap-1.5">
@@ -186,7 +187,7 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
         {openObj ? (
           openObj.reached ? (
             <div className="-mx-4 -mt-3.5 flex flex-col">
-              <Plate ratio="16/9" label={point(openObj)?.townland}
+              <Plate ratio="16/9" plate={point(openObj)?.plate} label={point(openObj)?.townland}
                 className="rounded-none border-0 border-b border-rule" />
               <div className="selectable flex flex-col gap-2 px-4 pt-3.5">
                 {point(openObj)?.nameGa ? (

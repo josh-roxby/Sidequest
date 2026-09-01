@@ -1,17 +1,27 @@
+import { readFileSync } from "node:fs";
 import { ImageResponse } from "next/og";
+import { APP_MARK } from "@/lib/media";
+import { mediaFile } from "@/lib/media.server";
 
 export const size = { width: 512, height: 512 };
 export const contentType = "image/png";
 
-/** Placeholder mark: a leaf in the field survey palette.
+/** The app icon and the favicon.
  *
- *  Drawn with CSS rather than an emoji or an SVG path, because the icon is
- *  rendered by Satori at build time and neither an emoji font nor complex path
- *  data is guaranteed to be available there. A rotated square with two opposite
- *  corners rounded is a leaf, and it renders identically everywhere.
- *
- *  Swap for real artwork when the plate set lands. docs/design-system.md §H. */
+ *  Served straight from the media folder once `app-mark` lands there, so the
+ *  icon is a file drop rather than a code change like every other plate. Until
+ *  then it falls back to a leaf drawn in CSS: the icon is rendered by Satori at
+ *  build time and neither an emoji font nor complex path data is guaranteed to
+ *  be available there, but a rotated square with two opposite corners rounded
+ *  is a leaf and renders identically everywhere. docs/design-system.md §H. */
 export default function Icon() {
+  const file = mediaFile(APP_MARK);
+  if (file) {
+    return new Response(new Uint8Array(readFileSync(file.path)), {
+      headers: { "Content-Type": file.type, "Cache-Control": "public, max-age=0, must-revalidate" },
+    });
+  }
+
   return new ImageResponse(
     (
       <div

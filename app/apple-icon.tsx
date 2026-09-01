@@ -1,11 +1,22 @@
+import { readFileSync } from "node:fs";
 import { ImageResponse } from "next/og";
+import { APP_MARK } from "@/lib/media";
+import { mediaFile } from "@/lib/media.server";
 
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
 /** iOS ignores the manifest for the home screen icon and reads this instead.
- *  It also does not apply a mask, so the artwork carries its own padding. */
+ *  It also does not apply a mask, so the artwork carries its own padding.
+ *  Same folder as everything else: drop `app-mark` in and it is used here. */
 export default function AppleIcon() {
+  const file = mediaFile(APP_MARK);
+  if (file) {
+    return new Response(new Uint8Array(readFileSync(file.path)), {
+      headers: { "Content-Type": file.type, "Cache-Control": "public, max-age=0, must-revalidate" },
+    });
+  }
+
   return new ImageResponse(
     (
       <div

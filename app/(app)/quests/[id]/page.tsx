@@ -36,7 +36,7 @@ export default function QuestDetail({ params }: { params: Promise<{ id: string }
         <p className="t-body text-stone">That quest is no longer available.</p>
       ) : (
         <>
-          <Plate ratio="16/9" label={q.townland} />
+          <Plate ratio="16/9" plate={q.plate} label={q.townland} />
 
           <h1 className="t-h1 mt-4 uppercase tracking-[0.04em] text-ink">{q.title}</h1>
           <div className="mt-2 flex items-center gap-2">

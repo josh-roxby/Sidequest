@@ -60,7 +60,7 @@ export default function TaleScreen({ params }: { params: Promise<{ id: string }>
           </p>
 
           <div className="mt-4">
-            <TaleCarousel cards={t.cards} />
+            <TaleCarousel cards={t.cards} plate={t.plate} />
           </div>
 
           <Rule className="my-5" />
