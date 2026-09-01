@@ -1,6 +1,7 @@
 "use client";
 import { Action } from "@/components/primitives/Action";
 import { cn } from "@/lib/cn";
+import { useHanded } from "@/lib/settings";
 
 /** A screen's primary action, docked in the strip beside the nav button.
  *
@@ -26,12 +27,13 @@ export function ThumbAction({
   disabled?: boolean;
   className?: string;
 }) {
+  const handed = useHanded();
   return (
     <div
       className={cn("fixed z-40 flex items-center", className)}
       style={{
-        left: "var(--gutter)",
-        right: "calc(var(--gutter) + var(--tile) + var(--s-2))",
+        left: handed === "left" ? "calc(var(--gutter) + var(--tile) + var(--s-2))" : "var(--gutter)",
+        right: handed === "left" ? "var(--gutter)" : "calc(var(--gutter) + var(--tile) + var(--s-2))",
         bottom: "calc(var(--gutter) + env(safe-area-inset-bottom))",
         height: "var(--tile)",
       }}

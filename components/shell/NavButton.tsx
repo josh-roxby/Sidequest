@@ -5,6 +5,7 @@ import { Mark } from "@/components/primitives/Marks";
 import { NavDrawer } from "./NavDrawer";
 import { QUADS, type QuadDir } from "@/lib/nav";
 import { getTaught, getTaughtServer, markTaught, subscribeTaught } from "@/lib/taught";
+import { useHanded, useSettings } from "@/lib/settings";
 import { cn } from "@/lib/cn";
 
 /** Release before this and it is a tap: the drawer opens. Reach it and the
@@ -22,6 +23,8 @@ const CELL = 64;
  *  gesture is ambiguous and releasing cancels. */
 const DEAD_ZONE = 22;
 
+/** Lattice offsets for a right-handed button. Mirrored on x for left-handed,
+ *  so the gesture is the same shape either way: up and away, up, and away. */
 const OFFSET: Record<QuadDir, { x: number; y: number }> = {
   tl: { x: -CELL, y: -CELL },
   tr: { x: 0, y: -CELL },
@@ -49,6 +52,10 @@ export function NavButton() {
   const origin = useRef<{ x: number; y: number } | null>(null);
   const holdFired = useRef(false);
   const taught = useSyncExternalStore(subscribeTaught, getTaught, getTaughtServer);
+  const handed = useHanded();
+  const haptics = useSettings().haptics;
+  const flip = handed === "left" ? -1 : 1;
+  const off = (d: QuadDir) => ({ x: OFFSET[d].x * flip, y: OFFSET[d].y });
 
   const reset = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -69,9 +76,9 @@ export function NavButton() {
       setPressing(false);
       setQuads(true);
       markTaught();
-      navigator.vibrate?.(8);
+      if (haptics) navigator.vibrate?.(8);
     }, HOLD_MS);
-  }, []);
+  }, [haptics]);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (!quads || !origin.current) return;
@@ -83,15 +90,16 @@ export function NavButton() {
     let best: QuadDir | null = null;
     let bestD = Infinity;
     for (const q of QUADS) {
-      const o = OFFSET[q.dir];
+      const o = off(q.dir);
       const d = Math.hypot(dx - o.x, dy - o.y);
       if (d < bestD) { bestD = d; best = q.dir; }
     }
     setAim((prev) => {
-      if (prev !== best) navigator.vibrate?.(4);
+      if (prev !== best && haptics) navigator.vibrate?.(4);
       return best;
     });
-  }, [quads]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quads, haptics, flip]);
 
   /** Pointerup only resolves the hold. The tap path deliberately runs off the
    *  native click below, because click is the one gesture signal every browser
@@ -126,7 +134,7 @@ export function NavButton() {
       <div
         className="fixed z-40"
         style={{
-          right: "var(--gutter)",
+          [handed === "left" ? "left" : "right"]: "var(--gutter)",
           bottom: "calc(var(--gutter) + env(safe-area-inset-bottom))",
         }}
       >
@@ -147,9 +155,9 @@ export function NavButton() {
                     left: 0,
                     top: 0,
                     borderRadius: "var(--r-md)",
-                    ["--qx" as string]: `${OFFSET[q.dir].x}px`,
-                    ["--qy" as string]: `${OFFSET[q.dir].y}px`,
-                    transform: `translate(${OFFSET[q.dir].x}px, ${OFFSET[q.dir].y}px) scale(${on ? 1.06 : 1})`,
+                    ["--qx" as string]: `${off(q.dir).x}px`,
+                    ["--qy" as string]: `${off(q.dir).y}px`,
+                    transform: `translate(${off(q.dir).x}px, ${off(q.dir).y}px) scale(${on ? 1.06 : 1})`,
                     animation: "sq-quad-in var(--dur-frame) var(--ease-out)",
                     transition: "transform var(--dur-state) var(--ease), background-color var(--dur-state)",
                   }}
@@ -164,7 +172,10 @@ export function NavButton() {
           : null}
 
         {!taught && !quads ? (
-          <p className="t-data pointer-events-none absolute bottom-1 right-full mr-3 whitespace-nowrap text-right text-[10px] uppercase leading-[1.5] text-mute">
+          <p className={cn(
+            "t-data pointer-events-none absolute bottom-1 whitespace-nowrap text-[10px] uppercase leading-[1.5] text-mute",
+            handed === "left" ? "left-full ml-3 text-left" : "right-full mr-3 text-right",
+          )}>
             Tap for all<br />Hold and drag
           </p>
         ) : null}

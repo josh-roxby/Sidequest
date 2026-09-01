@@ -4,13 +4,14 @@ import { MapCanvas, type MapMarker } from "@/components/map/MapCanvas";
 import { Frame } from "@/components/shell/Frame";
 import { Action } from "@/components/primitives/Action";
 import { MapDock } from "@/components/map/MapDock";
-import { MapAdd } from "@/components/map/MapAdd";
+import { MapAdd, type AddMode } from "@/components/map/MapAdd";
 import { Plate } from "@/components/primitives/Plate";
 import { Data, Label } from "@/components/primitives/Text";
 import { Skeleton, StatusStrip } from "@/components/primitives/States";
 import { data, type CommunityPoint, type Note, type Point } from "@/lib/data";
 import { hexAt } from "@/lib/map/hex";
 import { useAsync } from "@/hooks/use-async";
+import { useSettings } from "@/lib/settings";
 
 /** Fixtures carry normalised 0–1 positions. The canvas works in metres, so
  *  one place converts and everything downstream is world space. */
@@ -26,11 +27,17 @@ export default function MapScreen() {
   const cpoints = useAsync(() => data.getCommunityPoints(), [refresh]);
   const [openNote, setOpenNote] = useState<Note | null>(null);
   const [openCp, setOpenCp] = useState<CommunityPoint | null>(null);
+  const [addMode, setAddMode] = useState<AddMode>(null);
+  const settings = useSettings();
   const [open, setOpen] = useState<Point | null>(null);
   const [tale, setTale] = useState(false);
   const [layers, setLayers] = useState<Record<string, boolean>>({
     fog: true, trail: true, points: true, quests: true, notes: true, community: true,
   });
+  // The setting is the ceiling, the toggle is the switch underneath it. Turning
+  // community points off in settings hides them everywhere without needing the
+  // dock toggle to agree.
+  const showCommunity = settings.showCommunity && layers.community;
 
   const markers = useMemo<MapMarker[]>(() => {
     const pts = (points.data ?? []).map((p) => ({
@@ -64,13 +71,16 @@ export default function MapScreen() {
   return (
     <div className="relative h-dvh w-full overflow-hidden">
       <MapCanvas
-        markers={markers.filter((m) =>
-          m.kind === "you"
-          || (m.kind === "note" && layers.notes)
-          || (m.kind === "community" && layers.community)
-          || (m.kind === "point" && layers.points))}
-        trail={layers.trail ? trail : []}
-        questTiles={layers.quests ? questTiles : []}
+        markers={markers}
+        trail={trail}
+        questTiles={questTiles}
+        hidden={[
+          layers.points ? null : "point",
+          layers.notes ? null : "note",
+          showCommunity ? null : "community",
+          layers.trail ? null : "trail",
+          layers.quests ? null : "quests",
+        ].filter(Boolean) as string[]}
         onMarker={(id) => {
           if (id.startsWith("note-")) {
             setOpenNote((notes.data ?? []).find((n) => `note-${n.id}` === id) ?? null);
@@ -110,18 +120,6 @@ export default function MapScreen() {
         </div>
       ) : null}
 
-      {/* Add sits at the head of the dock row: it is the one control here that
-          changes the map rather than filtering it. */}
-      <div className="absolute z-30 flex"
-        style={{ left: "var(--gutter)",
-                 bottom: "calc(var(--gutter) + env(safe-area-inset-bottom) + 52px)" }}>
-        <MapAdd
-          quests={quests.data ?? []}
-          at={{ x: 0.5, y: 0.5 }}
-          onAdded={() => setRefresh((n) => n + 1)}
-        />
-      </div>
-
       <MapDock
         region={territory.data?.county ?? "In view"}
         tilesInView={{ revealed: territory.data?.tiles ?? 0, total: 4200 }}
@@ -135,6 +133,7 @@ export default function MapScreen() {
         ]}
         notes={notes.data ?? []}
         onNote={(id) => setOpenNote((notes.data ?? []).find((n) => n.id === id) ?? null)}
+        onAdd={setAddMode}
         layers={layers}
         onLayer={(k, on) => setLayers((l) => ({ ...l, [k]: on }))}
         onPoint={(id) => {
@@ -203,6 +202,16 @@ export default function MapScreen() {
         ) : null}
       </Frame>
 
+      {/* Rendered at the top level, outside every positioned container, so the
+          frames are not trapped in the dock's stacking context. */}
+      <MapAdd
+        mode={addMode}
+        setMode={setAddMode}
+        quests={quests.data ?? []}
+        at={{ x: 0.5, y: 0.5 }}
+        onAdded={() => setRefresh((n) => n + 1)}
+      />
+
       <Frame
         open={openNote !== null}
         onDismiss={() => setOpenNote(null)}
@@ -238,10 +247,12 @@ export default function MapScreen() {
             <Data className="text-[11px] uppercase text-mute">
               Added by {openCp.author} · {openCp.createdAt}
             </Data>
+            <p className="t-small border-t border-rule pt-3 text-stone">
+              Once reviewed this will be available for every sidequester.
+            </p>
             {openCp.status !== "approved" ? (
               <p className="t-small border-l-2 border-rust pl-3 text-stone">
-                Only you can see this one. It appears for everyone once it has
-                been reviewed.
+                Only you can see this one for now.
               </p>
             ) : null}
           </div>

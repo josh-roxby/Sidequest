@@ -226,6 +226,17 @@ h1, h2, h3, h4, .t-label, .t-display, .t-h1, .t-h2, .t-data,
   to   { opacity: 1; transform: translate(var(--qx), var(--qy)) scale(1); }
 }
 
+/* The in-app reduce-motion setting, stamped on <html> by the settings store's
+   consumers. Sits alongside the OS query rather than replacing it: someone can
+   want less motion here without changing their whole device. */
+html[data-reduce-motion="1"] *,
+html[data-reduce-motion="1"] *::before,
+html[data-reduce-motion="1"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

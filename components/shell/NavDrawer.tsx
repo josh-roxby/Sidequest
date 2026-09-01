@@ -6,6 +6,7 @@ import { Marquee } from "@/components/primitives/Marquee";
 import { Frame } from "./Frame";
 import { data } from "@/lib/data";
 import { useAsync } from "@/hooks/use-async";
+import { useSettings } from "@/lib/settings";
 import { DESTS } from "@/lib/nav";
 import { cn } from "@/lib/cn";
 
@@ -28,7 +29,8 @@ export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () =>
   // A ticker of things other people are doing is the cheapest possible signal
   // that the app is alive, and it costs no space at all down there.
   const activity = useAsync(() => data.getActivity(), []);
-  const recent = (activity.data ?? []).slice(0, 10).map((e) => e.text);
+  const tickerOn = useSettings().activityInDrawer;
+  const recent = tickerOn ? (activity.data ?? []).slice(0, 10).map((e) => e.text) : [];
 
   return (
     <Frame

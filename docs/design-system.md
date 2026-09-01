@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 1.9 |
+| Version | 2.0 |
 | Date | 2026-08-31 |
 | Status | Locked. 1.2 replaces both nav forms with a single button, adds the canvas map and the hex tiling, and sets the interaction hygiene rules. |
 | Supersedes | The cream / sage / lavender token set in `app/globals.css` |
@@ -498,6 +498,11 @@ it, which is the point of having a tiling at all.
 
 ### E-4 Markers
 
+**E-4-0 Layers fade, they do not blink.** Toggling a layer eases its opacity
+rather than adding or removing markers, and the tween is driven from inside
+the draw loop rather than from React. A layer change never causes a render, so
+the canvas never clears mid-transition.
+
 **E-4-1 Canvas markers carry the same glyphs as the buttons that filter them.**
 A separate drawing language for the canvas means learning the legend twice, so
 a note on the map is the note icon in a ring, a community point is the three
@@ -892,6 +897,38 @@ A home screen you have to scroll has stopped being a place to start from.
 
 ---
 
+## N1. Settings
+
+Settings live in `lib/settings.ts` and are read through `useSyncExternalStore`,
+so a change lands in every component at once and survives navigation. An
+earlier version held them in component state, which is exactly why
+left-handed appeared to work and then forgot itself the moment you moved
+screen.
+
+The snapshot is cached rather than parsed per read: `useSyncExternalStore`
+compares with `Object.is`, and returning fresh JSON each time hands it a new
+object every render and spins.
+
+Every setting has to actually do something. A switch that stores a preference
+nothing reads is worse than no switch, because it teaches people the controls
+are decorative.
+
+| Setting | Reaches |
+|---|---|
+| Left-handed | Nav button, its shortcut lattice, docked actions |
+| Haptics | Hold threshold and aim changes |
+| Reduce motion | A document attribute, alongside the OS query rather than replacing it |
+| Community points | The map layer, above the dock toggle |
+| Activity ticker | The drawer footer |
+| Units, usual length, keep awake | Their own surfaces |
+
+**N1-1 Handedness is one switch, not a sweep.** Anything in the thumb corner
+reads `useHanded()` and picks its side from that. The shortcut lattice mirrors
+on x with it, so the gesture keeps its shape either way: up and away, up, and
+away.
+
+---
+
 ## O. Docked actions
 
 A screen's primary action can sit in the strip beside the nav button, fixed to
@@ -937,6 +974,12 @@ ticker, which is why the constraint has to hold at both sizes.
 **Q-3 Nothing locational is ever published.** An event says what someone did,
 never where they are. The feed carries badges, quests, tales and joins, and no
 coordinate ever reaches it.
+
+**Q-3a A fixed child cannot escape a stacking context.** The add drawers are
+rendered by the page at the top level, not inside the dock. A container with a
+z-index opens a stacking context, and a fixed child of it stays inside that
+context however high its own z-index goes. Mounting the frames inside the
+dock's wrapper is what put them underneath the nav.
 
 **Q-4 Anyone can add a point, nobody can publish one.** A community point is a
 claim about a real place on other people's maps, so it goes to review before it

@@ -24,6 +24,10 @@ export interface MapCanvasProps {
   onMarker?: (id: string) => void;
   /** Recentre target, in world metres. */
   home?: { x: number; y: number };
+  /** Marker kinds and overlays currently switched off. They keep rendering at
+   *  a falling opacity rather than vanishing, so a layer toggle reads as a
+   *  fade rather than the canvas blinking. */
+  hidden?: string[];
   /** Preview mode: no gestures, no compass, no hit testing. Used where the map
    *  is illustration rather than a thing to drive. */
   interactive?: boolean;
@@ -52,7 +56,7 @@ const REVEAL_RADIUS = 900;    // world metres of cleared ground around origin
  *  underneath a drag. */
 export function MapCanvas({
   markers = [], trail = [], questTiles = [], onMarker,
-  interactive = true, initialScale = 1, home = { x: 0, y: 0 },
+  interactive = true, initialScale = 1, home = { x: 0, y: 0 }, hidden = [],
 }: MapCanvasProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -62,6 +66,15 @@ export function MapCanvas({
   const frame = useRef<number | null>(null);
   const size = useRef({ w: 0, h: 0, dpr: 1 });
   const [bearing, setBearing] = useState(0);
+
+  /** Current opacity per layer, eased toward its target. Held in a ref and
+   *  driven by the same animation frame as the camera, so a fade never causes
+   *  a React render and the canvas never clears mid-transition. */
+  const alpha = useRef<Record<string, number>>({});
+  const hiddenKey = hidden.join(",");
+  /** Lets draw schedule its own next frame without referencing itself, which
+   *  would be a use-before-declaration inside its own callback. */
+  const drawRef = useRef<() => void>(() => {});
 
   /** Screen point to world point, undoing rotation and zoom. */
   const toWorld = useCallback((sx: number, sy: number) => {
@@ -82,6 +95,17 @@ export function MapCanvas({
 
   const draw = useCallback(() => {
     frame.current = null;
+    const hiddenSet = new Set(hiddenKey ? hiddenKey.split(",") : []);
+    const a = alpha.current;
+    let settling = false;
+    for (const layer of ["point", "note", "community", "trail", "quests"]) {
+      const target = hiddenSet.has(layer) ? 0 : 1;
+      const current = a[layer] ?? target;
+      const next = current + (target - current) * 0.22;
+      a[layer] = Math.abs(target - next) < 0.01 ? target : next;
+      if (a[layer] !== target) settling = true;
+    }
+
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
@@ -175,14 +199,17 @@ export function MapCanvas({
         ctx.globalAlpha = 1;
       }
 
-      if (questSet.has(hexKey(hx))) {
+      if (questSet.has(hexKey(hx)) && (a.quests ?? 1) > 0.01) {
         ctx.strokeStyle = rust;
+        ctx.globalAlpha = a.quests ?? 1;
         ctx.lineWidth = 2 / c.scale;
         ctx.stroke();
+        ctx.globalAlpha = 1;
       }
     }
 
-    if (trail.length > 1) {
+    if (trail.length > 1 && (a.trail ?? 1) > 0.01) {
+      ctx.globalAlpha = a.trail ?? 1;
       ctx.strokeStyle = css("--map-trail");
       ctx.lineWidth = 3 / c.scale;
       ctx.lineJoin = "miter";
@@ -196,6 +223,7 @@ export function MapCanvas({
       trail.slice(half).forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
     }
 
     // Markers counter-rotate so they stay upright however the map is turned.
@@ -203,7 +231,10 @@ export function MapCanvas({
     const field = css("--field");
     const surface = css("--surface");
     for (const m of markers) {
+      const layerAlpha = a[m.kind] ?? 1;
+      if (layerAlpha <= 0.01) continue;
       ctx.save();
+      ctx.globalAlpha = layerAlpha;
       ctx.translate(m.x, m.y);
       ctx.rotate(c.bearing);
       ctx.scale(1 / c.scale, 1 / c.scale);
@@ -234,7 +265,17 @@ export function MapCanvas({
     }
 
     ctx.restore();
-  }, [markers, trail, questTiles]);
+    ctx.globalAlpha = 1;
+
+    // Keep stepping while anything is mid-fade. Scheduling from inside draw
+    // rather than from React means the tween runs at display rate and cannot
+    // be interrupted by an unrelated re-render.
+    if (settling && frame.current === null) {
+      frame.current = requestAnimationFrame(() => drawRef.current());
+    }
+  }, [markers, trail, questTiles, hiddenKey]);
+
+  useEffect(() => { drawRef.current = draw; }, [draw]);
 
   const invalidate = useCallback(() => {
     if (frame.current === null) frame.current = requestAnimationFrame(draw);
@@ -423,10 +464,10 @@ export function MapCanvas({
         className="flex h-10 w-10 items-center justify-center border border-rule bg-surface text-field active:bg-field-soft"
         style={{ borderRadius: "var(--r-full)" }}
       >
-        <svg width="17" height="17" viewBox="0 0 16 16" aria-hidden fill="none"
-          stroke="currentColor" strokeWidth="1.6" strokeLinecap="square">
-          <circle cx="8" cy="8" r="3" />
-          <path d="M8 1v2.4M8 12.6V15M1 8h2.4M12.6 8H15" />
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden fill="none"
+          stroke="currentColor" strokeWidth="1.7" strokeLinecap="square">
+          <circle cx="8" cy="8" r="2.6" />
+          <path d="M8 1.6v2M8 12.4v2M1.6 8h2M12.4 8h2" />
         </svg>
       </button>
       </div>

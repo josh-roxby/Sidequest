@@ -2,31 +2,39 @@
 import { useState } from "react";
 import { Action } from "@/components/primitives/Action";
 import { Field } from "@/components/primitives/Field";
-import { Mark } from "@/components/primitives/Marks";
 import { Data, Label } from "@/components/primitives/Text";
 import { Frame } from "@/components/shell/Frame";
 import { data, type Quest } from "@/lib/data";
 import { cn } from "@/lib/cn";
 
-type Mode = null | "choose" | "note" | "point";
+export type AddMode = null | "note" | "point";
 
-/** Add something to the map from where you are standing.
+/** The two add drawers. The button and its menu live in the dock; these are
+ *  rendered by the page at the top level, outside any positioned container.
+ *
+ *  That placement is the fix for the stacking bug: a container with a z-index
+ *  opens a stacking context, and a fixed child of it cannot escape however
+ *  high its own z-index goes. The frames were mounted inside the dock's
+ *  wrapper and were landing underneath the nav.
  *
  *  Two things, deliberately kept apart. A note is yours: nobody else ever sees
  *  it, so it saves immediately. A community point is a claim about a real place
  *  on other people's maps, so it goes to review first. Collapsing the two into
- *  one "add" flow would blur the difference, and the difference is the whole
+ *  one add flow would blur the difference, and the difference is the whole
  *  reason the second one is trustworthy. */
 export function MapAdd({
+  mode,
+  setMode,
   quests,
   at,
   onAdded,
 }: {
+  mode: AddMode;
+  setMode: (m: AddMode) => void;
   quests: Quest[];
   at: { x: number; y: number };
   onAdded: () => void;
 }) {
-  const [mode, setMode] = useState<Mode>(null);
   const [text, setText] = useState("");
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
@@ -68,35 +76,6 @@ export function MapAdd({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setMode("choose")}
-        aria-label="Add to the map"
-        className="flex h-11 w-11 items-center justify-center border border-field bg-field text-field-ink active:scale-[0.97]"
-        style={{ borderRadius: "var(--r-sm)", transitionDuration: "var(--dur-tap)" }}
-      >
-        <Mark name="plus" size={18} />
-      </button>
-
-      <Frame
-        open={mode === "choose"}
-        onDismiss={reset}
-        label="Here"
-        title="Add to the map"
-      >
-        <div className="flex flex-col gap-2">
-          <Choice
-            mark="note" tone="ink" title="A note"
-            line="Just for you. Nobody else ever sees it."
-            onClick={() => setMode("note")}
-          />
-          <Choice
-            mark="friends" tone="rust" title="A community point"
-            line="A real place worth knowing. Reviewed before it appears for anyone else."
-            onClick={() => setMode("point")}
-          />
-        </div>
-      </Frame>
 
       <Frame
         open={mode === "note"}
@@ -167,6 +146,9 @@ export function MapAdd({
             <Data className="text-[10px] uppercase text-mute">
               Pinned at where you are standing
             </Data>
+            <p className="t-small border-t border-rule pt-3 text-stone">
+              Once reviewed this will be available for every sidequester.
+            </p>
           </div>
         )}
       </Frame>
@@ -174,30 +156,6 @@ export function MapAdd({
   );
 }
 
-function Choice({
-  mark, tone, title, line, onClick,
-}: {
-  mark: "note" | "friends"; tone: "ink" | "rust"; title: string; line: string; onClick: () => void;
-}) {
-  return (
-    <button type="button" onClick={onClick}
-      className="flex items-start gap-3 border border-rule bg-surface p-3.5 text-left active:bg-field-soft"
-      style={{ borderRadius: "var(--r-md)" }}>
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center border"
-        style={{
-          borderRadius: "var(--r-full)",
-          borderColor: tone === "rust" ? "var(--rust)" : "var(--ink)",
-          color: tone === "rust" ? "var(--rust)" : "var(--ink)",
-        }}>
-        <Mark name={mark} size={16} />
-      </span>
-      <span className="min-w-0">
-        <p className="t-small font-semibold text-ink">{title}</p>
-        <p className="t-small mt-0.5 text-stone">{line}</p>
-      </span>
-    </button>
-  );
-}
 
 function Pill({ on, onClick, children }: {
   on: boolean; onClick: () => void; children: React.ReactNode;

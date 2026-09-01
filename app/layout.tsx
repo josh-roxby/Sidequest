@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ServiceWorker } from "@/components/shell/ServiceWorker";
+import { SettingsEffects } from "@/components/shell/SettingsEffects";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <ServiceWorker />
+        <SettingsEffects />
       </body>
     </html>
   );

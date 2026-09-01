@@ -5,7 +5,7 @@ import { Data, Label } from "@/components/primitives/Text";
 import type { Note } from "@/lib/data";
 import { cn } from "@/lib/cn";
 
-type PanelId = "tiles" | "notes" | "badges" | "points" | "layers";
+type PanelId = "add" | "tiles" | "notes" | "badges" | "points" | "layers";
 
 const BUTTONS: { id: PanelId; mark: MarkName; label: string }[] = [
   { id: "tiles", mark: "grid", label: "Tiles" },
@@ -25,6 +25,7 @@ export interface MapDockProps {
   badges: { label: string; progress: number; target: number }[];
   notes: Note[];
   onNote: (id: string) => void;
+  onAdd: (kind: "note" | "point") => void;
   layers: Record<string, boolean>;
   onLayer: (key: string, on: boolean) => void;
   onPoint: (id: string) => void;
@@ -38,6 +39,7 @@ export interface MapDockProps {
  *  Only one panel is open at a time. */
 export function MapDock({
   tilesInView, region, points, badges, notes, layers, onLayer, onPoint, onNote,
+  onAdd,
 }: MapDockProps) {
   const [open, setOpen] = useState<PanelId | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -69,7 +71,7 @@ export function MapDock({
       {open ? (
         <div
           role="dialog"
-          aria-label={BUTTONS.find((b) => b.id === open)?.label}
+          aria-label={open === "add" ? "Add to the map" : BUTTONS.find((b) => b.id === open)?.label}
           className="no-bar mb-2 max-h-[46dvh] overflow-y-auto border border-ink bg-surface p-3"
           style={{
             borderRadius: "var(--r-md)",
@@ -77,6 +79,21 @@ export function MapDock({
             animation: "sq-frame-in var(--dur-frame) var(--ease-out)",
           }}
         >
+          {open === "add" ? (
+            <div className="flex flex-col gap-2">
+              <AddChoice
+                mark="note" tone="ink" title="A note"
+                line="Just for you. Nobody else ever sees it."
+                onClick={() => { setOpen(null); onAdd("note"); }}
+              />
+              <AddChoice
+                mark="friends" tone="rust" title="A community point"
+                line="A real place worth knowing. Reviewed before anyone else sees it."
+                onClick={() => { setOpen(null); onAdd("point"); }}
+              />
+            </div>
+          ) : null}
+
           {open === "tiles" ? (
             <>
               <Label>{region} in view</Label>
@@ -194,6 +211,24 @@ export function MapDock({
       ) : null}
 
       <div className="flex gap-1.5">
+        {/* Add leads the row: it is the one control here that changes the map
+            rather than filtering it, so it is green and it is first. */}
+        <button
+          type="button"
+          aria-label="Add to the map"
+          aria-expanded={open === "add"}
+          onClick={() => setOpen(open === "add" ? null : "add")}
+          className={cn(
+            "flex h-11 w-11 items-center justify-center border active:scale-[0.97]",
+            open === "add"
+              ? "border-ink bg-ink text-surface"
+              : "border-field bg-field text-field-ink",
+          )}
+          style={{ borderRadius: "var(--r-sm)", transitionDuration: "var(--dur-tap)" }}
+        >
+          <Mark name="plus" size={18} />
+        </button>
+
         {BUTTONS.map((b) => {
           const on = open === b.id;
           return (
@@ -215,5 +250,30 @@ export function MapDock({
         })}
       </div>
     </div>
+  );
+}
+
+function AddChoice({
+  mark, tone, title, line, onClick,
+}: {
+  mark: "note" | "friends"; tone: "ink" | "rust"; title: string; line: string; onClick: () => void;
+}) {
+  return (
+    <button type="button" onClick={onClick}
+      className="flex items-start gap-2.5 border border-rule bg-surface p-2.5 text-left active:bg-field-soft"
+      style={{ borderRadius: "var(--r-sm)" }}>
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center border"
+        style={{
+          borderRadius: "var(--r-full)",
+          borderColor: tone === "rust" ? "var(--rust)" : "var(--ink)",
+          color: tone === "rust" ? "var(--rust)" : "var(--ink)",
+        }}>
+        <Mark name={mark} size={15} />
+      </span>
+      <span className="min-w-0">
+        <p className="t-small font-semibold text-ink">{title}</p>
+        <p className="t-small mt-0.5 leading-snug text-stone">{line}</p>
+      </span>
+    </button>
   );
 }

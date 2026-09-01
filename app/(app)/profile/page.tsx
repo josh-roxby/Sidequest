@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/primitives/Button";
 import { StatRow } from "@/components/primitives/Stat";
@@ -37,7 +38,7 @@ export default function ProfileScreen() {
             josh@exhale.studio
           </Data>
         </div>
-        <Button className="shrink-0">Edit</Button>
+        <Link href="/profile/edit" className="shrink-0"><Button>Edit</Button></Link>
       </header>
 
       {territory.loading ? (

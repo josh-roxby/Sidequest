@@ -124,6 +124,16 @@ data with auth off and no database.
 - [x] Add to the map: notes, and community points that go to review
 - [x] Home band fixed to the nav button height
 - [x] Tab panels slide, and no scrolling surface shows a scrollbar
+- [x] Settings persist and take effect, including left-handed
+- [x] Data export, terms of use and a privacy statement in settings
+- [x] Profile edit: name, handle, avatar tint, bio, findability, account
+- [x] Home rebuilt around one hero card, the shelf, four ways in and a docked
+      begin action
+- [x] Map add moved into the dock with its own menu, and its drawers hoisted
+      out of the dock's stacking context
+- [x] Layer toggles fade instead of blinking the canvas
+- [ ] Legal copy reviewed by someone qualified before launch. What is there now
+      is honest and plain, not advice
 - [ ] Admin review queue for community points, alongside the media console
 - [ ] Unlock a point for real from a live position rather than a fixture flag
 - [ ] Tile counts in the dock computed from the camera rather than passed in
