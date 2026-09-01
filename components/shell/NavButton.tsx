@@ -7,7 +7,11 @@ import { QUADS, type QuadDir } from "@/lib/nav";
 import { getTaught, getTaughtServer, markTaught, subscribeTaught } from "@/lib/taught";
 import { cn } from "@/lib/cn";
 
-const HOLD_MS = 380;
+/** Release before this and it is a tap: the drawer opens. Reach it and the
+ *  shortcut fan takes over. A full second is deliberately long: it removes any
+ *  ambiguity between a thumb tap and a deliberate hold, which is what made the
+ *  shorter threshold unreliable. */
+const HOLD_MS = 1000;
 /** Tile pitch: one tile plus one gap. The three shortcut tiles sit on this
  *  lattice around the anchor, forming a 2×2 with the button at bottom-right. */
 const CELL = 64;
@@ -40,7 +44,7 @@ export function NavButton() {
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const origin = useRef<{ x: number; y: number } | null>(null);
-  const opened = useRef(false);
+  const holdFired = useRef(false);
   const taught = useSyncExternalStore(subscribeTaught, getTaught, getTaughtServer);
 
   const reset = useCallback(() => {
@@ -54,11 +58,11 @@ export function NavButton() {
 
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
-    opened.current = false;
+    holdFired.current = false;
     origin.current = { x: e.clientX, y: e.clientY };
     setPressing(true);
     timer.current = setTimeout(() => {
-      opened.current = true;
+      holdFired.current = true;
       setPressing(false);
       setQuads(true);
       markTaught();
@@ -86,16 +90,23 @@ export function NavButton() {
     });
   }, [quads]);
 
+  /** Pointerup only resolves the hold. The tap path deliberately runs off the
+   *  native click below, because click is the one gesture signal every browser
+   *  agrees on: it survives the small thumb travel that a touch always has,
+   *  and it fires after any pointer capture has been released. Driving the
+   *  drawer off pointerup instead is what made a thumb tap unreliable. */
   const onPointerUp = useCallback(() => {
-    if (quads) {
-      const target = aim ? QUADS.find((q) => q.dir === aim) : null;
-      reset();
-      if (target) router.push(target.href);
-      return;
-    }
+    if (!quads) { reset(); return; }
+    const target = aim ? QUADS.find((q) => q.dir === aim) : null;
     reset();
-    if (!opened.current) setDrawer(true);
-  }, [quads, aim, reset, router, setDrawer]);
+    if (target) router.push(target.href);
+  }, [quads, aim, reset, router]);
+
+  const onClick = useCallback(() => {
+    // A completed hold already acted; swallow the click it also produces.
+    if (holdFired.current) { holdFired.current = false; return; }
+    setDrawer(true);
+  }, []);
 
   return (
     <>
@@ -151,7 +162,7 @@ export function NavButton() {
 
         {!taught && !quads ? (
           <p className="t-data pointer-events-none absolute bottom-1 right-full mr-3 whitespace-nowrap text-right text-[10px] uppercase leading-[1.5] text-mute">
-            Tap for all<br />Hold and drag
+            Tap for all<br />Hold 1s and drag
           </p>
         ) : null}
 
@@ -174,6 +185,7 @@ export function NavButton() {
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={reset}
+          onClick={onClick}
           onContextMenu={(e) => e.preventDefault()}
         >
           <Mark name="grid" size={22} />

@@ -42,9 +42,11 @@ get broken by accident.
 Two more worth knowing before you build a screen.
 
 - **Navigation is one button.** A 56px square in the thumb corner on every
-  screen. Tap opens the square drawer (a `Frame`, so its dismiss lands back on
-  the same square). Press and hold fans three tiles and you drag to one: up-left
-  Map, up Quests, left Badges. Nothing is hold-only.
+  screen. Release under 1s and the square drawer opens (a `Frame`, so its
+  dismiss lands back on the same square). Hold past 1s and three tiles fan out
+  to drag to: up-left Map, up Quests, left Badges. Nothing is hold-only.
+  **Tap runs off the native `click`, hold runs off pointer events.** Moving the
+  tap onto pointerup is what previously made it unreliable.
 - **Frames are squares, not drawers.** They scale from the thumb corner and
   never touch the bottom of the screen. Two ratios, 1:1 and 1:1.28, and no
   full screen sheet.

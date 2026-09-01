@@ -124,9 +124,10 @@ body { min-height: 100dvh; margin: 0; }
  * iOS callout. Prose stays selectable: see .selectable below.
  * -------------------------------------------------------------------- */
 
-button, a, label, nav, header, [role="tab"], [role="dialog"] > header,
+button, button *, a, a *, label, nav, nav *, header, header *,
+[role="tab"], [role="tab"] *, [role="dialog"] > header,
 h1, h2, h3, h4, .t-label, .t-display, .t-h1, .t-h2, .t-data,
-.t-data-lg, .t-data-xl, canvas {
+.t-data-lg, .t-data-xl, .chip, .chip *, canvas {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;

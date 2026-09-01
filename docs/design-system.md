@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 1.2 |
+| Version | 1.3 |
 | Date | 2026-08-31 |
 | Status | Locked. 1.2 replaces both nav forms with a single button, adds the canvas map and the hex tiling, and sets the interaction hygiene rules. |
 | Supersedes | The cream / sage / lavender token set in `app/globals.css` |
@@ -258,7 +258,7 @@ the map be the whole screen.
 
 ### C-2 Tap: the drawer
 
-Opens a square drawer, the same `Frame` every other modal surface uses, so it
+Release before **1000ms** and it is a tap. Opens a square drawer, the same `Frame` every other modal surface uses, so it
 inherits the scrim, the focus trap, Escape, and the dismiss control at the
 anchor. Tap the button to open, tap the same square to close. The thumb does
 not travel.
@@ -287,9 +287,14 @@ in every session get double-height tiles; the other six sit beneath as a 3×2.
 
 ### C-3 Hold and drag: the shortcut
 
-Press and hold for 380ms and three tiles fan onto the lattice around the
-button, forming a 2×2 with the button at bottom-right. Keep the thumb down,
-drag toward the one you want, release.
+Reach **1000ms** without releasing and three tiles fan onto the lattice
+around the button, forming a 2×2 with the button at bottom-right. Keep the
+thumb down, drag toward the one you want, release.
+
+A full second is deliberately long. A shorter threshold has to guess whether
+a slow thumb tap was a hold, and it guesses wrong often enough that tapping
+stops feeling reliable. At a second there is no ambiguity in either
+direction.
 
 | Position | Destination |
 |---|---|
@@ -315,16 +320,27 @@ each time the aim crosses to a different tile.
 **C-3-3 Nothing is hold-only.** All three shortcuts are in the drawer. The
 gesture is an accelerator, never the only route.
 
-**C-3-4 Opening on pointerup has a trap.** The button has to distinguish tap
-from hold, so it can only decide "this was a tap" on pointerup. The frame
-therefore mounts while the browser is still mid-gesture, and the trailing
-click lands on whatever now sits under the finger, which is the scrim. A
-scrim that dismisses on click would swallow that and close the frame in the
-same frame it opened, which reads to the user as "tap does nothing".
+**C-3-4 Tap runs off click, hold runs off pointer events.** The two paths use
+different event streams on purpose.
+
+The hold needs pointerdown, pointermove and pointerup, because it has to time
+the press and track the drag. The tap does not: it uses the native `click`,
+which is the one gesture signal every browser agrees on. Click survives the
+small travel a thumb always has, fires after pointer capture releases, and
+cannot be confused by a touch that started slightly off-centre. A completed
+hold sets a flag that swallows the click it also produces.
+
+Driving the tap off pointerup instead is what made a thumb tap unreliable.
+
+**C-3-5 A frame opened mid-gesture has a second trap.** Whichever event opens
+it, the frame can mount while the browser is still inside the gesture, and the
+trailing click then lands on whatever now sits under the finger, which is the
+scrim. A scrim that dismisses on click would swallow that and close the frame
+in the frame it opened.
 
 The scrim therefore dismisses on a full press-release cycle that BEGAN on the
 scrim, never on click. The opening gesture's pointerdown happened on the
-button, before the scrim existed, so it can never satisfy that condition.
+trigger, before the scrim existed, so it can never satisfy that condition.
 
 ### C-4 States
 
@@ -549,7 +565,22 @@ Square checkboxes at 16px, `--r-sm`, filling `--field` when complete, with a
 hairline divider between rows and an optional mono value on the right for
 counted objectives.
 
-### I-5 Locked territory
+### I-5 Tooltips
+
+Custom, never the native `title` attribute: that needs a hover no phone has,
+and it renders in OS chrome we cannot style.
+
+Tap to open, tap anywhere else or press Escape to close. Ink ground, surface
+text, `--r-sm`, scaling in from the edge it is anchored to over
+`--dur-state`.
+
+A tooltip is always an explanation and never the only route to information.
+Anything a person must read in order to use a control belongs in the
+control's own label. They are used on the six small drawer tiles, where the
+label alone cannot say what Outposts or Tales are and the grid has no room
+for a subtitle, and on the two count chips in the rank header.
+
+### I-6 Locked territory
 
 On the map, unreached ground that is gated rather than merely unexplored gets
 a dashed `--rust` outline over diagonal hatching, with a round lock marker at
@@ -579,3 +610,34 @@ Rules that stop the app feeling like a web page.
   `touch-action: none` via `.gesture`. The browser never competes.
 - **No context menu on controls.** `onContextMenu` is prevented on the nav
   button and the canvas, since a long press there is a real gesture.
+
+
+---
+
+## K. Installing
+
+The app is a PWA and is meant to live on a home screen.
+
+| Piece | Where |
+|---|---|
+| Manifest | `app/manifest.ts`. Standalone, portrait, paper background and theme, `start_url` `/home` |
+| Icon | `app/icon.tsx`, 512px PNG rendered at build time |
+| iOS icon | `app/apple-icon.tsx`, 180px. iOS ignores the manifest and reads this |
+| Service worker | `public/sw.js`, registered after load by `ServiceWorker` |
+
+**K-1 The mark is a placeholder.** A leaf in `--field` on `--paper`, drawn as
+a rotated square with two opposite corners rounded. Drawn in CSS rather than
+as an emoji or a path because the icon is rendered by Satori at build time,
+where neither an emoji font nor complex path data is guaranteed. It is a
+stand-in until the plate set lands.
+
+**K-2 `start_url` is `/home`, not `/`.** Once the app is on a home screen the
+landing page has already done its job, and opening to a pitch every time is a
+small insult.
+
+**K-3 The service worker is minimal on purpose.** Network first with a cache
+fallback, so a stale shell can never mask a deploy, and Next's build output is
+never cached by URL since it is already immutable and content-hashed. Android
+wants a fetch handler before it will offer to install, and that is most of what
+it is for today. The offline story that matters, holding an active walk's
+route and tales through a loss of signal, belongs with the walk flow.

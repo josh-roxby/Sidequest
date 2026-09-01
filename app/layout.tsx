@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { ServiceWorker } from "@/components/shell/ServiceWorker";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -20,6 +21,16 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Side Quest",
   description: "Pick how long you have. Get a walk worth taking.",
+  applicationName: "Side Quest",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Side Quest",
+    // Transparent so the page's own paper reaches the top edge and the status
+    // bar sits on it, rather than on a black or white band.
+    statusBarStyle: "default",
+  },
+  formatDetection: { telephone: false, date: false, address: false, email: false },
 };
 
 export const viewport: Viewport = {
@@ -32,7 +43,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IE" className={`${archivo.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ServiceWorker />
+      </body>
     </html>
   );
 }

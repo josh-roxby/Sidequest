@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Mark } from "@/components/primitives/Marks";
+import { Tooltip } from "@/components/primitives/Tooltip";
 import { Frame } from "./Frame";
 import { DESTS } from "@/lib/nav";
 import { cn } from "@/lib/cn";
@@ -54,22 +55,36 @@ export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () =>
           {secondary.map((d) => {
             const on = pathname === d.href;
             return (
-              <Link
-                key={d.href}
-                href={d.href}
-                onClick={onDismiss}
-                aria-current={on ? "page" : undefined}
-                className={cn(
-                  "flex h-[68px] flex-col items-center justify-center gap-1.5 border active:scale-[0.98]",
-                  on ? "border-field bg-field text-field-ink" : "border-rule bg-surface text-stone",
-                )}
-                style={{ borderRadius: "var(--r-md)", transitionDuration: "var(--dur-tap)" }}
-              >
-                <Mark name={d.mark} size={17} />
-                <span className="text-[9px] font-semibold uppercase tracking-[0.06em]">
-                  {d.label}
-                </span>
-              </Link>
+              <div key={d.href} className="relative">
+                <Link
+                  href={d.href}
+                  onClick={onDismiss}
+                  aria-current={on ? "page" : undefined}
+                  className={cn(
+                    "flex h-[68px] flex-col items-center justify-center gap-1.5 border active:scale-[0.98]",
+                    on ? "border-field bg-field text-field-ink" : "border-rule bg-surface text-stone",
+                  )}
+                  style={{ borderRadius: "var(--r-md)", transitionDuration: "var(--dur-tap)" }}
+                >
+                  <Mark name={d.mark} size={17} />
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.06em]">
+                    {d.label}
+                  </span>
+                </Link>
+                {/* The label alone cannot say what Outposts or Tales are, and
+                    a six-tile grid has no room for a subtitle. The tooltip is
+                    the explanation, never the only route: tapping the tile
+                    still just goes there. */}
+                <Tooltip text={`${d.label}. ${d.blurb}.`} side="bottom"
+                  className="absolute right-1 top-1">
+                  <span aria-label={`What is ${d.label}?`}
+                    className={cn("flex h-4 w-4 items-center justify-center border text-[9px] leading-none",
+                      on ? "border-field-ink/50 text-field-ink" : "border-rule text-mute")}
+                    style={{ borderRadius: "var(--r-full)" }}>
+                    ?
+                  </span>
+                </Tooltip>
+              </div>
             );
           })}
         </div>

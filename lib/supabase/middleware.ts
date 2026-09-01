@@ -4,8 +4,8 @@ import { isAuthDisabled, required } from "@/lib/env";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
-const APP_PATHS = ["/home", "/map", "/quests", "/badges", "/history",
-                   "/tales", "/outposts", "/about", "/settings"];
+const APP_PATHS = ["/home", "/map", "/quests", "/badges", "/history", "/tales",
+                   "/outposts", "/about", "/settings", "/profile"];
 const AUTH_PATHS = ["/login", "/signup"];
 
 function startsWithAny(pathname: string, prefixes: string[]) {

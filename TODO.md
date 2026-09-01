@@ -77,6 +77,11 @@ data with auth off and no database.
 - [x] Pages: History, Badges (collected and earned), Tales, About, Settings
 - [x] Interaction hygiene: no text selection on chrome, no tap highlight, no
       rubber band, gestures exclusive to their element
+- [x] PWA: manifest, generated icons, Apple touch icon, service worker
+- [x] Profile with account header, referral tile, and History, Badges and
+      Settings as tabs over the same shared panels the routes use
+- [x] Custom tap-first tooltips on the small drawer tiles and the count chips
+- [ ] Replace the placeholder leaf mark with real artwork
 - [ ] Illustration slots filled: home plate, quest heroes, thumbnails,
       category marks, badges (`docs/design-system.md` §H)
 - [ ] Quest detail screen: hero plate, objective checklist, rewards row,
