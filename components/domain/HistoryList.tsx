@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { Button } from "@/components/primitives/Button";
 import { Data, Label } from "@/components/primitives/Text";
 import { EmptyState, Skeleton } from "@/components/primitives/States";
@@ -50,8 +51,8 @@ export function HistoryList({ showStats = true }: { showStats?: boolean }) {
       <Label className={showStats ? "mt-5" : undefined}>History</Label>
       <div className="mt-2 flex flex-col gap-2">
         {list.map((w) => (
-          <button key={w.id} type="button"
-            className="border border-rule bg-surface p-3.5 text-left active:bg-field-soft"
+          <Link key={w.id} href={`/history/${w.id}`}
+            className="block border border-rule bg-surface p-3.5 text-left active:bg-field-soft"
             style={{ borderRadius: "var(--r-md)" }}>
             <div className="flex items-baseline justify-between gap-3">
               <Data className="text-[11px] uppercase text-mute">{w.dateISO}</Data>
@@ -67,7 +68,7 @@ export function HistoryList({ showStats = true }: { showStats?: boolean }) {
               ) : null}
               <Data className="text-[10px] uppercase text-mute">+{w.tilesGained} tiles</Data>
             </div>
-          </button>
+          </Link>
         ))}
       </div>
     </>

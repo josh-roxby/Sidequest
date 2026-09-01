@@ -1,8 +1,11 @@
-import type { DataSource, Quest, Tale, Tier } from "../types";
+import type { DataSource, Note, Quest, Tale, Tier, WalkDetail } from "../types";
 import {
-  BADGES, CATEGORIES, COLLECTIBLES, COMMUNITY, HOME_CARDS, POINTS, QUESTS,
-  TALES, TERRITORY, UPDATES, WALKS,
+  BADGES, CATEGORIES, COLLECTIBLES, COMMUNITY, HOME_CARDS, NOTES, POINTS,
+  QUESTS, TALES, TERRITORY, UPDATES, WALKS,
 } from "./fixtures";
+
+/** Notes written this session. Mock only: real ones land in Postgres. */
+const written: Note[] = [];
 
 /** Artificial latency, so loading and skeleton states are visible during
  *  development rather than theoretical. Raise it to inspect a skeleton, set
@@ -35,4 +38,28 @@ export const mockSource: DataSource = {
   getCommunityQuests: () => settle("getCommunityQuests", COMMUNITY),
   getHomeCards: () => settle("getHomeCards", HOME_CARDS),
   getUpdates: () => settle("getUpdates", UPDATES),
+
+  getWalkDetail: (id: string) => {
+    const walk = WALKS.find((w) => w.id === id) ?? null;
+    if (!walk) return settle<WalkDetail | null>("getWalkDetail", null);
+    const quest = QUESTS.find((q) => q.title === walk.questTitle) ?? null;
+    const notes = [...NOTES, ...written].filter((n) => n.walkId === id);
+    return settle<WalkDetail | null>("getWalkDetail", {
+      walk,
+      quest,
+      badges: BADGES.filter((b) => b.earnedAt === walk.dateISO),
+      tales: TALES.filter((t) => t.readAt === walk.dateISO),
+      notes,
+    });
+  },
+  getNotes: () => settle("getNotes", [...NOTES, ...written]),
+  addNote: (note) => {
+    const created: Note = {
+      ...note,
+      id: `n-${Date.now()}`,
+      createdAt: new Date().toISOString().slice(0, 10),
+    };
+    written.push(created);
+    return settle("addNote", created);
+  },
 };

@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { MapCanvas, type MapMarker } from "@/components/map/MapCanvas";
 import { Frame } from "@/components/shell/Frame";
 import { Action } from "@/components/primitives/Action";
-import { Button } from "@/components/primitives/Button";
 import { MapDock } from "@/components/map/MapDock";
 import { Plate } from "@/components/primitives/Plate";
 import { Data, Label } from "@/components/primitives/Text";
@@ -109,11 +108,9 @@ export default function MapScreen() {
       <Frame
         open={open !== null && !tale}
         onDismiss={() => setOpen(null)}
+        ratio="tall"
         label={open?.category ?? ""}
         title={open?.name ?? ""}
-        action={open?.lore.length
-          ? <Button tone="outline" onClick={() => setTale(true)}>Read the tale</Button>
-          : null}
       >
         {open ? (
           <div className="-mx-4 -mt-3.5 flex flex-col">
@@ -127,6 +124,33 @@ export default function MapScreen() {
                 <p className="t-body italic text-ink">{open.nameGa}</p>
               ) : null}
               <p className="t-small text-stone">Townland of {open.townland}</p>
+              <p className="selectable t-body text-ink">{open.blurb}</p>
+
+              {/* The tale reads inline as a snippet rather than behind a
+                  button: one more tap to reach three sentences is a tax, not
+                  a feature. The full tale is still gated on arrival. */}
+              {open.visited && open.lore[0] ? (
+                <div className="mt-1 border-l-2 border-field pl-3">
+                  <Label style={{ fontSize: 9 }}>{open.lore[0].kind}</Label>
+                  <p className="t-h2 mt-1 text-ink">{open.lore[0].title}</p>
+                  <p className="selectable t-small mt-1 line-clamp-4 text-stone">
+                    {open.lore[0].body}
+                  </p>
+                  <button type="button" onClick={() => setTale(true)}
+                    className="t-small mt-1.5 font-semibold text-field underline">
+                    The rest of the tale
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-1 border-l-2 border-rule pl-3">
+                  <Label style={{ fontSize: 9 }}>Tale locked</Label>
+                  <p className="t-small mt-1 text-stone">
+                    Walk into this tile and its story opens: what the name means,
+                    what is standing there, who put it there.
+                  </p>
+                </div>
+              )}
+
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {open.tags.map((t) => (
                   <span key={t}

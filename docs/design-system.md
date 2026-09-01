@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 1.6 |
+| Version | 1.7 |
 | Date | 2026-08-31 |
 | Status | Locked. 1.2 replaces both nav forms with a single button, adds the canvas map and the hex tiling, and sets the interaction hygiene rules. |
 | Supersedes | The cream / sage / lavender token set in `app/globals.css` |
@@ -627,11 +627,16 @@ hour.
 Used for tales, which are three to five cards read one at a time, and for the
 home shelf.
 
-**I-5-1 Mixed ratios, one fixed-height row.** Home cards come in portrait
-9:16 for quests, square for updates and landscape 16:9 for banners. The row
-has a **fixed** height per breakpoint, 248px and 300px, and each card is
+**I-5-1 One ratio, one fixed-height row.** Every home card is **3:4**. The
+row has a fixed height per breakpoint, 248px and 300px, and each card is
 `height: 100%` with `width: auto` off its `aspect-ratio`, so the browser
 derives every width.
+
+Mixed ratios were tried and abandoned. On a shelf they read as a jumble
+rather than a rhythm, and more practically the odd shapes left no reliable
+room for a title plus two lines, so copy clipped. One shape means the text
+box below the media is the same size on every card. Media takes the top 54%,
+text the rest, and titles clamp rather than push anything off the bottom.
 
 The height is fixed rather than flexible on purpose. Sized off a flexible
 row, a portrait card swells on a tall phone and shrinks on a short one, which
@@ -672,6 +677,17 @@ They are used on the two count chips in the rank header, where the number
 alone cannot say what a leaf or a star is, and on the shape chips. They are deliberately not used in
 the nav drawer: see C-2-2.
 
+### I-6a Point drawer
+
+Full bleed plate, then the name, then one line of what it is, then the tale,
+then tags.
+
+The tale reads **inline as a snippet**, never behind a button. One more tap to
+reach three sentences is a tax rather than a feature. It is still gated on
+arrival: an unvisited point shows its one line and a note that the story opens
+when you get there, which keeps the reward for going intact without hiding
+what the place actually is.
+
 ### I-7 Locked territory
 
 On the map, unreached ground that is gated rather than merely unexplored gets
@@ -691,6 +707,11 @@ Rules that stop the app feeling like a web page.
   canvas all carry `user-select: none` and `-webkit-touch-callout: none`. A
   long press on a title should do what the app says it does, never raise a
   selection handle or an iOS callout.
+- **CTAs lay out horizontally.** An action's children are `inline-flex` with a
+  gap, so an icon and its label sit on one line. Left as inline text they land
+  on different baselines and wrap onto two.
+- **One marker per state.** A corner ribbon and a status label are the same
+  statement; using both puts two things in the same corner. Pick one.
 - **Prose is text.** Tale bodies, place descriptions and the About page opt
   back in with `.selectable`, because those are the things a person might
   reasonably want to quote.
@@ -772,11 +793,27 @@ distance in, and one line until the walker has been inside its tile. The
 detail is the reward for going, not something to read on the sofa instead of
 going. The locked card is dashed; the reached card is solid `--field`.
 
+**M-1-1 A brief before you set off.** Arriving on the walk opens one frame
+listing what you might run into, gathered at generation from the points the
+route passes. Vague on purpose: it sets expectations without spoiling the
+walk. A food stop is always framed as a maybe, because opening hours are the
+one thing the dataset genuinely cannot promise.
+
 **M-2 End walk sits beside the nav button, not on it.** The rest of the app
 stays reachable mid-walk, because checking your badges should not mean ending
 your walk. Ending always confirms in a frame, and that frame says the tiles
 already uncovered are kept, because people assume otherwise and will not end
 early rather than risk it.
+
+**M-2-1 Notes pin where you press.** A note button sits under End walk. The
+pin is dropped at submission rather than when the keyboard opens, because
+people write for a minute after they have stopped, and the pin should mark
+where they stopped rather than where they finished typing.
+
+Notes surface twice afterwards: on the walk's own record, next to the badges
+and tales it earned, and as a text-only run on the profile. No map on the
+profile tab on purpose. Read as a run of sentences they become a diary of
+walks rather than a list of pins.
 
 **M-3 Planning is shown, not hidden.** Generating a quest takes over the
 screen for the duration of the work: the route draws itself stage by stage,

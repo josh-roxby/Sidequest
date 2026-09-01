@@ -95,10 +95,17 @@ export default function OutpostsScreen() {
       ) : (
         <div className="flex flex-col gap-2">
           {list.map((o) => (
-            <Card key={o.id} flag={o.base} className="select-none">
-              <div className="flex items-baseline justify-between gap-3">
+            <Card key={o.id} className="select-none">
+              <div className="flex items-center gap-2">
                 <p className="t-small font-semibold text-ink">{o.name}</p>
-                {o.base ? <Data className="text-[10px] uppercase text-rust">Active</Data> : null}
+                {/* One active marker, not two. The corner ribbon and this
+                    label were both landing top right and overlapping. */}
+                {o.base ? (
+                  <span className="border border-rust bg-rust-soft px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.06em] text-rust"
+                    style={{ borderRadius: "var(--r-full)" }}>
+                    Active
+                  </span>
+                ) : null}
               </div>
               <p className="t-small mt-1 text-stone">{o.detail}</p>
               {!o.base ? (

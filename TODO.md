@@ -101,6 +101,14 @@ data with auth off and no database.
 - [x] Walk screen: map takeover, points along the way, detail unlocked by
       arrival
 - [x] Map dock: tiles in view, badges, points, layers
+- [x] Home cards standardised to 3:4 with room for media and text
+- [x] Updates marquee along the foot of Home
+- [x] Planning hands straight into the walk, with a brief of what you might
+      run into
+- [x] Notes on a walk, pinned at submission, surfaced on the walk record and
+      on a profile tab
+- [x] Trail record at `/history/[id]`: map, badges earned, tales opened, notes
+- [x] Point drawer reads the tale inline as a snippet, still gated on arrival
 - [ ] Unlock a point for real from a live position rather than a fixture flag
 - [ ] Tile counts in the dock computed from the camera rather than passed in
 

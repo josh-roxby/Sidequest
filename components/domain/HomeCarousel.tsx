@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { Plate } from "@/components/primitives/Plate";
 import { Label } from "@/components/primitives/Text";
 import { Skeleton } from "@/components/primitives/States";
-import type { CardRatio, HomeCard } from "@/lib/data";
+import type { HomeCard } from "@/lib/data";
 
 /** Mixed-ratio cards, all the same height, scrolled left to right.
  *
@@ -16,11 +16,14 @@ import type { CardRatio, HomeCard } from "@/lib/data";
  *
  *  Snap is `start`, not `center`: cards align to the page's left gutter, so
  *  the row reads as a shelf rather than as a slideshow. */
-const RATIO: Record<CardRatio, string> = {
-  portrait: "9 / 16",
-  square: "1 / 1",
-  landscape: "16 / 9",
-};
+/** One ratio for every card, 3:4. Mixed ratios read as a jumble on a shelf,
+ *  and the odd sizes left no reliable room for a title plus two lines, which
+ *  is why copy was clipping. A single shape means the row is a rhythm and the
+ *  text box below the media is the same size on every card. */
+const CARD_RATIO = "3 / 4";
+/** Media takes the top slice, text the rest. Fixed so a long title pushes
+ *  nothing off the bottom: it clamps instead. */
+const MEDIA_PCT = 54;
 
 export function HomeCarousel({ cards, loading }: { cards: HomeCard[]; loading: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -61,24 +64,25 @@ export function HomeCarousel({ cards, loading }: { cards: HomeCard[]; loading: b
             href={c.href}
             className="relative flex h-full shrink-0 select-none snap-start flex-col overflow-hidden border border-rule bg-surface active:scale-[0.99]"
             style={{
-              aspectRatio: RATIO[c.ratio],
+              aspectRatio: CARD_RATIO,
               width: "auto",
               maxWidth: "calc(100vw - 48px)",
               borderRadius: "var(--r-md)",
               transitionDuration: "var(--dur-tap)",
             }}
           >
-            <Plate
-              ratio={c.ratio === "portrait" ? "1/1" : c.ratio === "square" ? "1/1" : "16/9"}
-              plate={c.plate}
-              label={c.eyebrow}
-              className="shrink-0 rounded-none border-0 border-b border-rule"
-            />
-            <div className="flex min-h-0 flex-1 flex-col justify-end gap-1 p-3">
+            <div className="shrink-0 overflow-hidden border-b border-rule"
+              style={{ height: `${MEDIA_PCT}%` }}>
+              <Plate plate={c.plate} label={c.eyebrow} fill
+                className="h-full w-full rounded-none border-0" />
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-hidden p-3">
               <Label style={{ fontSize: 9 }}>{c.eyebrow}</Label>
-              <p className="text-[13px] font-semibold leading-tight text-ink">{c.title}</p>
+              <p className="line-clamp-2 text-[13px] font-semibold leading-tight text-ink">
+                {c.title}
+              </p>
               {c.body ? (
-                <p className="t-small line-clamp-3 leading-snug text-stone">{c.body}</p>
+                <p className="t-small line-clamp-2 leading-snug text-stone">{c.body}</p>
               ) : null}
             </div>
           </Link>

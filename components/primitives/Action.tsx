@@ -52,7 +52,12 @@ export function Action({
           <LoadingMark inverse={tone !== "outline"} />
         </span>
       ) : null}
-      <span className={cn(loading && "opacity-70")}>{children}</span>
+      {/* inline-flex, not a bare span: a CTA with an icon must lay its icon
+          and label out on one line. Left as inline text they sit on different
+          baselines and wrap onto two. */}
+      <span className={cn("inline-flex items-center gap-2", loading && "opacity-70")}>
+        {children}
+      </span>
     </button>
   );
 }

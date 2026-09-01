@@ -8,6 +8,7 @@ import { Mark } from "@/components/primitives/Marks";
 import { Plate } from "@/components/primitives/Plate";
 import { ShapeChip } from "@/components/primitives/ShapeChip";
 import { Data, Label } from "@/components/primitives/Text";
+import { EncounterList } from "@/components/domain/EncounterList";
 import { Frame } from "@/components/shell/Frame";
 import { data, type Objective, type Point } from "@/lib/data";
 import { estimateDurationS, formatDistance, formatDuration } from "@/lib/walking";
@@ -29,6 +30,10 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   const points = useAsync(() => data.getPointsNearby(), []);
   const [openObj, setOpenObj] = useState<Objective | null>(null);
   const [ending, setEnding] = useState(false);
+  const [briefed, setBriefed] = useState(false);
+  const [noting, setNoting] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [noteCount, setNoteCount] = useState(0);
 
   const q = quest.data;
 
@@ -58,9 +63,47 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   }) : 0;
   const walkedM = q ? Math.max(...q.objectives.filter((o) => o.reached).map((o) => o.atM), 0) : 0;
 
+  /** Pinned at submission, not at typing. The pin should mark where you
+   *  actually stopped, and people write for a minute after they stop walking. */
+  async function saveNote() {
+    if (!q || !noteText.trim()) return;
+    await data.addNote({
+      walkId: "w-active",
+      questTitle: q.title,
+      text: noteText.trim(),
+      atM: walkedM,
+      x: q.path[0][0],
+      y: q.path[0][1],
+    });
+    setNoteText("");
+    setNoting(false);
+    setNoteCount((n) => n + 1);
+  }
+
   return (
     <div className="relative h-dvh w-full overflow-hidden">
       <MapCanvas markers={markers} trail={trail} initialScale={1.3} />
+
+      {/* Opens once, on arrival, so you set off knowing roughly what is out
+          there without having read the whole walk in advance. */}
+      <Frame
+        open={Boolean(q) && !briefed}
+        onDismiss={() => setBriefed(true)}
+        ratio="tall"
+        label={`${formatDistance(q?.distanceM ?? 0)} · ${formatDuration(totalS)}`}
+        title={q?.title ?? ""}
+        action={<Action onClick={() => setBriefed(true)}>Set off</Action>}
+      >
+        <div className="flex flex-col gap-3">
+          <p className="t-body text-ink">{q?.flavour}</p>
+          <Label>What you might run into</Label>
+          {q ? <EncounterList encounters={q.encounters} /> : null}
+          <p className="t-small text-stone">
+            Anything marked maybe is exactly that. Opening hours are the one
+            thing we cannot promise, so nothing here depends on them.
+          </p>
+        </div>
+      </Frame>
 
       {/* Progress, top left. Everything a walker needs at a glance and
           nothing they do not. */}
@@ -192,18 +235,58 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
         </p>
       </Frame>
 
-      {/* End walk lives beside the nav button rather than replacing it, so the
-          rest of the app stays reachable mid-walk. */}
-      <button
-        type="button"
-        onClick={() => setEnding(true)}
-        aria-label="End walk"
-        className="absolute flex h-11 w-11 items-center justify-center border border-rust bg-rust text-field-ink active:scale-[0.97]"
-        style={{ right: "var(--gutter)", top: "calc(env(safe-area-inset-top) + var(--gutter))",
-                 borderRadius: "var(--r-sm)" }}
+      {/* End walk and notes live beside the nav button rather than replacing
+          it, so the rest of the app stays reachable mid-walk. */}
+      <div className="absolute flex flex-col gap-1.5"
+        style={{ right: "var(--gutter)", top: "calc(env(safe-area-inset-top) + var(--gutter))" }}>
+        <button
+          type="button"
+          onClick={() => setEnding(true)}
+          aria-label="End walk"
+          className="flex h-11 w-11 items-center justify-center border border-rust bg-rust text-field-ink active:scale-[0.97]"
+          style={{ borderRadius: "var(--r-sm)" }}
+        >
+          <Mark name="flag" size={17} />
+        </button>
+        <button
+          type="button"
+          onClick={() => setNoting(true)}
+          aria-label="Write a note"
+          className="relative flex h-11 w-11 items-center justify-center border border-rule bg-surface text-stone active:scale-[0.97]"
+          style={{ borderRadius: "var(--r-sm)" }}
+        >
+          <Mark name="tale" size={17} />
+          {noteCount > 0 ? (
+            <span aria-hidden className="absolute right-1 top-1 h-1.5 w-1.5 bg-field" />
+          ) : null}
+        </button>
+      </div>
+
+      <Frame
+        open={noting}
+        onDismiss={() => setNoting(false)}
+        label={`Pinned at ${formatDistance(walkedM)} in`}
+        title="Note this"
+        action={
+          <Action onClick={saveNote} disabled={!noteText.trim()}>Pin it here</Action>
+        }
       >
-        <Mark name="flag" size={17} />
-      </button>
+        <div className="flex flex-col gap-3">
+          <textarea
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            rows={5}
+            placeholder="A heron on the stream. The gate that sticks. Whatever you want to remember."
+            className="selectable w-full resize-none border border-ink bg-surface p-3 text-[15px] leading-snug text-ink placeholder:text-mute"
+            style={{ borderRadius: "var(--r-sm)" }}
+          />
+          <p className="t-small text-stone">
+            Pinned where you are when you press, so it marks the spot rather
+            than wherever you finish. Notes turn up on the walk afterwards and
+            in your profile.
+          </p>
+        </div>
+      </Frame>
     </div>
   );
 }

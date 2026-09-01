@@ -46,6 +46,11 @@ export interface Point {
   group: CategoryGroup;
   townland: string;
   tags: string[];
+  /** One line, always shown. What it is, before you have been.  */
+  blurb: string;
+  /** True once reached. The tale is the reward for going, so an unvisited
+   *  point shows the blurb and nothing more. */
+  visited: boolean;
   lore: Lore[];
   /** Normalised 0–1 position on the placeholder map surface. */
   x: number;
@@ -70,6 +75,14 @@ export interface Objective {
 export type QuestShape = "loop" | "line";
 export type QuestSurface = "made" | "unpaved" | "rough";
 
+export type EncounterKind = "point" | "food" | "terrain" | "view";
+
+export interface Encounter {
+  kind: EncounterKind;
+  label: string;
+  detail?: string;
+}
+
 export interface Quest {
   id: string;
   tier: Tier;
@@ -91,6 +104,10 @@ export interface Quest {
   honesty: string[];
   /** Normalised polyline points for the placeholder surface. */
   path: [number, number][];
+  /** What you might run into, gathered at generation from the points the route
+   *  passes. Vague on purpose: it sets expectations without spoiling the walk,
+   *  and a food stop is always listed as a maybe because it might be shut. */
+  encounters: Encounter[];
 }
 
 export interface Territory {
@@ -109,6 +126,28 @@ export interface CategoryProgress {
   /** Post reachability and visibility passes, so it is honest. Null when the
    *  dataset does not know, which is better than inventing a denominator. */
   total: number | null;
+}
+
+export interface Note {
+  id: string;
+  walkId: string;
+  questTitle: string;
+  text: string;
+  /** Metres along the route when it was written, and where that was. Pinned at
+   *  submission rather than at typing, so the pin marks where you actually
+   *  stopped. */
+  atM: number;
+  x: number;
+  y: number;
+  createdAt: string;
+}
+
+export interface WalkDetail {
+  walk: WalkRecord;
+  quest: Quest | null;
+  badges: Badge[];
+  tales: Tale[];
+  notes: Note[];
 }
 
 export interface WalkRecord {
@@ -197,4 +236,7 @@ export interface DataSource {
   getCommunityQuests(): Promise<CommunityQuest[]>;
   getHomeCards(): Promise<HomeCard[]>;
   getUpdates(): Promise<string[]>;
+  getWalkDetail(id: string): Promise<WalkDetail | null>;
+  getNotes(): Promise<Note[]>;
+  addNote(note: Omit<Note, "id" | "createdAt">): Promise<Note>;
 }

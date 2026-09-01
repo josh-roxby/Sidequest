@@ -44,8 +44,14 @@ export function StartQuest() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      {/* Planning ends by putting you on the map for the walk it planned.
+          Landing back on a picker with a card to tap would make the wait feel
+          like a step rather than the start of something. */}
       {working ? (
-        <QuestGenerating onDone={() => { setResult(pending); setPending(null); setWorking(false); }} />
+        <QuestGenerating onDone={() => {
+          if (pending) router.push(`/quests/${pending.id}/walk`);
+          else { setWorking(false); setResult(null); }
+        }} />
       ) : null}
 
       {/* The map itself, not a picture of one: you are choosing a walk from

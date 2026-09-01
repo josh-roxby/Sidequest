@@ -1,6 +1,6 @@
 import type {
-  Badge, CategoryProgress, Collectible, CommunityQuest, HomeCard, Point, Quest,
-  Tale, Territory, WalkRecord,
+  Badge, CategoryProgress, Collectible, CommunityQuest, HomeCard, Note, Point,
+  Quest, Tale, Territory, WalkRecord,
 } from "../types";
 
 /** Real Clare townlands, real category mix, distances that actually fall
@@ -18,7 +18,7 @@ export const TERRITORY: Territory = {
 
 export const POINTS: Point[] = [
   {
-    id: "p-cahercalla", tags: ["Upstanding remains", "From a boreen", "Free", "Ringfort"], name: "Cahercalla", nameGa: "Cathair Cala",
+    id: "p-cahercalla", blurb: "An earthen ring on the rise, banks still standing.", visited: true, tags: ["Upstanding remains", "From a boreen", "Free", "Ringfort"], name: "Cahercalla", nameGa: "Cathair Cala",
     category: "Ringfort", group: "fort", townland: "Cahercalla Beg",
     x: 0.68, y: 0.34,
     lore: [
@@ -31,7 +31,7 @@ export const POINTS: Point[] = [
     ],
   },
   {
-    id: "p-dysert", tags: ["High cross", "Monastic", "Car park", "12th century"], name: "Dysert O'Dea", nameGa: "Díseart Uí Dheá",
+    id: "p-dysert", blurb: "A hermitage, a round tower stump and a carved high cross.", visited: false, tags: ["High cross", "Monastic", "Car park", "12th century"], name: "Dysert O'Dea", nameGa: "Díseart Uí Dheá",
     category: "Monastic site", group: "sacred", townland: "Dysert",
     x: 0.31, y: 0.62,
     lore: [
@@ -44,7 +44,7 @@ export const POINTS: Point[] = [
     ],
   },
   {
-    id: "p-inchiquin", tags: ["Lough shore", "West facing", "Good at dusk", "Level ground"], name: "Inchiquin Lough", nameGa: "Loch Inse Uí Chuinn",
+    id: "p-inchiquin", blurb: "A west facing lough shore that fills and empties through the rock.", visited: true, tags: ["Lough shore", "West facing", "Good at dusk", "Level ground"], name: "Inchiquin Lough", nameGa: "Loch Inse Uí Chuinn",
     category: "Lough shore", group: "water", townland: "Inchiquin",
     x: 0.52, y: 0.78,
     lore: [
@@ -54,7 +54,7 @@ export const POINTS: Point[] = [
     ],
   },
   {
-    id: "p-ballykeel", tags: ["Mass rock", "Penal era", "Field path", "Hard to spot"], name: "Ballykeel mass rock", nameGa: "An Baile Caol",
+    id: "p-ballykeel", blurb: "A flat stone in a field where mass was said in secret.", visited: false, tags: ["Mass rock", "Penal era", "Field path", "Hard to spot"], name: "Ballykeel mass rock", nameGa: "An Baile Caol",
     category: "Mass rock", group: "sacred", townland: "Ballykeel",
     x: 0.19, y: 0.24,
     lore: [
@@ -64,7 +64,7 @@ export const POINTS: Point[] = [
     ],
   },
   {
-    id: "p-toonagh", tags: ["Mill race", "c. 1840", "Roadside", "Limestone"], name: "Toonagh mill", category: "Mill", group: "built",
+    id: "p-toonagh", blurb: "A ruined corn mill with its wheel pit and race intact.", visited: true, tags: ["Mill race", "c. 1840", "Roadside", "Limestone"], name: "Toonagh mill", category: "Mill", group: "built",
     nameGa: "Tuathanach", townland: "Toonagh", x: 0.79, y: 0.68,
     lore: [
       { kind: "architecture", title: "Corn mill, c. 1840",
@@ -76,7 +76,13 @@ export const POINTS: Point[] = [
 
 export const QUESTS: Quest[] = [
   {
-    id: "q-cloonanaha", tier: "stroll", shape: "loop", surface: "unpaved", ascentM: 34,
+    id: "q-cloonanaha",
+    encounters: [
+      { kind: "point", label: "A ringfort", detail: "Banks still standing, on the rise" },
+      { kind: "terrain", label: "A stream crossing", detail: "Stepping stones, dry in summer" },
+      { kind: "food", label: "Maybe a coffee", detail: "A hatch at the crossroads, hours unverified" },
+      { kind: "view", label: "Back over the valley" },
+    ], tier: "stroll", shape: "loop", surface: "unpaved", ascentM: 34,
     title: "Cloonanaha Loop",
     flavour: "Out along the old mass path to a ringfort on the rise, back down by the stream.",
     distanceM: 2840, durationMin: 47, startsAwayM: 0, townland: "Cloonanaha",
@@ -88,7 +94,12 @@ export const QUESTS: Quest[] = [
     path: [[0.16, 0.72], [0.3, 0.6], [0.44, 0.55], [0.6, 0.42], [0.68, 0.34], [0.62, 0.5], [0.4, 0.66], [0.16, 0.72]],
   },
   {
-    id: "q-dysert", tier: "stroll", shape: "loop", surface: "unpaved", ascentM: 22,
+    id: "q-dysert",
+    encounters: [
+      { kind: "point", label: "A hermitage and a high cross" },
+      { kind: "terrain", label: "A stretch of boreen", detail: "No pavement for 300m" },
+      { kind: "food", label: "Maybe lunch", detail: "Pub in the village, kitchen closes at three" },
+    ], tier: "stroll", shape: "loop", surface: "unpaved", ascentM: 22,
     title: "Dysert Round",
     flavour: "A field path to a hermitage and a high cross, returning by the boreen.",
     distanceM: 3160, durationMin: 52, startsAwayM: 220, townland: "Dysert",
@@ -99,7 +110,11 @@ export const QUESTS: Quest[] = [
     path: [[0.2, 0.8], [0.24, 0.72], [0.31, 0.62], [0.42, 0.6], [0.38, 0.74], [0.2, 0.8]],
   },
   {
-    id: "q-toonagh", tier: "trot", shape: "line", surface: "made", ascentM: 6,
+    id: "q-toonagh",
+    encounters: [
+      { kind: "point", label: "A ruined corn mill" },
+      { kind: "terrain", label: "The mill race", detail: "Straight cut channel, easy to spot" },
+    ], tier: "trot", shape: "line", surface: "made", ascentM: 6,
     title: "Toonagh Mill",
     flavour: "Ten minutes to a ruined corn mill and back along the race.",
     distanceM: 1080, durationMin: 16, startsAwayM: 0, townland: "Toonagh",
@@ -110,7 +125,14 @@ export const QUESTS: Quest[] = [
     path: [[0.64, 0.78], [0.72, 0.72], [0.79, 0.68], [0.7, 0.82], [0.64, 0.78]],
   },
   {
-    id: "q-inchiquin", tier: "sidequest", shape: "loop", surface: "rough", ascentM: 180,
+    id: "q-inchiquin",
+    encounters: [
+      { kind: "point", label: "A lough shore" },
+      { kind: "point", label: "A ringfort on the way back" },
+      { kind: "view", label: "The high point", detail: "Best of it an hour before sunset" },
+      { kind: "terrain", label: "Steep for 600m", detail: "On the return leg" },
+      { kind: "food", label: "Maybe a pint", detail: "Halfway, if the bar is open" },
+    ], tier: "sidequest", shape: "loop", surface: "rough", ascentM: 180,
     title: "Inchiquin Shore",
     flavour: "Lough shore, a tower house on the point, and the hill road back.",
     distanceM: 6140, durationMin: 94, startsAwayM: 410, townland: "Inchiquin",
@@ -282,4 +304,17 @@ export const UPDATES: string[] = [
   "Niamh published Castle ruins by rivers",
   "Tales now read as cards you can share",
   "Co. Clare is 0.04% explored",
+];
+
+
+export const NOTES: Note[] = [
+  { id: "n-1", walkId: "w-1", questTitle: "Cloonanaha Loop",
+    text: "Heron on the stream, stood dead still for a full minute before it went.",
+    atM: 1980, x: 0.44, y: 0.55, createdAt: "2026-08-28" },
+  { id: "n-2", walkId: "w-1", questTitle: "Cloonanaha Loop",
+    text: "The bank is higher on the west side than the survey makes it sound.",
+    atM: 1450, x: 0.68, y: 0.34, createdAt: "2026-08-28" },
+  { id: "n-3", walkId: "w-2", questTitle: "Toonagh Mill",
+    text: "Race is completely dry. Whole channel walkable if you fancy it.",
+    atM: 540, x: 0.79, y: 0.68, createdAt: "2026-08-26" },
 ];

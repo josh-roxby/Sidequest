@@ -9,6 +9,7 @@ import { Screen } from "@/components/shell/Screen";
 import { HistoryList } from "@/components/domain/HistoryList";
 import { BadgesPanel } from "@/components/domain/BadgesPanel";
 import { SettingsPanel } from "@/components/domain/SettingsPanel";
+import { NotesList } from "@/components/domain/NotesList";
 import { ReferralTile } from "@/components/domain/ReferralTile";
 import { data } from "@/lib/data";
 import { useAsync } from "@/hooks/use-async";
@@ -63,6 +64,7 @@ export default function ProfileScreen() {
         items={[
           { id: "history", label: "History" },
           { id: "badges", label: "Badges" },
+          { id: "notes", label: "Notes" },
           { id: "settings", label: "Settings" },
         ]}
       />
@@ -70,6 +72,7 @@ export default function ProfileScreen() {
       <div className="mt-4">
         {tab === "history" ? <HistoryList showStats={false} /> : null}
         {tab === "badges" ? <BadgesPanel /> : null}
+        {tab === "notes" ? <NotesList /> : null}
         {tab === "settings" ? <SettingsPanel /> : null}
       </div>
     </Screen>

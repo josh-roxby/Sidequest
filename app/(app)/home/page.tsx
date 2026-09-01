@@ -4,6 +4,7 @@ import { Mark, type MarkName } from "@/components/primitives/Marks";
 import { RankHeader } from "@/components/shell/RankHeader";
 import { HomeCarousel } from "@/components/domain/HomeCarousel";
 import { HillsBand } from "@/components/domain/HillsBand";
+import { Marquee } from "@/components/primitives/Marquee";
 import { data } from "@/lib/data";
 import { useAsync } from "@/hooks/use-async";
 
@@ -22,10 +23,11 @@ const TILES: { href: string; label: string; mark: MarkName; tone: "field" | "rus
 
 export default function HomeScreen() {
   const cards = useAsync(() => data.getHomeCards(), []);
+  const updates = useAsync(() => data.getUpdates(), []);
 
   return (
     <div
-      className="flex h-dvh flex-col gap-3 overflow-hidden px-4"
+      className="relative flex h-dvh flex-col gap-3 overflow-hidden px-4"
       style={{
         paddingTop: "calc(env(safe-area-inset-top) + var(--s-4))",
         // Clears the nav button's square in the thumb corner, so the bottom
@@ -33,6 +35,19 @@ export default function HomeScreen() {
         paddingBottom: "calc(var(--tile) + var(--gutter) * 2 + env(safe-area-inset-bottom))",
       }}
     >
+      {/* Updates run along the foot, in the strip beside the nav button that
+          would otherwise be dead space. */}
+      <div
+        className="pointer-events-none absolute flex items-center"
+        style={{
+          left: "var(--gutter)",
+          right: "calc(var(--gutter) + var(--tile) + var(--s-2))",
+          bottom: "calc(var(--gutter) + env(safe-area-inset-bottom))",
+          height: "var(--tile)",
+        }}
+      >
+        <Marquee items={updates.data ?? []} className="w-full" />
+      </div>
       <div className="shrink-0">
         <RankHeader initials="JD" name="Josh" rank={8} leaves={420} stars={12} />
       </div>

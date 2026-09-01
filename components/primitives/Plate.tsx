@@ -12,16 +12,21 @@ export function Plate({
   ratio = "4/3",
   label,
   className,
+  fill = false,
 }: {
   plate?: string;
   ratio?: "4/3" | "16/9" | "1/1";
   label?: string;
   className?: string;
+  /** Fill the parent instead of holding a ratio. For slots whose height is
+   *  already decided, like the media band on a home card. */
+  fill?: boolean;
 }) {
   return (
     <div
       className={cn("flex items-center justify-center overflow-hidden border border-rule bg-surface", className)}
-      style={{ aspectRatio: ratio.replace("/", " / "), borderRadius: "var(--r-md)" }}
+      style={{ aspectRatio: fill ? undefined : ratio.replace("/", " / "),
+               borderRadius: "var(--r-md)" }}
     >
       {plate ? (
         // eslint-disable-next-line @next/next/no-img-element
