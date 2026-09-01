@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Action } from "@/components/primitives/Action";
+import { ThumbAction } from "@/components/shell/ThumbAction";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { QuestGenerating } from "./QuestGenerating";
@@ -72,7 +72,7 @@ export function StartQuest() {
         </div>
       </div>
 
-      <div className="shrink-0 pt-4">
+      <div className="shrink-0 pb-[var(--tile)] pt-4">
         <Label>How long have you got</Label>
         <div className="mt-2 grid grid-cols-4 gap-1.5">
           {TIERS.map((t) => {
@@ -146,11 +146,9 @@ export function StartQuest() {
           </button>
         ) : null}
 
-        <div className="mt-3">
-          <Action loading={working} onClick={generate}>
-            {result ? `Find another ${spec.label.toLowerCase()}` : `Start a ${spec.label.toLowerCase()}`}
-          </Action>
-        </div>
+        <ThumbAction loading={working} onClick={generate}>
+          Start a {spec.label.toLowerCase()}
+        </ThumbAction>
       </div>
     </div>
   );

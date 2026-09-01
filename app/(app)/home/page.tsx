@@ -4,7 +4,6 @@ import { Mark, type MarkName } from "@/components/primitives/Marks";
 import { RankHeader } from "@/components/shell/RankHeader";
 import { HomeCarousel } from "@/components/domain/HomeCarousel";
 import { HillsBand } from "@/components/domain/HillsBand";
-import { Marquee } from "@/components/primitives/Marquee";
 import { data } from "@/lib/data";
 import { useAsync } from "@/hooks/use-async";
 
@@ -23,7 +22,6 @@ const TILES: { href: string; label: string; mark: MarkName; tone: "field" | "rus
 
 export default function HomeScreen() {
   const cards = useAsync(() => data.getHomeCards(), []);
-  const updates = useAsync(() => data.getUpdates(), []);
 
   return (
     <div
@@ -32,37 +30,20 @@ export default function HomeScreen() {
         paddingTop: "calc(env(safe-area-inset-top) + var(--s-4))",
         // Clears the nav button's square in the thumb corner, so the bottom
         // row of the grid is never sitting underneath it.
-        paddingBottom: "calc(var(--tile) + var(--gutter) * 2 + env(safe-area-inset-bottom))",
+        // No bottom padding: the countryside band runs all the way to the
+        // screen edge and carries the space beside the nav button itself.
+        paddingBottom: 0,
       }}
     >
-      {/* Updates run along the foot, in the strip beside the nav button that
-          would otherwise be dead space. */}
-      <div
-        className="pointer-events-none absolute flex items-center"
-        style={{
-          left: "var(--gutter)",
-          right: "calc(var(--gutter) + var(--tile) + var(--s-2))",
-          bottom: "calc(var(--gutter) + env(safe-area-inset-bottom))",
-          height: "var(--tile)",
-        }}
-      >
-        <Marquee items={updates.data ?? []} className="w-full" />
-      </div>
       <div className="shrink-0">
         <RankHeader initials="JD" name="Josh" rank={8} leaves={420} stars={12} />
       </div>
 
       {/* Fixed height rather than flexible. Cards hold their ratio off a known
-          height, so a portrait card is the same size on every phone instead of
-          swelling on a tall one. The band below absorbs the difference. */}
-      <div className="h-[248px] shrink-0 sm:h-[300px]">
+          height, so a card is the same size on every phone instead of swelling
+          on a tall one. The band below absorbs the difference. */}
+      <div className="h-[196px] shrink-0 sm:h-[232px]">
         <HomeCarousel cards={cards.data ?? []} loading={cards.loading} />
-      </div>
-
-      {/* Takes whatever height is left. Collapses to nothing on a short screen
-          rather than pushing the grid off the bottom. */}
-      <div className="min-h-0 flex-1">
-        <HillsBand />
       </div>
 
       <nav aria-label="Shortcuts" className="grid shrink-0 grid-cols-2 gap-2">
@@ -88,6 +69,18 @@ export default function HomeScreen() {
           </Link>
         ))}
       </nav>
+
+      {/* The countryside runs along the foot and down into the strip beside
+          the nav button, which is the space the update ticker used to hold.
+          Updates now live only in the drawer, where scrolling text belongs.
+          This takes whatever height is left and collapses on a short screen
+          rather than pushing the grid off the bottom. */}
+      <div
+        className="-mx-4 min-h-[72px] flex-1 overflow-hidden pt-3"
+        style={{ paddingRight: "calc(var(--tile) + var(--gutter))" }}
+      >
+        <HillsBand />
+      </div>
     </div>
   );
 }

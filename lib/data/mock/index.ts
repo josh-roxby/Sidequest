@@ -1,7 +1,8 @@
 import type { DataSource, Note, Quest, Tale, Tier, WalkDetail } from "../types";
 import {
-  BADGES, CATEGORIES, COLLECTIBLES, COMMUNITY, HOME_CARDS, NOTES, POINTS,
-  QUESTS, TALES, TERRITORY, UPDATES, WALKS,
+  ACTIVITY, BADGES, CATEGORIES, CHALLENGES, COLLECTIBLES, COMMUNITY,
+  FRIEND_QUESTS, FRIENDS, HOME_CARDS, NOTES, POINTS, QUESTS, REQUESTS, TALES,
+  TERRITORY, WALKS,
 } from "./fixtures";
 
 /** Notes written this session. Mock only: real ones land in Postgres. */
@@ -37,7 +38,11 @@ export const mockSource: DataSource = {
   getTale: (id: string) => settle<Tale | null>("getTale", TALES.find((t) => t.id === id) ?? null),
   getCommunityQuests: () => settle("getCommunityQuests", COMMUNITY),
   getHomeCards: () => settle("getHomeCards", HOME_CARDS),
-  getUpdates: () => settle("getUpdates", UPDATES),
+  getActivity: () => settle("getActivity", ACTIVITY),
+  getFriends: () => settle("getFriends", FRIENDS),
+  getFriendRequests: () => settle("getFriendRequests", REQUESTS),
+  getFriendQuests: () => settle("getFriendQuests", FRIEND_QUESTS),
+  getChallenges: () => settle("getChallenges", CHALLENGES),
 
   getWalkDetail: (id: string) => {
     const walk = WALKS.find((w) => w.id === id) ?? null;

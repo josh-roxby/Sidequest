@@ -1,6 +1,6 @@
 import type {
-  Badge, CategoryProgress, Collectible, CommunityQuest, HomeCard, Note, Point,
-  Quest, Tale, Territory, WalkRecord,
+  ActivityEvent, Badge, CategoryProgress, Challenge, Collectible, CommunityQuest,
+  Friend, FriendQuest, HomeCard, Note, Point, Quest, Tale, Territory, WalkRecord,
 } from "../types";
 
 /** Real Clare townlands, real category mix, distances that actually fall
@@ -298,13 +298,6 @@ export const HOME_CARDS: HomeCard[] = [
     href: "/badges" },
 ];
 
-export const UPDATES: string[] = [
-  "New: 46 points added around Corofin",
-  "Rath finder is 2 ringforts away",
-  "Niamh published Castle ruins by rivers",
-  "Tales now read as cards you can share",
-  "Co. Clare is 0.04% explored",
-];
 
 
 export const NOTES: Note[] = [
@@ -317,4 +310,48 @@ export const NOTES: Note[] = [
   { id: "n-3", walkId: "w-2", questTitle: "Toonagh Mill",
     text: "Race is completely dry. Whole channel walkable if you fancy it.",
     atM: 540, x: 0.79, y: 0.68, createdAt: "2026-08-26" },
+];
+
+
+export const ACTIVITY: ActivityEvent[] = [
+  { id: "a-1", name: "Niamh", kind: "badge", text: "Niamh earned Rath finder", at: "4m" },
+  { id: "a-2", name: "Padraig", kind: "quest", text: "Padraig walked a Stroll near Kilnaboy", at: "12m" },
+  { id: "a-3", name: "Aoife", kind: "tale", text: "Aoife unlocked the tale of Dysert O'Dea", at: "26m" },
+  { id: "a-4", name: "Cillian", kind: "poi", text: "Cillian found Toonagh mill", at: "41m" },
+  { id: "a-5", name: "Sean", kind: "friend", text: "Sean invited a friend", at: "1h" },
+  { id: "a-6", name: "Maire", kind: "joined", text: "Maire made an account", at: "1h" },
+  { id: "a-7", name: "Eoin", kind: "collection", text: "Eoin published Castle ruins by rivers", at: "2h" },
+  { id: "a-8", name: "Roisin", kind: "quest", text: "Roisin finished an Adventure in the Burren", at: "3h" },
+  { id: "a-9", name: "Fionn", kind: "poi", text: "Fionn found Cahercalla ringfort", at: "4h" },
+  { id: "a-10", name: "Sinead", kind: "badge", text: "Sinead earned First light", at: "5h" },
+  { id: "a-11", name: "Darragh", kind: "tale", text: "Darragh unlocked the tale of Inchiquin Lough", at: "6h" },
+  { id: "a-12", name: "Orla", kind: "quest", text: "Orla walked a Trot near Corofin", at: "8h" },
+];
+
+export const FRIENDS: Friend[] = [
+  { id: "f-1", name: "Niamh", initials: "NB", townland: "Corofin", rank: 12, walksTogether: 6, lastSeen: "Today" },
+  { id: "f-2", name: "Padraig", initials: "PC", townland: "Kilnaboy", rank: 9, walksTogether: 3, lastSeen: "Yesterday" },
+  { id: "f-3", name: "Aoife", initials: "AD", townland: "Toonagh", rank: 7, walksTogether: 11, lastSeen: "2 days" },
+  { id: "f-4", name: "Sean", initials: "SO", townland: "Carran", rank: 15, walksTogether: 1, lastSeen: "A week" },
+];
+
+export const REQUESTS: Friend[] = [
+  { id: "r-1", name: "Roisin", initials: "RM", townland: "Ennistymon", rank: 4, walksTogether: 0, lastSeen: "New" },
+  { id: "r-2", name: "Fionn", initials: "FK", townland: "Lahinch", rank: 6, walksTogether: 0, lastSeen: "New" },
+];
+
+export const FRIEND_QUESTS: FriendQuest[] = [
+  { id: "fq-1", friend: "Niamh", title: "Castle ruins by rivers", townland: "Corofin",
+    tier: "sidequest", shape: "loop", distanceM: 6200 },
+  { id: "fq-2", friend: "Aoife", title: "The mill races", townland: "Toonagh",
+    tier: "trot", shape: "line", distanceM: 1200 },
+  { id: "fq-3", friend: "Sean", title: "Burren limestone walk", townland: "Carran",
+    tier: "adventure", shape: "loop", distanceM: 11800 },
+];
+
+export const CHALLENGES: Challenge[] = [
+  { id: "c-1", title: "Beat Niamh to five ringforts", line: "She is on three. So are you.", friend: "Niamh" },
+  { id: "c-2", title: "A townland neither of you has", line: "Pick one on the map and both walk it this week." },
+  { id: "c-3", title: "Same walk, different day", line: "Walk Aoife's mill races and compare notes.", friend: "Aoife" },
+  { id: "c-4", title: "Furthest from home", line: "Whoever reaches the furthest new tile by Sunday." },
 ];

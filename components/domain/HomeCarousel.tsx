@@ -20,10 +20,10 @@ import type { HomeCard } from "@/lib/data";
  *  and the odd sizes left no reliable room for a title plus two lines, which
  *  is why copy was clipping. A single shape means the row is a rhythm and the
  *  text box below the media is the same size on every card. */
-const CARD_RATIO = "3 / 4";
+const CARD_RATIO = "3 / 2";
 /** Media takes the top slice, text the rest. Fixed so a long title pushes
  *  nothing off the bottom: it clamps instead. */
-const MEDIA_PCT = 54;
+const MEDIA_PCT = 58;
 
 export function HomeCarousel({ cards, loading }: { cards: HomeCard[]; loading: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -36,7 +36,7 @@ export function HomeCarousel({ cards, loading }: { cards: HomeCard[]; loading: b
     let best = 0;
     let bestD = Infinity;
     Array.from(el.children).forEach((c, i) => {
-      const d = Math.abs((c as HTMLElement).offsetLeft - el.scrollLeft - 16);
+      const d = Math.abs((c as HTMLElement).offsetLeft - el.scrollLeft);
       if (d < bestD) { bestD = d; best = i; }
     });
     setIndex(best);
@@ -55,8 +55,11 @@ export function HomeCarousel({ cards, loading }: { cards: HomeCard[]; loading: b
       <div
         ref={ref}
         onScroll={onScroll}
-        className="gesture -mx-4 flex min-h-0 flex-1 snap-x snap-mandatory gap-2 overflow-x-auto px-4"
-        style={{ scrollbarWidth: "none", touchAction: "pan-x" }}
+        // Negative margin on the right only. Bleeding both edges was what
+        // pushed the first card flush against the screen; this keeps the left
+        // on the page gutter and lets the row run off to the right.
+        className="gesture -mr-4 flex min-h-0 flex-1 snap-x snap-mandatory gap-2 overflow-x-auto pr-4"
+        style={{ scrollbarWidth: "none", touchAction: "pan-x", scrollPaddingLeft: 0 }}
       >
         {cards.map((c) => (
           <Link
@@ -66,7 +69,7 @@ export function HomeCarousel({ cards, loading }: { cards: HomeCard[]; loading: b
             style={{
               aspectRatio: CARD_RATIO,
               width: "auto",
-              maxWidth: "calc(100vw - 48px)",
+              maxWidth: "calc(100vw - 56px)",
               borderRadius: "var(--r-md)",
               transitionDuration: "var(--dur-tap)",
             }}

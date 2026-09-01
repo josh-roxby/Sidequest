@@ -4,10 +4,11 @@ import { Mark, type MarkName } from "@/components/primitives/Marks";
 import { Data, Label } from "@/components/primitives/Text";
 import { cn } from "@/lib/cn";
 
-type PanelId = "tiles" | "badges" | "points" | "layers";
+type PanelId = "tiles" | "notes" | "badges" | "points" | "layers";
 
 const BUTTONS: { id: PanelId; mark: MarkName; label: string }[] = [
   { id: "tiles", mark: "grid", label: "Tiles" },
+  { id: "notes", mark: "note", label: "Notes" },
   { id: "badges", mark: "badge", label: "Badges" },
   { id: "points", mark: "quest", label: "Points" },
   { id: "layers", mark: "layers", label: "Layers" },
@@ -21,6 +22,7 @@ export interface MapDockProps {
   region: string;
   points: { id: string; name: string; category: string; unlocked: boolean }[];
   badges: { label: string; progress: number; target: number }[];
+  notes: { id: string; text: string; questTitle: string; atM: number; createdAt: string }[];
   layers: Record<string, boolean>;
   onLayer: (key: string, on: boolean) => void;
   onPoint: (id: string) => void;
@@ -33,7 +35,7 @@ export interface MapDockProps {
  *  are looking at, so the answer belongs over the map, not on another screen.
  *  Only one panel is open at a time. */
 export function MapDock({
-  tilesInView, region, points, badges, layers, onLayer, onPoint,
+  tilesInView, region, points, badges, notes, layers, onLayer, onPoint,
 }: MapDockProps) {
   const [open, setOpen] = useState<PanelId | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -87,6 +89,39 @@ export function MapDock({
               <p className="t-small mt-2 text-stone">
                 A tile clears when you walk through it. Zoomed out, a big tile only
                 clears once most of the ground inside it has.
+              </p>
+            </>
+          ) : null}
+
+          {open === "notes" ? (
+            <>
+              <Label>{notes.length} on this map</Label>
+              {notes.length === 0 ? (
+                <p className="t-small mt-2 text-stone">
+                  Nothing written down here yet. On a walk, tap the note button
+                  to keep a moment where it happened.
+                </p>
+              ) : (
+                <div className="mt-2 flex flex-col gap-2">
+                  {notes.map((n) => (
+                    <div key={n.id} className="border border-rule bg-surface-2 p-2.5"
+                      style={{ borderRadius: "var(--r-sm)" }}>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <Data className="truncate text-[10px] uppercase text-mute">
+                          {n.questTitle}
+                        </Data>
+                        <Data className="shrink-0 text-[10px] uppercase text-mute">
+                          {n.createdAt}
+                        </Data>
+                      </div>
+                      <p className="selectable t-small mt-1 text-ink">{n.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="t-small mt-2.5 text-stone">
+                The map on its own is a notebook: everywhere you have been, and
+                everything you thought worth writing down while you were there.
               </p>
             </>
           ) : null}

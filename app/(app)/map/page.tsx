@@ -20,18 +20,22 @@ export default function MapScreen() {
   const territory = useAsync(() => data.getTerritory(), []);
   const points = useAsync(() => data.getPointsNearby(), []);
   const quests = useAsync(() => data.getQuests("stroll"), []);
+  const notes = useAsync(() => data.getNotes(), []);
   const [open, setOpen] = useState<Point | null>(null);
   const [tale, setTale] = useState(false);
   const [layers, setLayers] = useState<Record<string, boolean>>({
-    fog: true, trail: true, points: true, quests: true,
+    fog: true, trail: true, points: true, quests: true, notes: true,
   });
 
   const markers = useMemo<MapMarker[]>(() => {
     const pts = (points.data ?? []).map((p) => ({
       id: p.id, x: toWorld(p.x), y: toWorld(p.y), kind: "point" as const, label: p.name,
     }));
-    return [{ id: "you", x: 0, y: 0, kind: "you" as const }, ...pts];
-  }, [points.data]);
+    const noteMarks = (notes.data ?? []).map((n) => ({
+      id: `note-${n.id}`, x: toWorld(n.x), y: toWorld(n.y), kind: "note" as const,
+    }));
+    return [{ id: "you", x: 0, y: 0, kind: "you" as const }, ...pts, ...noteMarks];
+  }, [points.data, notes.data]);
 
   const trail = useMemo<[number, number][]>(
     () => (quests.data?.[0]?.path ?? []).map(([x, y]) => [toWorld(x), toWorld(y)]),
@@ -52,7 +56,9 @@ export default function MapScreen() {
   return (
     <div className="relative h-dvh w-full overflow-hidden">
       <MapCanvas
-        markers={layers.points ? markers : markers.filter((m) => m.kind === "you")}
+        markers={markers.filter((m) =>
+          m.kind === "you"
+          || (m.kind === "note" ? layers.notes : layers.points))}
         trail={layers.trail ? trail : []}
         questTiles={layers.quests ? questTiles : []}
         onMarker={(id) => {
@@ -97,6 +103,7 @@ export default function MapScreen() {
           { label: "Well read", progress: 7, target: 20 },
           { label: "Parish bounds", progress: 14, target: 25 },
         ]}
+        notes={notes.data ?? []}
         layers={layers}
         onLayer={(k, on) => setLayers((l) => ({ ...l, [k]: on }))}
         onPoint={(id) => {

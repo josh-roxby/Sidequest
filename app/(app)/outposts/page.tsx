@@ -9,6 +9,7 @@ import { Data, Label } from "@/components/primitives/Text";
 import { EmptyState } from "@/components/primitives/States";
 import { Frame } from "@/components/shell/Frame";
 import { Screen } from "@/components/shell/Screen";
+import { ThumbAction } from "@/components/shell/ThumbAction";
 
 interface Outpost {
   id: string; name: string; detail: string; base: boolean;
@@ -76,16 +77,11 @@ export default function OutpostsScreen() {
   }
 
   return (
-    <Screen>
-      <div className="flex items-start justify-between gap-3 pb-4">
-        <div>
-          <Label>Outposts</Label>
-          <h1 className="t-h1 mt-1.5 text-ink">Where you start from</h1>
-        </div>
-        <Button tone="solid" onClick={() => setOpen(true)} className="shrink-0">
-          <Mark name="plus" size={14} /> Add
-        </Button>
-      </div>
+    <Screen docked>
+      <header className="pb-4">
+        <Label>Outposts</Label>
+        <h1 className="t-h1 mt-1.5 text-ink">Where you start from</h1>
+      </header>
 
       {list.length === 0 ? (
         <EmptyState
@@ -130,6 +126,10 @@ export default function OutpostsScreen() {
           plan the walks before you go.
         </p>
       </Card>
+
+      <ThumbAction onClick={() => setOpen(true)}>
+        <Mark name="plus" size={15} /> Add an outpost
+      </ThumbAction>
 
       <Frame
         open={open}

@@ -5,6 +5,7 @@
 export type MarkName =
   | "map" | "quest" | "journal" | "you" | "grid" | "pack" | "tale" | "badge"
   | "flag" | "info" | "compass" | "home" | "plus" | "target" | "layers"
+  | "leaf" | "star" | "note" | "friends"
   | "trot" | "stroll" | "sidequest" | "adventure"
   | "fort" | "sacred" | "ancient" | "water" | "green" | "height" | "built" | "table";
 
@@ -20,6 +21,15 @@ const PATHS: Record<MarkName, React.ReactNode> = {
   badge:   <><path d="M8 2l4.5 2.5v5L8 14l-4.5-4.5v-5z" /><path d="M8 6l1 2h2l-1.5 1.5.5 2L8 10.5 6 11.5l.5-2L5 8h2z" /></>,
   flag:    <><path d="M4 14V2.5" /><path d="M4 3h8l-2 2.5L12 8H4z" /></>,
   info:    <><rect x="2.5" y="2.5" width="11" height="11" /><path d="M8 7v4" /><rect x="7.25" y="4.5" width="1.5" height="1.5" fill="currentColor" stroke="none" /></>,
+  // Leaf and star are drawn as filled silhouettes rather than strokes: at chip
+  // size a 1.6 stroke reads as a smudge, and these two carry a count so they
+  // have to be legible at 12px.
+  leaf:    <><path d="M13.4 2.6c.6 4.6-.9 7.6-3.1 9.1-2 1.4-4.4 1.2-5.8.2-1.6-1.2-2-3.4-1-5.4C4.9 3.6 8.4 2.4 13.4 2.6Z" fill="currentColor" stroke="none" /><path d="M11.8 4.6 3.4 13.4" stroke="currentColor" strokeWidth="1.2" /></>,
+  star:    <path d="m8 1.9 1.85 3.9 4.15.6-3 3 .71 4.2L8 11.63 4.29 13.6 5 9.4l-3-3 4.15-.6Z" fill="currentColor" stroke="none" />,
+  // A page with a folded corner. Deliberately unlike the point circle and the
+  // outpost flag, because on the map these three must never be confused.
+  note:    <><path d="M3 2.5h6.5L13 6v7.5H3Z" /><path d="M9.5 2.5V6H13" /><path d="M5.5 8.5h5M5.5 11h3" /></>,
+  friends: <><circle cx="6" cy="6" r="2.6" /><path d="M2 13.5c0-2.2 1.8-3.6 4-3.6s4 1.4 4 3.6" /><path d="M11 4.2a2.6 2.6 0 0 1 0 5.1M12 13.5c0-1.6-.6-2.8-1.6-3.4" /></>,
   home:    <><path d="M2.5 7.5 8 2.5l5.5 5" /><path d="M4 7v6.5h8V7" /></>,
   plus:    <><path d="M8 3v10M3 8h10" /></>,
   target:  <><circle cx="8" cy="8" r="5" /><path d="M8 1v2M8 13v2M1 8h2M13 8h2" /></>,

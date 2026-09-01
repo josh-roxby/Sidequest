@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Mark } from "@/components/primitives/Marks";
 import { Tooltip } from "@/components/primitives/Tooltip";
 import { Data, Label } from "@/components/primitives/Text";
 
@@ -45,8 +46,9 @@ function Pip({ tone, value, tip }: { tone: "field" | "rust"; value: number; tip:
           background: tone === "field" ? "var(--field-soft)" : "var(--rust-soft)",
         }}
       >
-        <span aria-hidden className="h-2 w-2"
-          style={{ borderRadius: "var(--r-full)", background: colour }} />
+        <span aria-hidden className="flex items-center" style={{ color: colour }}>
+          <Mark name={tone === "field" ? "leaf" : "star"} size={13} />
+        </span>
         <Data className="text-[12px]" style={{ color: colour }}>{value}</Data>
       </span>
     </Tooltip>

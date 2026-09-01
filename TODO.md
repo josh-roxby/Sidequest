@@ -109,6 +109,14 @@ data with auth off and no database.
       on a profile tab
 - [x] Trail record at `/history/[id]`: map, badges earned, tales opened, notes
 - [x] Point drawer reads the tale inline as a snippet, still gated on arrival
+- [x] Home cards at 3:2 with the left edge on the gutter, and the countryside
+      band carrying the foot of the screen
+- [x] Leaf and star drawn as real marks, in the header chips
+- [x] Notes on the map: own layer, own dock panel, own marker
+- [x] Primary actions docked beside the nav button
+- [x] Activity feed, reachable from the drawer ticker
+- [x] Friends: list, their quests, requests, challenges, referral
+- [x] Profile and friends squares in the drawer header
 - [ ] Unlock a point for real from a live position rather than a fixture flag
 - [ ] Tile counts in the dock computed from the camera rather than passed in
 

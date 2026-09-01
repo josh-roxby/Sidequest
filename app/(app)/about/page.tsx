@@ -22,7 +22,7 @@ export default function AboutScreen() {
       <ScreenHead label="About" title="What this is" />
 
       <Plate ratio="16/9" plate="about-hero" label="Three quarters of an hour"
-        className="-mx-4 mb-4 w-auto rounded-none border-x-0" />
+        className="mb-4" />
 
       <div className="selectable flex flex-col gap-4">
         <p className="t-body text-ink">
@@ -65,7 +65,7 @@ export default function AboutScreen() {
       <Rule className="my-7" />
 
       <div className="selectable flex flex-col gap-3">
-        <Plate ratio="16/9" plate="about-local" label="A cafe someone owns" className="-mx-4 w-auto rounded-none border-x-0" />
+        <Plate ratio="16/9" plate="about-local" label="A cafe someone owns" className="mb-1" />
         <div className="flex items-center gap-2.5">
           <Mark name="table" size={18} />
           <h2 className="t-h2 text-ink">Nothing on this map is a chain</h2>
@@ -85,7 +85,7 @@ export default function AboutScreen() {
       <Rule className="my-7" />
 
       <div className="selectable flex flex-col gap-3">
-        <Plate ratio="16/9" plate="about-tales" label="A high cross" className="-mx-4 w-auto rounded-none border-x-0" />
+        <Plate ratio="16/9" plate="about-tales" label="A high cross" className="mb-1" />
         <div className="flex items-center gap-2.5">
           <Mark name="tale" size={18} />
           <h2 className="t-h2 text-ink">Everywhere has a tale</h2>
@@ -109,7 +109,7 @@ export default function AboutScreen() {
       <Rule className="my-7" />
 
       <div className="selectable flex flex-col gap-3">
-        <Plate ratio="16/9" plate="about-collect" label="A ringfort bank" className="-mx-4 w-auto rounded-none border-x-0" />
+        <Plate ratio="16/9" plate="about-collect" label="A ringfort bank" className="mb-1" />
         <div className="flex items-center gap-2.5">
           <Mark name="badge" size={18} />
           <h2 className="t-h2 text-ink">Things worth collecting</h2>
@@ -132,7 +132,7 @@ export default function AboutScreen() {
       <Rule className="my-7" />
 
       <div className="selectable flex flex-col gap-3">
-        <Plate ratio="16/9" plate="about-map" label="Fog over townlands" className="-mx-4 w-auto rounded-none border-x-0" />
+        <Plate ratio="16/9" plate="about-map" label="Fog over townlands" className="mb-1" />
         <div className="flex items-center gap-2.5">
           <Mark name="map" size={18} />
           <h2 className="t-h2 text-ink">The map fills in</h2>

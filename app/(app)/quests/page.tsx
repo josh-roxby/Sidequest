@@ -36,7 +36,10 @@ export default function QuestsScreen() {
       {tab === "start" ? (
         <div className="min-h-0 flex-1"><StartQuest /></div>
       ) : (
-        <div className="-mx-4 min-h-0 flex-1 overflow-y-auto px-4 pt-1">
+        /* min-h-0 plus overflow on this element, not the page: without it the
+           grid grows past the viewport and scrolls under the nav rather than
+           stopping at the foot of the screen. */
+        <div className="-mx-4 min-h-0 flex-1 overflow-y-auto px-4 pb-2 pt-1">
           {tab === "history" ? <HistoryList showStats={false} /> : null}
           {tab === "community" ? <CommunityQuests /> : null}
           {tab === "custom" ? <CustomQuest /> : null}

@@ -66,8 +66,8 @@ PRD section 11. Costs nothing recurring, which is a hard product constraint.
 app/            routes. (app) group is the shell, everything else is public
 components/
   primitives/   Action, Button, Card, Tabs, Field, Chip, Stat, Marks, States
-  shell/        NavButton, NavDrawer, Frame, RankHeader, Screen, PhoneFrame
-  map/          MapCanvas (pan, zoom, rotate, hex tiles)
+  map/          MapCanvas, MapDock
+  shell/        NavButton, NavDrawer, Frame, ThumbAction, RankHeader, Screen
   domain/       per feature composition
 lib/
   data/         the read interface. mock/ and supabase/ implement it

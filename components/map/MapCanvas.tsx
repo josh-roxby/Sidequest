@@ -11,7 +11,7 @@ export interface MapMarker {
   /** World coordinates, metres. */
   x: number;
   y: number;
-  kind: "point" | "objective" | "objective-done" | "you";
+  kind: "point" | "objective" | "objective-done" | "you" | "note";
   label?: string;
 }
 
@@ -200,6 +200,19 @@ export function MapCanvas({
         ctx.fillStyle = rust;
         ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = surface; ctx.lineWidth = 2.5; ctx.stroke();
+      } else if (m.kind === "note") {
+        // A page with its corner turned. Distinct in silhouette from the point
+        // circle and the outpost flag, which is what matters at 12px.
+        ctx.fillStyle = surface;
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-6, -8); ctx.lineTo(2, -8); ctx.lineTo(6, -4);
+        ctx.lineTo(6, 8); ctx.lineTo(-6, 8); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(2, -8); ctx.lineTo(2, -4); ctx.lineTo(6, -4);
+        ctx.stroke();
       } else if (m.kind === "objective-done") {
         ctx.fillStyle = field;
         ctx.fillRect(-5, -5, 10, 10);

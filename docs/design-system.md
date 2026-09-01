@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 1.7 |
+| Version | 1.8 |
 | Date | 2026-08-31 |
 | Status | Locked. 1.2 replaces both nav forms with a single button, adds the canvas map and the hex tiling, and sets the interaction hygiene rules. |
 | Supersedes | The cream / sage / lavender token set in `app/globals.css` |
@@ -276,8 +276,11 @@ rather than a peer of them, so it is not one of the tiles. It takes the
 header's spare corner as a small square, at a size that cannot compete with
 the grid below.
 
-**C-2-3 The footer carries a marquee.** The strip left of the dismiss control
-would otherwise sit empty, so it runs updates. The track holds its items twice
+**C-2-3 The footer carries the activity ticker, and it is a link.** The strip
+left of the dismiss control would otherwise sit empty, so it runs the ten most
+recent community events and taps through to the full feed. Scrolling text
+belongs in one place: it was tried along the foot of Home and removed, because
+a home screen with a ticker on it reads as a dashboard. The track holds its items twice
 and translates by exactly -50%, which makes the reset frame pixel-identical to
 the start frame. That is the whole trick: there is no jump to hide because the
 two frames are the same. Duration scales with item count, so adding an update
@@ -627,10 +630,16 @@ hour.
 Used for tales, which are three to five cards read one at a time, and for the
 home shelf.
 
-**I-5-1 One ratio, one fixed-height row.** Every home card is **3:4**. The
-row has a fixed height per breakpoint, 248px and 300px, and each card is
+**I-5-1 One ratio, one fixed-height row.** Every home card is **3:2**
+landscape, which at the row height puts about 1.2 cards on screen: one to read
+and enough of the next to know the row moves. The
+row has a fixed height per breakpoint, 196px and 232px, and each card is
 `height: 100%` with `width: auto` off its `aspect-ratio`, so the browser
 derives every width.
+
+**I-5-2 The left edge stays on the gutter.** The track bleeds to the right
+only, using a negative right margin. Bleeding both edges is what pushed the
+first card flush against the screen.
 
 Mixed ratios were tried and abandoned. On a shelf they read as a jumble
 rather than a rhythm, and more practically the odd shapes left no reliable
@@ -857,3 +866,57 @@ Both reserve `--tile` plus two gutters of bottom padding, so the last row of
 content is never underneath the nav button.
 
 A home screen you have to scroll has stopped being a place to start from.
+
+
+---
+
+## O. Docked actions
+
+A screen's primary action can sit in the strip beside the nav button, fixed to
+the foot of the viewport.
+
+That strip is the screen width minus one 56px square and on most screens it is
+empty. Putting the main action there means it is always within the thumb's
+reach without scrolling to find it, and it never fights the nav button because
+it stops exactly where the button starts.
+
+Used by: add an outpost, start a quest, save a custom quest, add a friend.
+
+`Screen` takes a `docked` prop that adds the matching bottom padding, so the
+last row of content is never underneath the bar. A scrolling region on a
+docked screen must carry `min-h-0` and own its overflow, or it grows past the
+viewport and runs under the nav instead of stopping at the foot of the screen.
+
+---
+
+## P. The map as a notebook
+
+With no quest running, the map is a personal record rather than a tool: every
+tile you have walked, every point you have found, and every note you wrote
+where you wrote it.
+
+Notes are their own layer, their own dock panel, and their own marker: a page
+with the corner turned. Distinct in silhouette from the point circle and the
+outpost flag, which is the only thing that matters at 12px on a busy map.
+
+---
+
+## Q. Community
+
+**Q-1 The feed is a flat list.** No cards, no avatars, no detail pages behind
+each row, first names only. Its job is to make the place feel inhabited, and
+the moment a feed grows affordances it starts asking to be worked through
+rather than glanced at.
+
+**Q-2 Every event is one line.** Long ones ellipsise rather than wrap, because
+a ragged column stops reading as a pulse. The same lines feed the drawer
+ticker, which is why the constraint has to hold at both sizes.
+
+**Q-3 Nothing locational is ever published.** An event says what someone did,
+never where they are. The feed carries badges, quests, tales and joins, and no
+coordinate ever reaches it.
+
+**Q-4 Friends are not a social network.** No feed of theirs to scroll, no
+follower count, no way to see where anyone is. What a friend gives you is a
+route worth stealing and a reason to go this week. Challenges are between the
+two of you and nothing is scored, published or ranked.

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Action } from "@/components/primitives/Action";
+import { ThumbAction } from "@/components/shell/ThumbAction";
 import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
 import { Field } from "@/components/primitives/Field";
@@ -18,7 +18,7 @@ export function CustomQuest() {
   const [share, setShare] = useState(false);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 pb-[var(--tile)]">
       <Card>
         <Label>Your quests</Label>
         <EmptyState line="You have not built one yet. Drop points on the map and name the route." />
@@ -73,7 +73,7 @@ export function CustomQuest() {
           </div>
         </Card>
 
-        <Action>Save quest</Action>
+        <ThumbAction>Save quest</ThumbAction>
       </div>
     </div>
   );

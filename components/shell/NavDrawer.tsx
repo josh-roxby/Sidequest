@@ -24,7 +24,11 @@ import { cn } from "@/lib/cn";
 export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () => void }) {
   const pathname = usePathname();
   const [primary, secondary] = [DESTS.slice(0, 2), DESTS.slice(2)];
-  const updates = useAsync(() => data.getUpdates(), []);
+  // The ten most recent, which is the same feed the activity page renders.
+  // A ticker of things other people are doing is the cheapest possible signal
+  // that the app is alive, and it costs no space at all down there.
+  const activity = useAsync(() => data.getActivity(), []);
+  const recent = (activity.data ?? []).slice(0, 10).map((e) => e.text);
 
   return (
     <Frame
@@ -33,12 +37,18 @@ export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () =>
       label="Go to"
       title="Side Quest"
       scroll={false}
-      footerLeft={<Marquee items={updates.data ?? []} className="w-full" />}
+      footerLeft={
+        <Link href="/activity" onClick={onDismiss} aria-label="Community activity"
+          className="block w-full">
+          <Marquee items={recent} className="w-full" />
+        </Link>
+      }
       headerRight={
-        // Home is not one of the eight tiles, because it is the shell the
-        // tiles sit on rather than a peer of them. It still needs a way back,
-        // so it takes the header's spare corner at a size that cannot compete
-        // with the grid below.
+        /* Home, profile and friends are not tiles. Home is the shell the tiles
+           sit on, and the other two are you and the people you walk with rather
+           than places in the app. All three take the header's spare corner at a
+           size that cannot compete with the grid below. */
+        <div className="flex shrink-0 gap-1.5">
         <Link
           href="/home"
           onClick={onDismiss}
@@ -54,6 +64,9 @@ export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () =>
         >
           <Mark name="home" size={16} />
         </Link>
+        <SmallLink href="/profile" label="Profile" mark="you" pathname={pathname} onGo={onDismiss} />
+        <SmallLink href="/friends" label="Friends" mark="friends" pathname={pathname} onGo={onDismiss} />
+        </div>
       }
     >
       <div className="flex h-full flex-col gap-2">
@@ -118,5 +131,28 @@ export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () =>
         </div>
       </div>
     </Frame>
+  );
+}
+
+function SmallLink({
+  href, label, mark, pathname, onGo,
+}: {
+  href: string; label: string; mark: "you" | "friends"; pathname: string; onGo: () => void;
+}) {
+  const on = pathname === href;
+  return (
+    <Link
+      href={href}
+      onClick={onGo}
+      aria-label={label}
+      aria-current={on ? "page" : undefined}
+      className={cn(
+        "flex h-9 w-9 shrink-0 items-center justify-center border active:scale-[0.96]",
+        on ? "border-field bg-field text-field-ink" : "border-rule bg-surface text-stone",
+      )}
+      style={{ borderRadius: "var(--r-sm)", transitionDuration: "var(--dur-tap)" }}
+    >
+      <Mark name={mark} size={16} />
+    </Link>
   );
 }

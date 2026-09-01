@@ -222,6 +222,48 @@ export interface HomeCard {
   plate?: string;
 }
 
+export type ActivityKind =
+  | "badge" | "quest" | "poi" | "tale" | "friend" | "joined" | "collection";
+
+export interface ActivityEvent {
+  id: string;
+  /** First names only. This is a feed of things happening, not a directory of
+   *  people, and a surname turns it into one. */
+  name: string;
+  kind: ActivityKind;
+  /** One line. Long ones ellipsise rather than wrap: a feed that breaks its
+   *  own rhythm stops reading as a pulse. */
+  text: string;
+  at: string;
+}
+
+export interface Friend {
+  id: string;
+  name: string;
+  initials: string;
+  townland: string;
+  rank: number;
+  walksTogether: number;
+  lastSeen: string;
+}
+
+export interface FriendQuest {
+  id: string;
+  friend: string;
+  title: string;
+  townland: string;
+  tier: Tier;
+  shape: QuestShape;
+  distanceM: number;
+}
+
+export interface Challenge {
+  id: string;
+  title: string;
+  line: string;
+  friend?: string;
+}
+
 export interface DataSource {
   getTerritory(): Promise<Territory>;
   getQuests(tier: Tier): Promise<Quest[]>;
@@ -235,7 +277,11 @@ export interface DataSource {
   getTale(id: string): Promise<Tale | null>;
   getCommunityQuests(): Promise<CommunityQuest[]>;
   getHomeCards(): Promise<HomeCard[]>;
-  getUpdates(): Promise<string[]>;
+  getActivity(): Promise<ActivityEvent[]>;
+  getFriends(): Promise<Friend[]>;
+  getFriendRequests(): Promise<Friend[]>;
+  getFriendQuests(): Promise<FriendQuest[]>;
+  getChallenges(): Promise<Challenge[]>;
   getWalkDetail(id: string): Promise<WalkDetail | null>;
   getNotes(): Promise<Note[]>;
   addNote(note: Omit<Note, "id" | "createdAt">): Promise<Note>;
