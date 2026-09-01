@@ -5,6 +5,7 @@ import { Frame } from "@/components/shell/Frame";
 import { Action } from "@/components/primitives/Action";
 import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
+import { Plate } from "@/components/primitives/Plate";
 import { Data, Label } from "@/components/primitives/Text";
 import { Skeleton, StatusStrip } from "@/components/primitives/States";
 import { data, type Point } from "@/lib/data";
@@ -107,9 +108,27 @@ export default function MapScreen() {
           : null}
       >
         {open ? (
-          <div className="flex flex-col gap-3">
-            {open.nameGa ? <p className="t-body italic text-ink">{open.nameGa}</p> : null}
-            <p className="t-small text-stone">Townland of {open.townland}</p>
+          <div className="-mx-4 -mt-3.5 flex flex-col">
+            {/* Full-bleed plate, then the name, then the tags. The picture is
+                what tells you whether it is worth the walk, so it goes first
+                and it goes edge to edge. */}
+            <Plate ratio="16/9" label={open.townland}
+              className="rounded-none border-0 border-b border-rule" />
+            <div className="flex flex-col gap-2 px-4 pt-3.5">
+              {open.nameGa ? (
+                <p className="t-body italic text-ink">{open.nameGa}</p>
+              ) : null}
+              <p className="t-small text-stone">Townland of {open.townland}</p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {open.tags.map((t) => (
+                  <span key={t}
+                    className="border border-rule bg-surface-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.05em] text-stone"
+                    style={{ borderRadius: "var(--r-full)" }}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         ) : null}
       </Frame>

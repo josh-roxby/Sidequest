@@ -74,3 +74,46 @@ export function hexNoise(h: Axial, seed = 1): number {
   const n = Math.sin(h.q * 127.1 + h.r * 311.7 + seed * 74.7) * 43758.5453;
   return n - Math.floor(n);
 }
+
+
+/** Base resolution, in world metres. Every coarser level is this doubled. */
+export const BASE_HEX = 90;
+
+/** Which hex size to draw at a given zoom, so an on-screen hex stays around
+ *  64px whatever the scale. Without this the tile layer is either a solid mat
+ *  of hairlines when zoomed out, or four hexes filling the screen when zoomed
+ *  in. */
+export function levelForScale(scale: number, targetPx = 64): number {
+  const wanted = targetPx / scale;
+  return Math.max(0, Math.round(Math.log2(wanted / BASE_HEX)));
+}
+
+export function sizeForLevel(level: number): number {
+  return BASE_HEX * 2 ** level;
+}
+
+/** Whether the base-resolution hex containing a world point is revealed.
+ *  Deterministic, so the map looks identical between renders and reloads. */
+export function revealedAt(x: number, y: number, revealRadius: number): boolean {
+  if (Math.hypot(x, y) < revealRadius) return true;
+  return hexNoise(hexAt(x, y, BASE_HEX)) > 0.62;
+}
+
+/** A coarse hex counts as revealed only when MOST of the ground inside it is.
+ *
+ *  Sampled at the centre and six points around it rather than by walking every
+ *  child, which at level 9 would be seven to the ninth. Seven samples is a
+ *  fair read of a hexagon and it costs the same at every level, so zooming out
+ *  stays smooth. */
+export function majorityRevealed(
+  cx: number, cy: number, size: number, revealRadius: number,
+): boolean {
+  if (size <= BASE_HEX) return revealedAt(cx, cy, revealRadius);
+  let hits = revealedAt(cx, cy, revealRadius) ? 1 : 0;
+  const r = size * 0.58;
+  for (let i = 0; i < 6; i++) {
+    const a = (Math.PI / 3) * i;
+    if (revealedAt(cx + r * Math.cos(a), cy + r * Math.sin(a), revealRadius)) hits++;
+  }
+  return hits >= 4;
+}

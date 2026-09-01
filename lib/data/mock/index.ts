@@ -1,5 +1,8 @@
 import type { DataSource, Quest, Tale, Tier } from "../types";
-import { BADGES, CATEGORIES, COLLECTIBLES, POINTS, QUESTS, TALES, TERRITORY, WALKS } from "./fixtures";
+import {
+  BADGES, CATEGORIES, COLLECTIBLES, COMMUNITY, HOME_CARDS, POINTS, QUESTS,
+  TALES, TERRITORY, UPDATES, WALKS,
+} from "./fixtures";
 
 /** Artificial latency, so loading and skeleton states are visible during
  *  development rather than theoretical. Raise it to inspect a skeleton, set
@@ -29,4 +32,7 @@ export const mockSource: DataSource = {
   getBadges: () => settle("getBadges", BADGES),
   getTales: () => settle("getTales", TALES),
   getTale: (id: string) => settle<Tale | null>("getTale", TALES.find((t) => t.id === id) ?? null),
+  getCommunityQuests: () => settle("getCommunityQuests", COMMUNITY),
+  getHomeCards: () => settle("getHomeCards", HOME_CARDS),
+  getUpdates: () => settle("getUpdates", UPDATES),
 };

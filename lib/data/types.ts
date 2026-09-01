@@ -45,6 +45,7 @@ export interface Point {
   category: string;
   group: CategoryGroup;
   townland: string;
+  tags: string[];
   lore: Lore[];
   /** Normalised 0–1 position on the placeholder map surface. */
   x: number;
@@ -60,9 +61,18 @@ export interface Objective {
   y: number;
 }
 
+export type QuestShape = "loop" | "line";
+export type QuestSurface = "made" | "unpaved" | "rough";
+
 export interface Quest {
   id: string;
   tier: Tier;
+  /** Every quest is one of two shapes and it is always shown as a chip: a
+   *  loop ends where it began, a line goes out and comes back the same way.
+   *  distanceM is the full walked distance for both. */
+  shape: QuestShape;
+  surface: QuestSurface;
+  ascentM: number;
   title: string;
   flavour: string;
   distanceM: number;
@@ -141,6 +151,32 @@ export interface Tale {
   cards: Lore[];
 }
 
+export interface CommunityQuest {
+  id: string;
+  title: string;
+  author: string;
+  townland: string;
+  tier: Tier;
+  shape: QuestShape;
+  distanceM: number;
+  walkers: number;
+  /** Preset imagery is always square, so the community grid never jitters. */
+  plate?: string;
+}
+
+export type CardRatio = "portrait" | "square" | "landscape";
+
+export interface HomeCard {
+  id: string;
+  kind: "quest" | "update" | "banner" | "community";
+  ratio: CardRatio;
+  eyebrow: string;
+  title: string;
+  body?: string;
+  href: string;
+  plate?: string;
+}
+
 export interface DataSource {
   getTerritory(): Promise<Territory>;
   getQuests(tier: Tier): Promise<Quest[]>;
@@ -152,4 +188,7 @@ export interface DataSource {
   getBadges(): Promise<Badge[]>;
   getTales(): Promise<Tale[]>;
   getTale(id: string): Promise<Tale | null>;
+  getCommunityQuests(): Promise<CommunityQuest[]>;
+  getHomeCards(): Promise<HomeCard[]>;
+  getUpdates(): Promise<string[]>;
 }

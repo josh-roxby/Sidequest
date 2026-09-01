@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 1.4 |
+| Version | 1.5 |
 | Date | 2026-08-31 |
 | Status | Locked. 1.2 replaces both nav forms with a single button, adds the canvas map and the hex tiling, and sets the interaction hygiene rules. |
 | Supersedes | The cream / sage / lavender token set in `app/globals.css` |
@@ -258,7 +258,7 @@ the map be the whole screen.
 
 ### C-2 Tap: the drawer
 
-Release before **500ms** and it is a tap. Opens a square drawer, the same `Frame` every other modal surface uses, so it
+Release before **300ms** and it is a tap. Opens a square drawer, the same `Frame` every other modal surface uses, so it
 inherits the scrim, the focus trap, Escape, and the dismiss control at the
 anchor. Tap the button to open, tap the same square to close. The thumb does
 not travel.
@@ -270,6 +270,13 @@ in every session get double-height tiles; the other six sit beneath as a 3×2.
 square gives them rather than carrying fixed heights, so the grid holds its
 proportions on a small phone instead of overflowing. A drawer that scrolls has
 stopped being a map of the app and become a list.
+
+**C-2-3 The footer carries a marquee.** The strip left of the dismiss control
+would otherwise sit empty, so it runs updates. The track holds its items twice
+and translates by exactly -50%, which makes the reset frame pixel-identical to
+the start frame. That is the whole trick: there is no jump to hide because the
+two frames are the same. Duration scales with item count, so adding an update
+slows the strip rather than speeding everything past.
 
 **C-2-2 The blurb sits on the tile.** Each small tile carries its own one-line
 explanation. An earlier pass put a question mark on every tile opening a
@@ -297,14 +304,14 @@ opened the drawer for. When the answer fits on the tile, it belongs on it.
 
 ### C-3 Hold and drag: the shortcut
 
-Reach **500ms** without releasing and three tiles fan onto the lattice around
+Reach **300ms** without releasing and three tiles fan onto the lattice around
 the button, forming a 2×2 with the button at bottom-right. Keep the thumb
 down, drag toward the one you want, release.
 
 Ambiguity between tap and hold is no longer a risk at any threshold, because
 the tap runs off the native click rather than off pointerup (C-3-4). That
-frees the number to be tuned purely on feel, and half a second is where a
-deliberate hold stops feeling like a wait.
+frees the number to be tuned purely on feel, and 300ms is about as short as a
+hold can be while still reading as deliberate rather than as a slow tap.
 
 | Position | Destination |
 |---|---|
@@ -435,8 +442,25 @@ observed rather than polled, and every camera change coalesces into one
 
 ### E-3 Tiling
 
-Pointy-top hexagons in axial coordinates, 90m circumradius, rounded in cube
-space so the seams never gap. This is a stand-in for H3 with the same
+Pointy-top hexagons in axial coordinates, rounded in cube space so the seams
+never gap. Base circumradius 90m.
+
+**E-3-1 Resolution follows zoom.** The camera runs from 0.0008 to 4, which is
+enough to hold the whole island on a phone and still see a field boundary.
+Across that range a fixed hex size is either a solid mat of hairlines or four
+tiles filling the screen, so the drawn size steps by powers of two to keep an
+on-screen hex around 64px at any scale.
+
+**E-3-2 A coarse tile is only clear when most of its ground is.** A single
+revealed field must not clear a forty kilometre tile. Each coarse hex is
+sampled at its centre and six points around it, and reads as revealed only on
+a majority. Seven samples rather than walking every child, which at the
+coarsest level would be seven to the ninth, so zooming out stays smooth.
+
+**E-3-3 The island is a placeholder.** About thirty points traced by eye, so
+zooming out reads as Ireland rather than as an empty grid. It is never used
+for anything that needs to be true and it is replaced wholesale by the real
+coastline when the basemap lands. The camera clamps to its extent. This is a stand-in for H3 with the same
 properties that matter: one neighbour distance, tiles without gaps, counts
 as an integer. The fog and territory UI built against it does not change when
 H3 lands behind it.
@@ -575,9 +599,37 @@ Square checkboxes at 16px, `--r-sm`, filling `--field` when complete, with a
 hairline divider between rows and an optional mono value on the right for
 counted objectives.
 
+### I-4 Quest shape
+
+Every quest is one of two shapes and it always says which, as a chip.
+
+| Shape | Meaning |
+|---|---|
+| Loop | Ends where it began. No ground walked twice. |
+| There and back | Out along one path, back down the same one. |
+
+`distanceM` is the full walked distance for both, both legs of a line
+included, so a line and a loop carrying the same number take the same time.
+
+Duration is never a flat 5 km/h. It runs from a comfortable 4.7 km/h on made
+paths, reduced for unpaved and rough ground, plus a minute for every ten
+metres of climb, plus a few minutes standing at each point. An app that
+ignores surface and ascent keeps promising forty five minutes and taking an
+hour.
+
 ### I-5 Carousel
 
-Used for tales, which are three to five cards read one at a time.
+Used for tales, which are three to five cards read one at a time, and for the
+home shelf.
+
+**I-5-1 Mixed ratios, one row.** Home cards come in portrait 9:16 for quests,
+square for updates and landscape 16:9 for banners. Sizing runs off
+`aspect-ratio` with `height: 100%` and `width: auto`, so the browser derives
+each width from whatever height the row was given. That is what lets three
+ratios sit flush at any screen height with no measuring in JavaScript.
+
+**I-5-2 Snap start, not centre.** Cards align to the page's left gutter, so
+the row reads as a shelf rather than as a slideshow.
 
 Built on native scroll snap rather than a transform track. Scroll snap gives
 real momentum, respects the platform's own overscroll feel, and keeps every
@@ -600,8 +652,13 @@ text, `--r-sm`, scaling in from the edge it is anchored to over
 
 A tooltip is always an explanation and never the only route to information.
 Anything a person must read in order to use a control belongs in the
-control's own label. They are used on the two count chips in the rank header, where the number
-alone cannot say what a leaf or a star is. They are deliberately not used in
+control's own label. Placement is corner-anchored rather than centred, so a tooltip on a control
+near a screen edge grows inward instead of off the side. The default is
+bottom-left, which is right for the header chips: they sit top-right, so the
+panel drops down and back into the page.
+
+They are used on the two count chips in the rank header, where the number
+alone cannot say what a leaf or a star is, and on the shape chips. They are deliberately not used in
 the nav drawer: see C-2-2.
 
 ### I-7 Locked territory
@@ -665,3 +722,21 @@ never cached by URL since it is already immutable and content-hashed. Android
 wants a fetch handler before it will offer to install, and that is most of what
 it is for today. The offline story that matters, holding an active walk's
 route and tales through a loss of signal, belongs with the walk flow.
+
+
+---
+
+## L. Screens that do not scroll
+
+Home and the Start tab of Quests fit the viewport exactly.
+
+The pattern is the same in both: a header and a control block take the height
+they need, and one flexible region takes the rest. On Home that region is the
+card shelf, whose mixed-ratio cards size themselves from it. On Start it is the
+plate, which runs full bleed with the controls sitting over its foot rather
+than beneath it.
+
+Both reserve `--tile` plus two gutters of bottom padding, so the last row of
+content is never underneath the nav button.
+
+A home screen you have to scroll has stopped being a place to start from.

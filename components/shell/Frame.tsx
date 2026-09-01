@@ -12,6 +12,9 @@ interface FrameProps {
    *  docs/design-system.md §B-1. */
   ratio?: "square" | "tall";
   action?: React.ReactNode;
+  /** Rendered in the footer to the left of the dismiss control, where a frame
+   *  has a strip of space that would otherwise sit empty. */
+  footerLeft?: React.ReactNode;
   /** Bodies scroll by default. Pass false when the content sizes itself to the
    *  frame instead, as the nav drawer does. */
   scroll?: boolean;
@@ -25,7 +28,7 @@ interface FrameProps {
  *  single decision that most separates this from a drawer, and it ties every
  *  frame visually to the block it was opened from. */
 export function Frame({
-  open, onDismiss, label, title, ratio = "square", action, scroll = true, children,
+  open, onDismiss, label, title, ratio = "square", action, footerLeft, scroll = true, children,
 }: FrameProps) {
   const ref = useRef<HTMLDivElement>(null);
   const restoreTo = useRef<HTMLElement | null>(null);
@@ -117,7 +120,7 @@ export function Frame({
           className="flex items-stretch border-t border-rule"
           style={{ height: "var(--tile)" }}
         >
-          <div className="flex flex-1 items-center px-2">{action}</div>
+          <div className="flex min-w-0 flex-1 items-center px-2">{footerLeft ?? action}</div>
           <button
             type="button"
             onClick={onDismiss}

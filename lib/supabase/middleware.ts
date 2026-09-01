@@ -55,46 +55,22 @@ export async function updateSession(request: NextRequest) {
   const path = url.pathname;
   const isAppPath  = startsWithAny(path, APP_PATHS);
   const isAuthPath = startsWithAny(path, AUTH_PATHS);
-  const isWelcome  = path.startsWith("/start");
 
-  // 1. Anonymous users can't reach app paths or /welcome.
-  if (!user && (isAppPath || isWelcome)) {
+  // 1. Anonymous users can't reach app paths. The landing page at / is the
+  //    public face and stays open to everyone.
+  if (!user && isAppPath) {
     const redirect = url.clone();
     redirect.pathname = "/login";
     redirect.searchParams.set("next", path);
     return NextResponse.redirect(redirect);
   }
 
-  if (user) {
-    const onboarded = Boolean(user.user_metadata?.onboarding_completed);
-
-    // 2. Signed-in but not onboarded → must finish /welcome before
-    //    anything else (other than the auth callbacks and /welcome
-    //    itself).
-    if (!onboarded && isAppPath) {
-      const redirect = url.clone();
-      redirect.pathname = "/start";
-      redirect.search = "";
-      return NextResponse.redirect(redirect);
-    }
-
-    // 3. Signed-in and already onboarded should never see /welcome
-    //    or /login or /signup.
-    if (onboarded && (isWelcome || isAuthPath)) {
-      const redirect = url.clone();
-      redirect.pathname = "/home";
-      redirect.search = "";
-      return NextResponse.redirect(redirect);
-    }
-
-    // 4. Signed-in but not onboarded should bounce out of /login or
-    //    /signup into /welcome (post-signup case).
-    if (!onboarded && isAuthPath) {
-      const redirect = url.clone();
-      redirect.pathname = "/start";
-      redirect.search = "";
-      return NextResponse.redirect(redirect);
-    }
+  // 2. Signed in and on an auth page: send them into the app.
+  if (user && isAuthPath) {
+    const redirect = url.clone();
+    redirect.pathname = "/home";
+    redirect.search = "";
+    return NextResponse.redirect(redirect);
   }
 
   return supabaseResponse;

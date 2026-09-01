@@ -81,6 +81,17 @@ data with auth off and no database.
 - [x] Profile with account header, referral tile, and History, Badges and
       Settings as tabs over the same shared panels the routes use
 - [x] Custom tap-first tooltips on the small drawer tiles and the count chips
+- [x] Quests: Start is the default, with Community and Custom alongside
+      History, and loop or line shown as a chip everywhere
+- [x] Landing page rebuilt as the sales page, with drifting topographic
+      contours and paired sign in and create account
+- [x] Home fits the viewport with a mixed-ratio card shelf
+- [x] Map zooms out to the whole island, with hex resolution following zoom
+      and coarse tiles clearing only on a majority
+- [x] Terrain and ascent aware duration estimates
+- [x] Marquee of updates in the drawer footer
+- [ ] Replace the placeholder Ireland outline with the real coastline when
+      the basemap lands
 - [ ] Replace the placeholder leaf mark with real artwork
 - [ ] Illustration slots filled: home plate, quest heroes, thumbnails,
       category marks, badges (`docs/design-system.md` §H)

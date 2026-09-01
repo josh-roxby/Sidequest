@@ -1,61 +1,68 @@
 "use client";
-import { HomeLauncher } from "@/components/domain/HomeLauncher";
+import Link from "next/link";
+import { Mark, type MarkName } from "@/components/primitives/Marks";
 import { RankHeader } from "@/components/shell/RankHeader";
-import { Screen } from "@/components/shell/Screen";
-import { Data, Label, Rule } from "@/components/primitives/Text";
-import { LockedCallout } from "@/components/primitives/Card";
-import { Skeleton } from "@/components/primitives/States";
+import { HomeCarousel } from "@/components/domain/HomeCarousel";
 import { data } from "@/lib/data";
 import { useAsync } from "@/hooks/use-async";
 
+/** Fits the screen exactly. Nothing here scrolls vertically.
+ *
+ *  The header and the grid take the height they need; the carousel takes
+ *  whatever is left, which is what makes its mixed-ratio cards size themselves.
+ *  A home screen you have to scroll is a home screen that has stopped being a
+ *  place to start from. */
+const TILES: { href: string; label: string; mark: MarkName; tone: "field" | "rust" | "plain" }[] = [
+  { href: "/quests", label: "New quest", mark: "quest", tone: "field" },
+  { href: "/badges", label: "Badges", mark: "badge", tone: "plain" },
+  { href: "/map", label: "View map", mark: "map", tone: "plain" },
+  { href: "/outposts", label: "Outposts", mark: "flag", tone: "rust" },
+];
+
 export default function HomeScreen() {
-  const territory = useAsync(() => data.getTerritory(), []);
+  const cards = useAsync(() => data.getHomeCards(), []);
 
   return (
-    <Screen>
-      <RankHeader initials="JD" name="Josh" rank={8} leaves={420} stars={12} />
-
-      <div className="mt-5 flex items-center gap-3">
-        <Label>Home</Label>
-        <Rule className="flex-1" />
+    <div
+      className="flex h-dvh flex-col gap-3 overflow-hidden px-4"
+      style={{
+        paddingTop: "calc(env(safe-area-inset-top) + var(--s-4))",
+        // Clears the nav button's square in the thumb corner, so the bottom
+        // row of the grid is never sitting underneath it.
+        paddingBottom: "calc(var(--tile) + var(--gutter) * 2 + env(safe-area-inset-bottom))",
+      }}
+    >
+      <div className="shrink-0">
+        <RankHeader initials="JD" name="Josh" rank={8} leaves={420} stars={12} />
       </div>
 
-      {/* Illustration slot. The engraving-style field survey artwork goes here
-          once it exists; until then the frame holds its own space so the
-          layout below never shifts when it lands. */}
-      <div
-        className="mt-4 flex aspect-[4/3] w-full items-center justify-center border border-rule bg-surface"
-        style={{ borderRadius: "var(--r-md)" }}
-      >
-        <Data className="text-[10px] uppercase text-mute">Field survey plate</Data>
+      <div className="min-h-0 flex-1">
+        <HomeCarousel cards={cards.data ?? []} loading={cards.loading} />
       </div>
 
-      <div className="mt-5 text-center">
-        <h1 className="t-display text-ink" style={{ letterSpacing: "0.04em" }}>
-          FIELD SURVEY
-        </h1>
-        <p className="t-data mt-1.5 text-[11px] uppercase text-stone">
-          Walk · Record · Reveal
-        </p>
-        {territory.loading ? (
-          <div className="mx-auto mt-3 w-40"><Skeleton h={14} /></div>
-        ) : territory.data ? (
-          <Data className="mt-3 block text-stone">
-            {territory.data.tiles.toLocaleString()} TILES · {territory.data.townlands} TOWNLANDS
-          </Data>
-        ) : null}
-      </div>
-
-      <div className="mt-6">
-        <HomeLauncher />
-      </div>
-
-      <div className="mt-4">
-        <LockedCallout
-          title="New quest in 2h 14m"
-          hint="Or reach an outpost to unlock one now"
-        />
-      </div>
-    </Screen>
+      <nav aria-label="Shortcuts" className="grid shrink-0 grid-cols-2 gap-2">
+        {TILES.map((t) => (
+          <Link
+            key={t.href}
+            href={t.href}
+            className="flex h-[74px] flex-col items-center justify-center gap-1.5 border active:scale-[0.985]"
+            style={{
+              borderRadius: "var(--r-md)",
+              transitionDuration: "var(--dur-tap)",
+              background: t.tone === "field" ? "var(--field)"
+                : t.tone === "rust" ? "var(--rust)" : "var(--surface)",
+              color: t.tone === "plain" ? "var(--stone)" : "var(--field-ink)",
+              borderColor: t.tone === "field" ? "var(--field)"
+                : t.tone === "rust" ? "var(--rust)" : "var(--rule)",
+            }}
+          >
+            <Mark name={t.mark} size={20} />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em]">
+              {t.label}
+            </span>
+          </Link>
+        ))}
+      </nav>
+    </div>
   );
 }

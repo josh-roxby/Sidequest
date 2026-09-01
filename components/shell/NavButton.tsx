@@ -12,9 +12,9 @@ import { cn } from "@/lib/cn";
  *
  *  Ambiguity between the two is no longer a risk at any threshold, because the
  *  tap runs off the native click rather than off pointerup. That frees this
- *  number to be tuned purely on feel, and half a second is where a deliberate
- *  hold stops feeling like a wait. */
-const HOLD_MS = 500;
+ *  number to be tuned purely on feel, and 300ms is about as short as a hold
+ *  can be while still reading as deliberate rather than as a slow tap. */
+const HOLD_MS = 300;
 /** Tile pitch: one tile plus one gap. The three shortcut tiles sit on this
  *  lattice around the anchor, forming a 2×2 with the button at bottom-right. */
 const CELL = 64;

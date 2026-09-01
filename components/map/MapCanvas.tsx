@@ -1,6 +1,10 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { hexCentre, hexCorners, hexesInRect, hexKey, hexNoise } from "@/lib/map/hex";
+import {
+  hexCentre, hexCorners, hexesInRect, hexKey, hexNoise,
+  levelForScale, majorityRevealed, sizeForLevel,
+} from "@/lib/map/hex";
+import { IRELAND, WORLD_HALF_X, WORLD_HALF_Y } from "@/lib/map/ireland";
 
 export interface MapMarker {
   id: string;
@@ -22,8 +26,10 @@ export interface MapCanvasProps {
 
 interface Camera { x: number; y: number; scale: number; bearing: number }
 
-const HEX_SIZE = 90;          // world metres, circumradius
-const MIN_SCALE = 0.25;
+/** Low enough to hold the whole island on a phone, high enough to see a
+ *  field boundary. Four decimal places of range, which is why the tile layer
+ *  has to change resolution rather than just scale. */
+const MIN_SCALE = 0.0008;
 const MAX_SCALE = 4;
 const REVEAL_RADIUS = 900;    // world metres of cleared ground around origin
 
@@ -58,6 +64,12 @@ export function MapCanvas({ markers = [], trail = [], questTiles = [], onMarker 
     return { x: c.x + dx * cos - dy * sin, y: c.y + dx * sin + dy * cos };
   }, []);
 
+  const clamp = useCallback(() => {
+    const c = cam.current;
+    c.x = Math.max(-WORLD_HALF_X, Math.min(WORLD_HALF_X, c.x));
+    c.y = Math.max(-WORLD_HALF_Y, Math.min(WORLD_HALF_Y, c.y));
+  }, []);
+
   const draw = useCallback(() => {
     frame.current = null;
     const canvas = canvasRef.current;
@@ -79,26 +91,51 @@ export function MapCanvas({ markers = [], trail = [], questTiles = [], onMarker 
     ctx.rotate(-c.bearing);
     ctx.translate(-c.x, -c.y);
 
+    // Resolution follows zoom, so an on-screen hex stays about 64px whatever
+    // the camera is doing.
+    const level = levelForScale(c.scale);
+    const hexSize = sizeForLevel(level);
+    const corners = hexCorners(hexSize);
+
     // World rectangle covering the rotated viewport, padded by the diagonal so
     // nothing pops in at the corners while turning.
-    const reach = (Math.hypot(w, h) / c.scale) / 2 + HEX_SIZE * 2;
+    const reach = (Math.hypot(w, h) / c.scale) / 2 + hexSize * 2;
     const minX = c.x - reach, maxX = c.x + reach;
     const minY = c.y - reach, maxY = c.y + reach;
-
-    const corners = hexCorners(HEX_SIZE);
-    const questSet = new Set(questTiles.map(([x, y]) => hexKey({ q: Math.round(x), r: Math.round(y) })));
+    const questSet = new Set(
+      level === 0
+        ? questTiles.map(([x, y]) => hexKey({ q: Math.round(x), r: Math.round(y) }))
+        : [],
+    );
 
     const fog = css("--map-fog");
     const green = css("--map-green");
     const rule = css("--rule");
     const rust = css("--rust");
 
-    const hexes = hexesInRect(minX, minY, maxX, maxY, HEX_SIZE);
+    // The island silhouette. A placeholder outline until the real basemap
+    // lands, drawn beneath the tiles so zooming out reads as Ireland rather
+    // than as an empty grid.
+    if (level >= 4) {
+      ctx.beginPath();
+      IRELAND.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      ctx.closePath();
+      ctx.fillStyle = green;
+      ctx.globalAlpha = 0.5;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = css("--stone");
+      ctx.lineWidth = 1.5 / c.scale;
+      ctx.stroke();
+    }
+
+    const hexes = hexesInRect(minX, minY, maxX, maxY, hexSize);
     for (const hx of hexes) {
-      const { x, y } = hexCentre(hx, HEX_SIZE);
+      const { x, y } = hexCentre(hx, hexSize);
       const n = hexNoise(hx);
-      const near = Math.hypot(x, y) < REVEAL_RADIUS;
-      const revealed = near || n > 0.62;
+      // At a coarse level the hex is only clear when most of the ground inside
+      // it is. A single revealed field must not clear a forty kilometre tile.
+      const revealed = majorityRevealed(x, y, hexSize, REVEAL_RADIUS);
 
       ctx.beginPath();
       ctx.moveTo(x + corners[0][0], y + corners[0][1]);
@@ -110,7 +147,7 @@ export function MapCanvas({ markers = [], trail = [], questTiles = [], onMarker 
         ctx.globalAlpha = 0.72;
         ctx.fill();
         ctx.globalAlpha = 1;
-      } else if (n > 0.86) {
+      } else if (level === 0 && n > 0.86) {
         ctx.fillStyle = green;
         ctx.fill();
       }
@@ -227,6 +264,7 @@ export function MapCanvas({ markers = [], trail = [], questTiles = [], onMarker 
       const sin = Math.sin(c.bearing);
       c.x -= dx * cos - dy * sin;
       c.y -= dx * sin + dy * cos;
+      clamp();
       invalidate();
       return;
     }
@@ -246,10 +284,11 @@ export function MapCanvas({ markers = [], trail = [], questTiles = [], onMarker 
       c.y += anchor.y - after.y;
 
       gesture.current = { dist, angle, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
+      clamp();
       setBearing(c.bearing);
       invalidate();
     }
-  }, [invalidate, toWorld]);
+  }, [invalidate, toWorld, clamp]);
 
   const endPointer = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     pointers.current.delete(e.pointerId);
@@ -265,8 +304,9 @@ export function MapCanvas({ markers = [], trail = [], questTiles = [], onMarker 
                           e.clientY - (wrapRef.current?.getBoundingClientRect().top ?? 0));
     c.x += anchor.x - after.x;
     c.y += anchor.y - after.y;
+    clamp();
     invalidate();
-  }, [invalidate, toWorld]);
+  }, [invalidate, toWorld, clamp]);
 
   const onClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!onMarker) return;

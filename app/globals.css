@@ -189,6 +189,16 @@ h1, h2, h3, h4, .t-label, .t-display, .t-h1, .t-h2, .t-data,
   from { opacity: 0; transform: scale(0.7); }
   to   { opacity: 1; transform: scale(1); }
 }
+/* Exactly -50% of a doubled track, so the reset frame is pixel-identical to
+   the start frame and the loop has no seam. */
+@keyframes sq-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes sq-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(var(--dx, -40px), var(--dy, 18px), 0); }
+}
 @keyframes sq-quad-in {
   from { opacity: 0; transform: translate(0, 0) scale(0.6); }
   to   { opacity: 1; transform: translate(var(--qx), var(--qy)) scale(1); }

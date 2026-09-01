@@ -1,5 +1,6 @@
 import type {
-  Badge, CategoryProgress, Collectible, Point, Quest, Tale, Territory, WalkRecord,
+  Badge, CategoryProgress, Collectible, CommunityQuest, HomeCard, Point, Quest,
+  Tale, Territory, WalkRecord,
 } from "../types";
 
 /** Real Clare townlands, real category mix, distances that actually fall
@@ -17,7 +18,7 @@ export const TERRITORY: Territory = {
 
 export const POINTS: Point[] = [
   {
-    id: "p-cahercalla", name: "Cahercalla", nameGa: "Cathair Cala",
+    id: "p-cahercalla", tags: ["Upstanding remains", "From a boreen", "Free", "Ringfort"], name: "Cahercalla", nameGa: "Cathair Cala",
     category: "Ringfort", group: "fort", townland: "Cahercalla Beg",
     x: 0.68, y: 0.34,
     lore: [
@@ -30,7 +31,7 @@ export const POINTS: Point[] = [
     ],
   },
   {
-    id: "p-dysert", name: "Dysert O'Dea", nameGa: "Díseart Uí Dheá",
+    id: "p-dysert", tags: ["High cross", "Monastic", "Car park", "12th century"], name: "Dysert O'Dea", nameGa: "Díseart Uí Dheá",
     category: "Monastic site", group: "sacred", townland: "Dysert",
     x: 0.31, y: 0.62,
     lore: [
@@ -43,7 +44,7 @@ export const POINTS: Point[] = [
     ],
   },
   {
-    id: "p-inchiquin", name: "Inchiquin Lough", nameGa: "Loch Inse Uí Chuinn",
+    id: "p-inchiquin", tags: ["Lough shore", "West facing", "Good at dusk", "Level ground"], name: "Inchiquin Lough", nameGa: "Loch Inse Uí Chuinn",
     category: "Lough shore", group: "water", townland: "Inchiquin",
     x: 0.52, y: 0.78,
     lore: [
@@ -53,7 +54,7 @@ export const POINTS: Point[] = [
     ],
   },
   {
-    id: "p-ballykeel", name: "Ballykeel mass rock", nameGa: "An Baile Caol",
+    id: "p-ballykeel", tags: ["Mass rock", "Penal era", "Field path", "Hard to spot"], name: "Ballykeel mass rock", nameGa: "An Baile Caol",
     category: "Mass rock", group: "sacred", townland: "Ballykeel",
     x: 0.19, y: 0.24,
     lore: [
@@ -63,7 +64,7 @@ export const POINTS: Point[] = [
     ],
   },
   {
-    id: "p-toonagh", name: "Toonagh mill", category: "Mill", group: "built",
+    id: "p-toonagh", tags: ["Mill race", "c. 1840", "Roadside", "Limestone"], name: "Toonagh mill", category: "Mill", group: "built",
     nameGa: "Tuathanach", townland: "Toonagh", x: 0.79, y: 0.68,
     lore: [
       { kind: "architecture", title: "Corn mill, c. 1840",
@@ -75,7 +76,8 @@ export const POINTS: Point[] = [
 
 export const QUESTS: Quest[] = [
   {
-    id: "q-cloonanaha", tier: "stroll", title: "Cloonanaha Loop",
+    id: "q-cloonanaha", tier: "stroll", shape: "loop", surface: "unpaved", ascentM: 34,
+    title: "Cloonanaha Loop",
     flavour: "Out along the old mass path to a ringfort on the rise, back down by the stream.",
     distanceM: 2840, durationMin: 47, startsAwayM: 0, townland: "Cloonanaha",
     honesty: ["Two stiles", "Unpaved for 400m after the second gate"],
@@ -86,7 +88,8 @@ export const QUESTS: Quest[] = [
     path: [[0.16, 0.72], [0.3, 0.6], [0.44, 0.55], [0.6, 0.42], [0.68, 0.34], [0.62, 0.5], [0.4, 0.66], [0.16, 0.72]],
   },
   {
-    id: "q-dysert", tier: "stroll", title: "Dysert Round",
+    id: "q-dysert", tier: "stroll", shape: "loop", surface: "unpaved", ascentM: 22,
+    title: "Dysert Round",
     flavour: "A field path to a hermitage and a high cross, returning by the boreen.",
     distanceM: 3160, durationMin: 52, startsAwayM: 220, townland: "Dysert",
     honesty: ["Road without a pavement for 300m", "Likely mud after rain"],
@@ -96,7 +99,8 @@ export const QUESTS: Quest[] = [
     path: [[0.2, 0.8], [0.24, 0.72], [0.31, 0.62], [0.42, 0.6], [0.38, 0.74], [0.2, 0.8]],
   },
   {
-    id: "q-toonagh", tier: "trot", title: "Toonagh Mill",
+    id: "q-toonagh", tier: "trot", shape: "line", surface: "made", ascentM: 6,
+    title: "Toonagh Mill",
     flavour: "Ten minutes to a ruined corn mill and back along the race.",
     distanceM: 1080, durationMin: 16, startsAwayM: 0, townland: "Toonagh",
     honesty: ["Made paths throughout"],
@@ -106,7 +110,8 @@ export const QUESTS: Quest[] = [
     path: [[0.64, 0.78], [0.72, 0.72], [0.79, 0.68], [0.7, 0.82], [0.64, 0.78]],
   },
   {
-    id: "q-inchiquin", tier: "sidequest", title: "Inchiquin Shore",
+    id: "q-inchiquin", tier: "sidequest", shape: "loop", surface: "rough", ascentM: 180,
+    title: "Inchiquin Shore",
     flavour: "Lough shore, a tower house on the point, and the hill road back.",
     distanceM: 6140, durationMin: 94, startsAwayM: 410, townland: "Inchiquin",
     honesty: ["Steep for 600m on the return", "Finishes after sunset if you start now"],
@@ -235,4 +240,46 @@ export const TALES: Tale[] = [
         licence: "CC BY-SA 4.0", linkOnly: true },
     ],
   },
+];
+
+
+export const COMMUNITY: CommunityQuest[] = [
+  { id: "cq-1", title: "Castle ruins by rivers", author: "Niamh", townland: "Corofin",
+    tier: "sidequest", shape: "loop", distanceM: 6200, walkers: 148 },
+  { id: "cq-2", title: "Three holy wells", author: "Padraig", townland: "Kilnaboy",
+    tier: "stroll", shape: "loop", distanceM: 3100, walkers: 92 },
+  { id: "cq-3", title: "The mill races", author: "Aoife", townland: "Toonagh",
+    tier: "trot", shape: "line", distanceM: 1200, walkers: 64 },
+  { id: "cq-4", title: "Burren limestone walk", author: "Sean", townland: "Carran",
+    tier: "adventure", shape: "loop", distanceM: 11800, walkers: 211 },
+  { id: "cq-5", title: "Ringforts of the parish", author: "Maire", townland: "Dysert",
+    tier: "sidequest", shape: "loop", distanceM: 5900, walkers: 37 },
+  { id: "cq-6", title: "Lough shore at dusk", author: "Cillian", townland: "Inchiquin",
+    tier: "stroll", shape: "line", distanceM: 2900, walkers: 118 },
+];
+
+export const HOME_CARDS: HomeCard[] = [
+  { id: "hc-1", kind: "quest", ratio: "portrait", eyebrow: "Ready to walk",
+    title: "Cloonanaha Loop", body: "A ringfort on the rise, back down by the stream.",
+    href: "/quests/q-cloonanaha" },
+  { id: "hc-2", kind: "update", ratio: "square", eyebrow: "New tale",
+    title: "Why forty thousand ringforts survived",
+    body: "Breaking one was desperately unlucky, so farmers ploughed around them.",
+    href: "/tales/t-1" },
+  { id: "hc-3", kind: "banner", ratio: "landscape", eyebrow: "Co. Clare",
+    title: "2,318 townlands. You have 14.", href: "/badges" },
+  { id: "hc-4", kind: "community", ratio: "portrait", eyebrow: "From the community",
+    title: "Castle ruins by rivers", body: "Eight quests, put together by Niamh.",
+    href: "/quests?tab=community" },
+  { id: "hc-5", kind: "update", ratio: "square", eyebrow: "Close",
+    title: "Two ringforts from a badge", body: "Rath finder unlocks at five.",
+    href: "/badges" },
+];
+
+export const UPDATES: string[] = [
+  "New: 46 points added around Corofin",
+  "Rath finder is 2 ringforts away",
+  "Niamh published Castle ruins by rivers",
+  "Tales now read as cards you can share",
+  "Co. Clare is 0.04% explored",
 ];

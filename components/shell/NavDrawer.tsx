@@ -2,7 +2,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Mark } from "@/components/primitives/Marks";
+import { Marquee } from "@/components/primitives/Marquee";
 import { Frame } from "./Frame";
+import { data } from "@/lib/data";
+import { useAsync } from "@/hooks/use-async";
 import { DESTS } from "@/lib/nav";
 import { cn } from "@/lib/cn";
 
@@ -21,9 +24,17 @@ import { cn } from "@/lib/cn";
 export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () => void }) {
   const pathname = usePathname();
   const [primary, secondary] = [DESTS.slice(0, 2), DESTS.slice(2)];
+  const updates = useAsync(() => data.getUpdates(), []);
 
   return (
-    <Frame open={open} onDismiss={onDismiss} label="Go to" title="Side Quest" scroll={false}>
+    <Frame
+      open={open}
+      onDismiss={onDismiss}
+      label="Go to"
+      title="Side Quest"
+      scroll={false}
+      footerLeft={<Marquee items={updates.data ?? []} className="w-full" />}
+    >
       <div className="flex h-full flex-col gap-2">
         <div className="grid min-h-0 flex-[1.15] grid-cols-2 gap-2">
           {primary.map((d) => {
