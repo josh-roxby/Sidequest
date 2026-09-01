@@ -107,6 +107,36 @@ export interface WalkRecord {
   status: "completed" | "abandoned";
 }
 
+export interface Collectible {
+  id: string;
+  name: string;
+  category: string;
+  group: CategoryGroup;
+  foundAt: string;
+  townland: string;
+  count: number;
+}
+
+export interface Badge {
+  id: string;
+  label: string;
+  description: string;
+  group: CategoryGroup;
+  earnedAt: string | null;
+  progress: number;
+  target: number;
+}
+
+export interface Tale {
+  id: string;
+  pointId: string;
+  pointName: string;
+  townland: string;
+  kind: Lore["kind"];
+  title: string;
+  readAt: string | null;
+}
+
 export interface DataSource {
   getTerritory(): Promise<Territory>;
   getQuests(tier: Tier): Promise<Quest[]>;
@@ -114,4 +144,7 @@ export interface DataSource {
   getPointsNearby(): Promise<Point[]>;
   getWalks(): Promise<WalkRecord[]>;
   getCategories(): Promise<CategoryProgress[]>;
+  getCollectibles(): Promise<Collectible[]>;
+  getBadges(): Promise<Badge[]>;
+  getTales(): Promise<Tale[]>;
 }

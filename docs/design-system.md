@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Version | 1.1 |
+| Version | 1.2 |
 | Date | 2026-08-31 |
-| Status | Locked. Revised 2026-08-31 against the visual direction: three radii replace two, and the nav has two forms rather than one. |
+| Status | Locked. 1.2 replaces both nav forms with a single button, adds the canvas map and the hex tiling, and sets the interaction hygiene rules. |
 | Supersedes | The cream / sage / lavender token set in `app/globals.css` |
 | Related | [reface-plan.md](./reface-plan.md) · [ux-loops.md](./ux-loops.md) · [PRD.md](./PRD.md) |
 
@@ -247,79 +247,89 @@ down there, it goes somewhere else instead.
 
 ## C. Navigation
 
-Two forms of the same four destinations, chosen by what the screen needs.
+One button. Everything else is behind a tap or a hold.
 
-### C-1 Block, the hub form
+### C-1 The button
 
-A full-width 2 by 2 launcher of 108px tiles with an 8px gap. Used on screens
-that are hubs or lists, where vertical space is not scarce: Home and Quests.
+A single 56px square anchored `--gutter` from the bottom-right, on every
+screen, carrying a surveyed-sheet glyph: a rectangle ruled into nine with the
+centre cell pinned. It is the only fixed chrome in the app, which is what lets
+the map be the whole screen.
+
+### C-2 Tap: the drawer
+
+Opens a square drawer, the same `Frame` every other modal surface uses, so it
+inherits the scrim, the focus trap, Escape, and the dismiss control at the
+anchor. Tap the button to open, tap the same square to close. The thumb does
+not travel.
+
+Contents are a bento rather than a flat grid. The two destinations reached for
+in every session get double-height tiles; the other six sit beneath as a 3×2.
 
 ```
-        ┌────────────┬────────────┐
-        │    MAP     │   QUESTS   │
-        ├────────────┼────────────┤
-        │ INVENTORY  │  OUTPOSTS  │
-        └────────────┴────────────┘
+┌───────────────────────────────┐
+│ GO TO                         │
+│ Side Quest                    │
+├───────────────────────────────┤
+│ ┌───────────┐ ┌─────────────┐ │
+│ │    MAP    │ │   QUESTS    │ │
+│ └───────────┘ └─────────────┘ │
+│ ┌──────┐ ┌──────┐ ┌────────┐  │
+│ │ INV  │ │ HIST │ │ TALES  │  │
+│ └──────┘ └──────┘ └────────┘  │
+│ ┌──────┐ ┌──────┐ ┌────────┐  │
+│ │ BADG │ │ OUTP │ │ ABOUT  │  │
+│ └──────┘ └──────┘ └────────┘  │
+├───────────────────────────────┤
+│                          [ × ]│
+└───────────────────────────────┘
 ```
 
-The first tile carries `--field` because it is the primary target from a hub.
-The last carries `--rust` permanently: one destination is accented, and it is
-the outward-facing one, where you go to find somewhere new.
+### C-3 Hold and drag: the shortcut
 
-### C-2 Bar, the compact form
+Press and hold for 380ms and three tiles fan onto the lattice around the
+button, forming a 2×2 with the button at bottom-right. Keep the thumb down,
+drag toward the one you want, release.
 
-The same four destinations, four across, 68px tall, fixed to the bottom with
-`--gutter` on the left, right and bottom so it never touches the screen edge.
-Used on the map and on detail screens, where vertical space is the
-constraint. The active destination fills `--field`; Outposts stays `--rust`.
-
-### C-3 Destinations
-
-| Tile | Destination | Hold shortcuts |
-|---|---|---|
-| Map | The map and your territory | Recentre, Layers, Drop a pin |
-| Quests | Tier picker and quests near you | Change tier, Saved |
-| Inventory | Everything found: walks, tales, badges, territory | Tales read, Badges, Territory |
-| Outposts | The places you start from, and your base camp | Saved places, Set base camp |
-
-### C-4 Interaction
-
-| Gesture | Result |
+| Position | Destination |
 |---|---|
-| Tap | Navigate. Active tile fills `--field`, glyph and label reverse to `--field-ink`. |
-| Press and hold, 400ms | A rust hairline ring draws inside the tile over the hold duration, then the shortcut fan opens above the block and a light haptic fires. |
-| Release on a fan item | Fires that shortcut. |
-| Release off the fan, or tap elsewhere | Cancels, fan closes, no navigation. |
-| Tap the active tile | Scrolls that section to top, or recentres the map. |
+| Up and left | Map |
+| Directly up | Quests |
+| Directly left | Inventory |
+| Released on the button, or under the dead zone | Cancel |
 
-**C-4-1 The hold ring is the affordance.** The ring drawing over 400ms is
-what teaches the gesture: a user who half-presses sees something start to
-happen and tries again properly. No tooltip needed after the first run.
+Positions are fixed forever. That is the whole value: after a week the
+gesture is muscle memory and you stop looking at the screen to change
+section.
 
-**C-4-2 First run.** On the first visit to the map, the hint text sits to the
-left of the block in mono at 10px: `TAP TO SWITCH / HOLD FOR MORE`. It fades
-out permanently after the first successful hold, or after three sessions.
+**C-3-1 Drag to select, not tap the fanned tile.** The point is that it
+completes in one continuous gesture without lifting the thumb. Selection is by
+nearest tile centre with a 22px dead zone, not by angle wedges, because wedges
+misfire near their boundaries.
 
-### C-5 States
+**C-3-2 The hold ring is the affordance.** A rust hairline draws inside the
+button over the hold duration, so a half-press shows something starting and
+the gesture teaches itself. A light haptic fires when the fan opens and again
+each time the aim crosses to a different tile.
+
+**C-3-3 Nothing is hold-only.** All three shortcuts are in the drawer. The
+gesture is an accelerator, never the only route.
+
+### C-4 States
 
 | State | Treatment |
 |---|---|
-| Default | `--surface` fill, `--stone` glyph and label |
-| Active | `--field` fill, `--field-ink` glyph and label |
-| Pressed | Scale 0.97 over `--dur-tap` |
-| Holding | Rust ring drawing inside the tile |
-| Badged | A 6px rust square in the tile's top-right corner, no number |
-| Disabled | `--surface-2` fill, `--mute` glyph, no press response |
+| Default | `--surface` fill, `--ink` border and glyph |
+| Pressing | Rust ring drawing inside |
+| Fan open | `--field` fill, screen dimmed to 18% |
+| Aimed tile | `--field` fill, scaled to 1.06 |
+| Drawer open | Replaced by the frame's dismiss on the same square |
 
-Badges are squares, never dots, and never carry a count. A count invites
-inbox behaviour, which is the opposite of the product.
+### C-5 Left-handed use
 
-### C-6 Left-handed use
-
-The bar form spans the width, so handedness does not affect it. The frame
-dismiss control still sits bottom-right and mirrors to bottom-left from a
-setting, along with the frame footer order. This is a v1 setting, not a v1.5
-one: a control that only works for right-handed users is a defect.
+The button and the fan mirror to the bottom-left from a setting, and the
+lattice mirrors with them: up-right Map, up Quests, right Inventory. A control
+that only works for right-handed users is a defect, so this is v1.
 
 ---
 
@@ -356,28 +366,69 @@ app furniture.
 
 ---
 
-## E. Map surface
+## E. Map
 
-Held deliberately simple for this pass. The real MapLibre style comes with
-the tile build, and the placeholder is built to the same tokens so the
-chrome does not need reworking when it lands.
+A canvas, not a DOM tree. The tile layer is hundreds of hexes that redraw on
+every camera change: as elements that is a layout thrash, as one canvas it is
+a single paint. It is also the shape MapLibre expects to occupy later, so the
+chrome around it survives the swap.
 
-| Layer | Token | Treatment |
-|---|---|---|
-| Ground | `--map-paper` | Flat |
-| Grid | `--ink` at 5.5% | 28px squares, 1px, always visible |
-| Green | `--map-green` | Flat fill, no outline |
-| Water | `--map-water` | Flat fill, no outline |
-| Fog | `--map-fog` at 62% | Hard-edged rectangles in the placeholder, H3 hexes in the real build |
-| Trail, out leg | `--map-trail` | 2px solid |
-| Trail, return leg | `--map-trail` | 2px dashed, 4/4 |
-| Position | `--rust` | 9px square, no pulse |
-| Objective, pending | `--ink` | 9px hollow square |
-| Objective, done | `--field` | 9px filled square |
+### E-1 Camera
 
-Positions and objectives are squares, not pins. A teardrop pin is the single
-most generic element in mobile mapping and dropping it is most of what makes
-this map look like ours.
+Pan with one finger, pinch to zoom, twist to rotate. Zoom clamps to 0.25–4.
+The point under the fingers stays pinned while zooming and turning, which is
+the difference between a map that feels attached to your hand and one that
+slides around under it.
+
+**E-1-1 North reset.** A round compass button sits `--gutter` from the top
+right, its needle showing current bearing. Tapping it eases back to north over
+320ms. Under reduced motion it snaps, because a slow spin of the entire map is
+disorienting rather than pleasant.
+
+**E-1-2 The canvas owns its gestures.** `touch-action: none` on the canvas and
+`overscroll-behavior: none` on the document, so the browser never competes
+with a drag by scrolling the page or zooming the document underneath.
+
+### E-2 Quality
+
+Backing store sized at `devicePixelRatio` capped at 2. Beyond 2 the extra
+pixels cost real frame time on a phone and nobody can see them. Resize is
+observed rather than polled, and every camera change coalesces into one
+`requestAnimationFrame`.
+
+### E-3 Tiling
+
+Pointy-top hexagons in axial coordinates, 90m circumradius, rounded in cube
+space so the seams never gap. This is a stand-in for H3 with the same
+properties that matter: one neighbour distance, tiles without gaps, counts
+as an integer. The fog and territory UI built against it does not change when
+H3 lands behind it.
+
+| Tile state | Treatment |
+|---|---|
+| Unexplored | `--map-fog` at 72%, hairline `--rule` edge |
+| Revealed | Paper showing through, hairline edge |
+| Green | `--map-green` fill |
+| Holds a quest | 2px `--rust` edge over the fill |
+
+Quest availability is drawn as territory rather than as a pin floating above
+it, which is the point of having a tiling at all.
+
+### E-4 Markers
+
+| Marker | Treatment |
+|---|---|
+| You | `--rust` disc, 7px, `--surface` ring |
+| Point | `--surface` disc with a `--field` ring and centre |
+| Objective, pending | Hollow `--ink` square |
+| Objective, done | Filled `--field` square |
+| Trail, out leg | 3px solid `--map-trail` |
+| Trail, return leg | 3px dashed |
+
+Markers counter-rotate and counter-scale, so they stay upright and the same
+size however the map is turned or zoomed. No teardrop pins anywhere: that is
+the single most generic element in mobile mapping and dropping it is most of
+what makes this map read as ours.
 
 ---
 
@@ -494,3 +545,26 @@ a dashed `--rust` outline over diagonal hatching, with a round lock marker at
 its centre. Ordinary unexplored ground is flat `--map-fog` with no outline.
 The distinction matters: one is somewhere you have not been, the other is
 somewhere you cannot go yet.
+
+
+---
+
+## J. Interaction hygiene
+
+Rules that stop the app feeling like a web page.
+
+- **Chrome is not text.** Buttons, labels, nav glyphs, headings, data and the
+  canvas all carry `user-select: none` and `-webkit-touch-callout: none`. A
+  long press on a title should do what the app says it does, never raise a
+  selection handle or an iOS callout.
+- **Prose is text.** Tale bodies, place descriptions and the About page opt
+  back in with `.selectable`, because those are the things a person might
+  reasonably want to quote.
+- **No tap highlight.** `-webkit-tap-highlight-color: transparent` globally;
+  press feedback is the 0.97 scale, which we control.
+- **No rubber band.** `overscroll-behavior: none` on the document, so a pull
+  inside the map never drags the page behind it.
+- **Gestures are exclusive.** Anything that owns a drag carries
+  `touch-action: none` via `.gesture`. The browser never competes.
+- **No context menu on controls.** `onContextMenu` is prevented on the nav
+  button and the canvas, since a long press there is a real gesture.

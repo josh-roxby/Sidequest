@@ -41,10 +41,10 @@ get broken by accident.
 
 Two more worth knowing before you build a screen.
 
-- **Navigation has two forms.** `<NavBlock />` is the full-width 2×2 launcher
-  used on hub screens (Home, Quests). `<NavBar />` is the compact four-across
-  bar used everywhere else. `NavSwitch` picks between them by route. Outposts
-  is permanently rust in both.
+- **Navigation is one button.** A 56px square in the thumb corner on every
+  screen. Tap opens the square drawer (a `Frame`, so its dismiss lands back on
+  the same square). Press and hold fans three tiles and you drag to one: up-left
+  Map, up Quests, left Inventory. Nothing is hold-only.
 - **Frames are squares, not drawers.** They scale from the thumb corner and
   never touch the bottom of the screen. Two ratios, 1:1 and 1:1.28, and no
   full screen sheet.
@@ -64,11 +64,14 @@ PRD section 11. Costs nothing recurring, which is a hard product constraint.
 app/            routes. (app) group is the shell, everything else is public
 components/
   primitives/   Action, Button, Card, Tabs, Field, Chip, Stat, Marks, States
-  shell/        Nav, NavSwitch, Frame, RankHeader, Screen, PhoneFrame
+  shell/        NavButton, NavDrawer, Frame, RankHeader, Screen, PhoneFrame
+  map/          MapCanvas (pan, zoom, rotate, hex tiles)
   domain/       per feature composition
 lib/
   data/         the read interface. mock/ and supabase/ implement it
   geo.ts        haversine, uniform point in radius, perpendicular waypoints
+  map/hex.ts    axial hex tiling, the stand-in for H3
+  nav.ts        the destination list, shared by the drawer and the shortcut
   fog/          H3 quantiser and local store, when it lands
 supabase/
   migrations/   written, not applied
@@ -98,6 +101,10 @@ npm run build
 - Distances are metric by default, written in mono, uppercase unit.
   Durations read `45 MIN` and `1H 30`.
 - Never call a walk a journey.
+- Chrome is never selectable. Buttons, labels, nav glyphs, headings and the
+  canvas carry `user-select: none`. Prose opts back in with `.selectable`.
+- Anything that owns a drag carries `.gesture` (`touch-action: none`) so the
+  browser never competes with it.
 
 ## Things that will bite you
 

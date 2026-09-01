@@ -1,5 +1,5 @@
 "use client";
-import { NavBlock } from "@/components/shell/Nav";
+import { HomeLauncher } from "@/components/domain/HomeLauncher";
 import { RankHeader } from "@/components/shell/RankHeader";
 import { Screen } from "@/components/shell/Screen";
 import { Data, Label, Rule } from "@/components/primitives/Text";
@@ -47,7 +47,7 @@ export default function HomeScreen() {
       </div>
 
       <div className="mt-6">
-        <NavBlock />
+        <HomeLauncher />
       </div>
 
       <div className="mt-4">

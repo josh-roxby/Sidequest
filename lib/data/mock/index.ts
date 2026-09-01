@@ -1,5 +1,5 @@
 import type { DataSource, Quest, Tier } from "../types";
-import { CATEGORIES, POINTS, QUESTS, TERRITORY, WALKS } from "./fixtures";
+import { BADGES, CATEGORIES, COLLECTIBLES, POINTS, QUESTS, TALES, TERRITORY, WALKS } from "./fixtures";
 
 /** Artificial latency, so loading and skeleton states are visible during
  *  development rather than theoretical. Raise it to inspect a skeleton, set
@@ -25,4 +25,7 @@ export const mockSource: DataSource = {
   getPointsNearby: () => settle("getPointsNearby", POINTS),
   getWalks: () => settle("getWalks", WALKS),
   getCategories: () => settle("getCategories", CATEGORIES),
+  getCollectibles: () => settle("getCollectibles", COLLECTIBLES),
+  getBadges: () => settle("getBadges", BADGES),
+  getTales: () => settle("getTales", TALES),
 };

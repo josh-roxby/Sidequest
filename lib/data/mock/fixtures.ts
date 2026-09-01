@@ -1,4 +1,6 @@
-import type { CategoryProgress, Point, Quest, Territory, WalkRecord } from "../types";
+import type {
+  Badge, CategoryProgress, Collectible, Point, Quest, Tale, Territory, WalkRecord,
+} from "../types";
 
 /** Real Clare townlands, real category mix, distances that actually fall
  *  inside their tier tolerance. No lorem and no invented placenames: fake
@@ -135,4 +137,44 @@ export const CATEGORIES: CategoryProgress[] = [
   { group: "height",  label: "Elevation", reached: 0,  total: 18 },
   { group: "built",   label: "Built",     reached: 6,  total: 94 },
   { group: "table",   label: "Table",     reached: 2,  total: null },
+];
+
+
+export const COLLECTIBLES: Collectible[] = [
+  { id: "c-1", name: "Ringfort bank", category: "Ringfort", group: "fort",
+    foundAt: "2026-08-28", townland: "Cahercalla Beg", count: 3 },
+  { id: "c-2", name: "Holy well cup", category: "Holy well", group: "sacred",
+    foundAt: "2026-08-26", townland: "Toonagh", count: 1 },
+  { id: "c-3", name: "Mill race stone", category: "Mill", group: "built",
+    foundAt: "2026-08-26", townland: "Toonagh", count: 2 },
+  { id: "c-4", name: "Lough shore reed", category: "Lough shore", group: "water",
+    foundAt: "2026-08-21", townland: "Inchiquin", count: 4 },
+];
+
+export const BADGES: Badge[] = [
+  { id: "b-1", label: "First light", description: "Finish your first walk",
+    group: "green", earnedAt: "2026-08-26", progress: 1, target: 1 },
+  { id: "b-2", label: "Rath finder", description: "Reach five ringforts",
+    group: "fort", earnedAt: null, progress: 3, target: 5 },
+  { id: "b-3", label: "Well read", description: "Read twenty tales",
+    group: "sacred", earnedAt: null, progress: 7, target: 20 },
+  { id: "b-4", label: "Parish bounds", description: "Explore twenty five townlands",
+    group: "height", earnedAt: null, progress: 14, target: 25 },
+  { id: "b-5", label: "Long way round", description: "Walk one hundred kilometres",
+    group: "built", earnedAt: null, progress: 34, target: 100 },
+  { id: "b-6", label: "Turf cutter", description: "Cross three bogs",
+    group: "green", earnedAt: null, progress: 0, target: 3 },
+];
+
+export const TALES: Tale[] = [
+  { id: "t-1", pointId: "p-cahercalla", pointName: "Cahercalla", townland: "Cahercalla Beg",
+    kind: "placename", title: "Cathair Cala", readAt: "2026-08-28" },
+  { id: "t-2", pointId: "p-cahercalla", pointName: "Cahercalla", townland: "Cahercalla Beg",
+    kind: "archaeology", title: "Upstanding banks", readAt: "2026-08-28" },
+  { id: "t-3", pointId: "p-toonagh", pointName: "Toonagh mill", townland: "Toonagh",
+    kind: "architecture", title: "Corn mill, c. 1840", readAt: "2026-08-26" },
+  { id: "t-4", pointId: "p-inchiquin", pointName: "Inchiquin Lough", townland: "Inchiquin",
+    kind: "placename", title: "Loch Inse Ui Chuinn", readAt: "2026-08-21" },
+  { id: "t-5", pointId: "p-dysert", pointName: "Dysert O'Dea", townland: "Dysert",
+    kind: "placename", title: "Diseart Ui Dhea", readAt: null },
 ];

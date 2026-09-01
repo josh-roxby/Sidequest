@@ -111,8 +111,39 @@ html, body {
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  /* Kills the rubber-band overscroll that makes a fixed-chrome app feel like
+     a web page, and stops a pull gesture inside the map from scrolling the
+     document behind it. */
+  overscroll-behavior: none;
 }
 body { min-height: 100dvh; margin: 0; }
+
+/* ---- interaction hygiene ----------------------------------------------
+ * Chrome is not text. A long press on a label, a nav glyph or a button
+ * should do what the app says it does, never raise a selection handle or an
+ * iOS callout. Prose stays selectable: see .selectable below.
+ * -------------------------------------------------------------------- */
+
+button, a, label, nav, header, [role="tab"], [role="dialog"] > header,
+h1, h2, h3, h4, .t-label, .t-display, .t-h1, .t-h2, .t-data,
+.t-data-lg, .t-data-xl, canvas {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Opt back in for anything meant to be read and quoted: tale bodies, place
+   descriptions, anything a person might reasonably want to copy. */
+.selectable, .selectable * {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* Any element that owns a gesture takes it outright, so the browser never
+   competes with a drag by panning or zooming the page. */
+.gesture { touch-action: none; }
 
 /* ---- type roles — docs/design-system.md §A-2 ---------------------- */
 
@@ -156,6 +187,10 @@ body { min-height: 100dvh; margin: 0; }
 @keyframes sq-hold-ring {
   from { opacity: 0; transform: scale(0.7); }
   to   { opacity: 1; transform: scale(1); }
+}
+@keyframes sq-quad-in {
+  from { opacity: 0; transform: translate(0, 0) scale(0.6); }
+  to   { opacity: 1; transform: translate(var(--qx), var(--qy)) scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {

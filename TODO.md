@@ -69,6 +69,14 @@ data with auth off and no database.
 - [x] Migrations 0001 to 0006 written to `supabase/migrations/`, not applied
 - [x] Three-radius scale replacing the two-radius rule (visual direction,
       2026-08-31)
+- [x] Navigation reduced to one button: tap for the square drawer, press and
+      hold and drag for the three-tile shortcut
+- [x] Canvas map with pan, pinch zoom, twist rotate, north reset, DPR-capped
+      quality scaling
+- [x] Hex tiling as the stand-in for H3, with quest tiles drawn as territory
+- [x] Pages: History, Inventory, Tales, Badges, About
+- [x] Interaction hygiene: no text selection on chrome, no tap highlight, no
+      rubber band, gestures exclusive to their element
 - [ ] Illustration slots filled: home plate, quest heroes, thumbnails,
       category marks, badges (`docs/design-system.md` §H)
 - [ ] Quest detail screen: hero plate, objective checklist, rewards row,
@@ -78,7 +86,10 @@ data with auth off and no database.
 - [ ] Active walk screen and walk complete frame
 - [ ] Tale reader as its own route rather than a frame on the map
 - [ ] Collections
-- [ ] Left-handed mirror setting
+- [ ] Left-handed mirror setting for the nav button and its lattice
+- [ ] Tale reader as its own route, so a tale can be linked to
+- [ ] Wire Tales, Badges and Inventory to real progression rather than
+      fixtures once the rules engine exists
 - [ ] Full pass on empty, loading, error and offline states per
       [`docs/ux-loops.md`](./docs/ux-loops.md) §F
 - [ ] Accessibility pass: touch targets, focus, reduced motion, colour

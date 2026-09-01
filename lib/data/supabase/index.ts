@@ -14,6 +14,9 @@ export const supabaseSource: DataSource = {
   getPointsNearby: notWired("getPointsNearby"),
   getWalks: notWired("getWalks"),
   getCategories: notWired("getCategories"),
+  getCollectibles: notWired("getCollectibles"),
+  getBadges: notWired("getBadges"),
+  getTales: notWired("getTales"),
 };
 
 function notWired(name: string) {
