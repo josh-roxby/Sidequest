@@ -123,7 +123,13 @@ data with auth off and no database.
 - [ ] Retire `hooks/use-project-storage.ts` (territory goes to IndexedDB)
 - [ ] Remove `leaflet`, `react-leaflet`, `@types/leaflet`, `styles/map.css`
 - [ ] Commit `SideQuestDesign.md` or remove the four references to it
-- [ ] Reconcile `README.md`'s `main`/`dev` branch story with reality
+- [x] Reconcile the branch story: `main` is the release line, there is no
+      `dev`, CI triggers on `main` and `claude/**`
+- [ ] **Set the repository default branch to `main`** in GitHub settings. It
+      is currently `claude/setup-side-quest-project-BdHAe`, which no tool can
+      change; it needs a click in Settings, General, Default branch
+- [ ] Delete `claude/setup-side-quest-project-BdHAe` once the default has
+      moved. Its content is fully contained in `main`
 - [ ] Purge "run" from code and copy — the entity is `walks`, invisible in UI
 
 ### Strip-back, tier two — blocked on the aesthetic decision (PRD Q5)

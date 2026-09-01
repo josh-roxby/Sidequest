@@ -86,8 +86,11 @@ npm run build
 
 ## Branches
 
-Active development is on `claude/*` feature branches. The `main` / `dev`
-release line described in earlier revisions is not currently in use.
+`main` is the release line and carries everything. Feature work happens on
+`claude/*` branches and merges back into `main`.
+
+There is no `dev` branch. An earlier revision of this README described a
+`main` / `dev` split that was never actually set up.
 
 ## Licensing note
 
