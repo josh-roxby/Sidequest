@@ -26,6 +26,7 @@ export function Frame({
 }: FrameProps) {
   const ref = useRef<HTMLDivElement>(null);
   const restoreTo = useRef<HTMLElement | null>(null);
+  const pressedScrim = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -56,11 +57,26 @@ export function Frame({
 
   return (
     <>
+      {/* Dismiss on a full press-release cycle that BEGAN on the scrim, not on
+          click. A frame opened from a pointerup — which is how the nav button
+          works, because it has to distinguish tap from hold — is still inside
+          that gesture when it mounts. The browser then dispatches the trailing
+          click, the freshly mounted scrim is what sits under the finger, and
+          an onClick handler would swallow it and close the frame in the same
+          frame it opened. Requiring the pointerdown to land on the scrim first
+          makes that impossible: the opening gesture's pointerdown happened on
+          the trigger, before this element existed. */}
       <button
         type="button"
         aria-label="Close"
         tabIndex={-1}
-        onClick={onDismiss}
+        onPointerDown={() => { pressedScrim.current = true; }}
+        onPointerUp={() => {
+          if (!pressedScrim.current) return;
+          pressedScrim.current = false;
+          onDismiss();
+        }}
+        onPointerCancel={() => { pressedScrim.current = false; }}
         className="fixed inset-0 z-50 cursor-default"
         style={{ background: "rgba(22,24,26,0.32)", transition: "opacity var(--dur-frame)" }}
       />

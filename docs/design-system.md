@@ -275,10 +275,10 @@ in every session get double-height tiles; the other six sit beneath as a 3×2.
 │ │    MAP    │ │   QUESTS    │ │
 │ └───────────┘ └─────────────┘ │
 │ ┌──────┐ ┌──────┐ ┌────────┐  │
-│ │ INV  │ │ HIST │ │ TALES  │  │
+│ │ BADG │ │ HIST │ │ TALES  │  │
 │ └──────┘ └──────┘ └────────┘  │
 │ ┌──────┐ ┌──────┐ ┌────────┐  │
-│ │ BADG │ │ OUTP │ │ ABOUT  │  │
+│ │ OUTP │ │ ABOUT│ │ SETTGS │  │
 │ └──────┘ └──────┘ └────────┘  │
 ├───────────────────────────────┤
 │                          [ × ]│
@@ -295,7 +295,7 @@ drag toward the one you want, release.
 |---|---|
 | Up and left | Map |
 | Directly up | Quests |
-| Directly left | Inventory |
+| Directly left | Badges |
 | Released on the button, or under the dead zone | Cancel |
 
 Positions are fixed forever. That is the whole value: after a week the
@@ -315,6 +315,17 @@ each time the aim crosses to a different tile.
 **C-3-3 Nothing is hold-only.** All three shortcuts are in the drawer. The
 gesture is an accelerator, never the only route.
 
+**C-3-4 Opening on pointerup has a trap.** The button has to distinguish tap
+from hold, so it can only decide "this was a tap" on pointerup. The frame
+therefore mounts while the browser is still mid-gesture, and the trailing
+click lands on whatever now sits under the finger, which is the scrim. A
+scrim that dismisses on click would swallow that and close the frame in the
+same frame it opened, which reads to the user as "tap does nothing".
+
+The scrim therefore dismisses on a full press-release cycle that BEGAN on the
+scrim, never on click. The opening gesture's pointerdown happened on the
+button, before the scrim existed, so it can never satisfy that condition.
+
 ### C-4 States
 
 | State | Treatment |
@@ -328,7 +339,7 @@ gesture is an accelerator, never the only route.
 ### C-5 Left-handed use
 
 The button and the fan mirror to the bottom-left from a setting, and the
-lattice mirrors with them: up-right Map, up Quests, right Inventory. A control
+lattice mirrors with them: up-right Map, up Quests, right Badges. A control
 that only works for right-handed users is a defect, so this is v1.
 
 ---

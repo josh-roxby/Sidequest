@@ -44,7 +44,7 @@ Two more worth knowing before you build a screen.
 - **Navigation is one button.** A 56px square in the thumb corner on every
   screen. Tap opens the square drawer (a `Frame`, so its dismiss lands back on
   the same square). Press and hold fans three tiles and you drag to one: up-left
-  Map, up Quests, left Inventory. Nothing is hold-only.
+  Map, up Quests, left Badges. Nothing is hold-only.
 - **Frames are squares, not drawers.** They scale from the thumb corner and
   never touch the bottom of the screen. Two ratios, 1:1 and 1:1.28, and no
   full screen sheet.

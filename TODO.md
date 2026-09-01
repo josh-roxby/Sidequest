@@ -64,7 +64,7 @@ data with auth off and no database.
       press and hold with the ring affordance and the shortcut fan
 - [x] `lib/data` read interface with mock and Supabase implementations,
       mock latency and failure switches
-- [x] Screens: landing, location priming, home, map, quests, inventory,
+- [x] Screens: landing, location priming, home, map, quests, badges,
       outposts, auth
 - [x] Migrations 0001 to 0006 written to `supabase/migrations/`, not applied
 - [x] Three-radius scale replacing the two-radius rule (visual direction,
@@ -74,7 +74,7 @@ data with auth off and no database.
 - [x] Canvas map with pan, pinch zoom, twist rotate, north reset, DPR-capped
       quality scaling
 - [x] Hex tiling as the stand-in for H3, with quest tiles drawn as territory
-- [x] Pages: History, Inventory, Tales, Badges, About
+- [x] Pages: History, Badges (collected and earned), Tales, About, Settings
 - [x] Interaction hygiene: no text selection on chrome, no tap highlight, no
       rubber band, gestures exclusive to their element
 - [ ] Illustration slots filled: home plate, quest heroes, thumbnails,
@@ -88,8 +88,8 @@ data with auth off and no database.
 - [ ] Collections
 - [ ] Left-handed mirror setting for the nav button and its lattice
 - [ ] Tale reader as its own route, so a tale can be linked to
-- [ ] Wire Tales, Badges and Inventory to real progression rather than
-      fixtures once the rules engine exists
+- [ ] Wire Tales and Badges to real progression rather than fixtures once
+      the rules engine exists
 - [ ] Full pass on empty, loading, error and offline states per
       [`docs/ux-loops.md`](./docs/ux-loops.md) §F
 - [ ] Accessibility pass: touch targets, focus, reduced motion, colour

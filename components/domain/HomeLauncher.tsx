@@ -7,7 +7,7 @@ import { DESTS } from "@/lib/nav";
  *  button in the thumb corner on every screen, including this one. Home
  *  simply puts the four places you are most likely to be going within reach
  *  without opening anything. */
-const TILES = ["/map", "/quests", "/inventory", "/outposts"];
+const TILES = ["/map", "/quests", "/badges", "/outposts"];
 
 export function HomeLauncher() {
   const tiles = TILES.map((h) => DESTS.find((d) => d.href === h)!);

@@ -25,7 +25,7 @@ const OFFSET: Record<QuadDir, { x: number; y: number }> = {
  *
  *  Tap opens the drawer. Press and hold fans three tiles onto the lattice
  *  around it, and you drag toward the one you want and release. Positions are
- *  fixed so it becomes muscle memory: up-left Map, up Quests, left Inventory.
+ *  fixed so it becomes muscle memory: up-left Map, up Quests, left Badges.
  *
  *  Drag-to-select rather than tap-the-fanned-tile, because the whole point is
  *  that it completes in one continuous gesture without lifting your thumb.
