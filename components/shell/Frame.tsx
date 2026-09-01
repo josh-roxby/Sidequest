@@ -100,7 +100,7 @@ export function Frame({
             type="button"
             onClick={onDismiss}
             aria-label="Close"
-            className="shrink-0 rounded-none border-0 bg-ink text-[18px] leading-none text-surface active:scale-[0.97]"
+            className="shrink-0 rounded-[--r-sm] border-0 bg-ink text-[18px] leading-none text-surface active:scale-[0.97]"
             style={{ width: "var(--tile)", transitionDuration: "var(--dur-tap)" }}
           >
             ×

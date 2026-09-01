@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Version | 1.0 |
+| Version | 1.1 |
 | Date | 2026-08-31 |
-| Status | Locked for the reface pass |
+| Status | Locked. Revised 2026-08-31 against the visual direction: three radii replace two, and the nav has two forms rather than one. |
 | Supersedes | The cream / sage / lavender token set in `app/globals.css` |
 | Related | [reface-plan.md](./reface-plan.md) · [ux-loops.md](./ux-loops.md) · [PRD.md](./PRD.md) |
 
@@ -15,8 +15,8 @@ stays out of its way.
 
 Three rules carry the identity. Everything else is detail.
 
-1. **Two radii exist.** Zero on everything, and a full pill on the primary
-   action button alone.
+1. **Three radii exist.** 6px on controls, 10px on surfaces, full round on
+   identity and map objects. Nothing else.
 2. **Every number is mono.** Prose is Archivo, data is JetBrains Mono.
 3. **Eight pixels, everywhere.** One gutter value from every screen edge,
    for every floating surface.
@@ -107,22 +107,30 @@ Irish forms are set in `body` italic, and the English gloss follows in
 ### A-3 Shape
 
 ```css
---r-0:      0px;      /* everything */
---r-action: 999px;    /* full-width primary action button only */
+--r-sm:   6px;     /* buttons, nav tiles, inputs, chips, checkboxes */
+--r-md:   10px;    /* cards, frames, panels, callouts */
+--r-full: 999px;   /* avatars, tabs, status chips, map markers */
 ```
 
-There are no other radii. Not 2px, not 4px, not 12px. Nav tiles, cards,
-frames, inputs, chips, badges, map controls, avatars and modals are all
-square.
+There are no other radii. Not 2px, not 4px, not 16px.
 
-**A-3-1 Why the pill is semantic.** In an interface with no other curves, a
-fully rounded pill is impossible to miss. That makes shape carry meaning:
-round means *this is the action on this screen*. One per screen, always full
-width, always at the foot of a frame or a page.
+**A-3-1 What each step means.** The two small steps separate *controls* from
+*surfaces*, so a button never reads as a card and a card never reads as a
+button. Full round is reserved for two things and they are related: identity
+(avatars, rank chips, the active tab) and map objects (markers, the position
+dot). Everything a person is, and everything a place is, is round. Everything
+the interface is, is not.
 
-**A-3-2 Enforcement.** The only radius values permitted in the codebase are
-`rounded-none` and `rounded-full`, and `rounded-full` may only appear inside
-`components/primitives/Action.tsx`. This is a one line grep in review.
+**A-3-2 Enforcement.** Radius is set from a token, never from a Tailwind
+radius utility. A `rounded-lg` or `rounded-xl` in a diff is a defect, because
+it is a fourth value nobody agreed to.
+
+**A-3-3 Note on the previous rule.** Version 1.0 allowed only 0 and 999px,
+with the pill as the sole round element so that shape carried the meaning
+"this is the action". That was replaced by the visual direction of
+2026-08-31. The action pill is still full round and still one per screen, so
+it keeps most of its signalling power, but it now shares roundness with
+avatars and map markers rather than owning it outright.
 
 ### A-4 Spacing
 
@@ -237,37 +245,44 @@ down there, it goes somewhere else instead.
 
 ---
 
-## C. The thumb block
+## C. Navigation
 
-### C-1 Geometry
+Two forms of the same four destinations, chosen by what the screen needs.
 
-A 2 by 2 grid of 56px tiles with a 2px gap, giving a 114px square anchored
-`--gutter` from the bottom-right. It does not span the screen width, so it
-does not read as a tab bar, and it leaves the entire left side of the map
-unobstructed.
+### C-1 Block, the hub form
+
+A full-width 2 by 2 launcher of 108px tiles with an 8px gap. Used on screens
+that are hubs or lists, where vertical space is not scarce: Home and Quests.
 
 ```
-                    ┌────┬────┐
-                    │ ▣  │ ◈  │   Map      Quests
-                    ├────┼────┤
-                    │ ◇  │ ▤  │   Journal  You
-                    └────┴────┘
-                              └── 8px from both edges
+        ┌────────────┬────────────┐
+        │    MAP     │   QUESTS   │
+        ├────────────┼────────────┤
+        │ INVENTORY  │  OUTPOSTS  │
+        └────────────┴────────────┘
 ```
 
-The 2px gap is `--ink`, not transparent, so the block reads as one ruled
-object rather than four floating buttons.
+The first tile carries `--field` because it is the primary target from a hub.
+The last carries `--rust` permanently: one destination is accented, and it is
+the outward-facing one, where you go to find somewhere new.
 
-### C-2 Destinations
+### C-2 Bar, the compact form
+
+The same four destinations, four across, 68px tall, fixed to the bottom with
+`--gutter` on the left, right and bottom so it never touches the screen edge.
+Used on the map and on detail screens, where vertical space is the
+constraint. The active destination fills `--field`; Outposts stays `--rust`.
+
+### C-3 Destinations
 
 | Tile | Destination | Hold shortcuts |
 |---|---|---|
-| Map | The map, the home screen | Recentre, Layers, Drop a pin |
-| Quests | Tier picker and quests near you | Change tier, Rerolls, Saved |
-| Journal | History and tales read | Tales read, Search, Collections |
-| You | Territory, progression, settings | Territory, Badges, Settings |
+| Map | The map and your territory | Recentre, Layers, Drop a pin |
+| Quests | Tier picker and quests near you | Change tier, Saved |
+| Inventory | Everything found: walks, tales, badges, territory | Tales read, Badges, Territory |
+| Outposts | The places you start from, and your base camp | Saved places, Set base camp |
 
-### C-3 Interaction
+### C-4 Interaction
 
 | Gesture | Result |
 |---|---|
@@ -277,15 +292,15 @@ object rather than four floating buttons.
 | Release off the fan, or tap elsewhere | Cancels, fan closes, no navigation. |
 | Tap the active tile | Scrolls that section to top, or recentres the map. |
 
-**C-3-1 The hold ring is the affordance.** The ring drawing over 400ms is
+**C-4-1 The hold ring is the affordance.** The ring drawing over 400ms is
 what teaches the gesture: a user who half-presses sees something start to
 happen and tries again properly. No tooltip needed after the first run.
 
-**C-3-2 First run.** On the first visit to the map, the hint text sits to the
+**C-4-2 First run.** On the first visit to the map, the hint text sits to the
 left of the block in mono at 10px: `TAP TO SWITCH / HOLD FOR MORE`. It fades
 out permanently after the first successful hold, or after three sessions.
 
-### C-4 States
+### C-5 States
 
 | State | Treatment |
 |---|---|
@@ -299,12 +314,12 @@ out permanently after the first successful hold, or after three sessions.
 Badges are squares, never dots, and never carry a count. A count invites
 inbox behaviour, which is the opposite of the product.
 
-### C-5 Left-handed use
+### C-6 Left-handed use
 
-The block mirrors to the bottom-left from a setting. When mirrored, frames
-keep their dismiss control at the mirrored anchor and the fan opens above the
-block as normal. This is a v1 setting, not a v1.5 one: a nav that only works
-for right-handed users is a defect.
+The bar form spans the width, so handedness does not affect it. The frame
+dismiss control still sits bottom-right and mirrors to bottom-left from a
+setting, along with the frame footer order. This is a v1 setting, not a v1.5
+one: a control that only works for right-handed users is a defect.
 
 ---
 
@@ -396,3 +411,86 @@ things about places, so the voice is a knowledgeable local, not a guide.
   from hollow to filled as well as changing colour.
 - The map has a text alternative: every screen with a map has the same
   information available as a list.
+
+
+---
+
+## H. Illustration
+
+The interface is flat and typographic. The illustration layer is the opposite
+and that contrast is the point: hand-drawn naturalist engraving, ink line on
+paper, no fills and no colour. It reads as the plates in a field guide, which
+is exactly the reference the rest of the system is built on.
+
+### H-1 Where illustration appears
+
+| Slot | Ratio | Subject |
+|---|---|---|
+| Home plate | 4:3 | The surveyor figure in landscape. The one character moment in the app. |
+| Quest hero | 16:9 | The place or the task, drawn as a study |
+| Quest thumbnail | 1:1, 72px | The object of the quest: a stone, a plant, a ruin |
+| Category mark | 1:1, 48px | One specimen per category, used on progression |
+| Badge | 1:1, 64px | The unlock, drawn as a specimen tag |
+
+### H-2 Rules
+
+- **Ink on paper only.** No fill colour, no wash, no gradient. `--ink` line on
+  `--surface`. The illustration never introduces a colour the token set does
+  not have.
+- **Line weight matches the interface.** Hairlines at the same optical weight
+  as `--rule`, so a plate sits beside a divider without fighting it.
+- **Drawn, not rendered.** Cross-hatching and stipple for tone, never soft
+  shading. The reference is a nineteenth century survey plate, not a
+  contemporary illustration style.
+- **Every slot holds its own space before the asset exists.** A bordered box
+  at the exact ratio with a mono placeholder label, so the layout never shifts
+  when artwork lands.
+- **The figure is used sparingly.** Home, onboarding, and the position marker
+  on the map. It is a signature, not a mascot, and it should not appear on
+  every screen.
+
+### H-3 Production
+
+Assets are commissioned or generated, then reviewed and published through the
+admin media console (PRD section 8.14), which is why that console exists.
+Nothing is drawn into a component as inline SVG path data: illustration lives
+in `/public/plates/` and is referenced by key, so the whole layer can be
+replaced without touching a component.
+
+---
+
+## I. Patterns
+
+Composites that recur, specified once so they are built once.
+
+### I-1 Rank header
+
+Avatar (round, initials until an image exists), name, rank in mono, and two
+count chips: one `--field`, one `--rust`. Sits at the top of Home only.
+
+### I-2 Quest card
+
+Square thumbnail on the left, title in uppercase, one line of description,
+progress as mono `5 / 8`. A rust corner ribbon marks the active or starred
+quest. The whole card is the tap target.
+
+### I-3 Locked callout
+
+Dashed `--rust` border on `--rust-soft`, with a `+` mark, a mono title and an
+optional hint line. Used for content that is timed or not yet reached.
+Distinct from an error: nothing is wrong, there is simply something to wait
+for or somewhere to go.
+
+### I-4 Objective checklist
+
+Square checkboxes at 16px, `--r-sm`, filling `--field` when complete, with a
+hairline divider between rows and an optional mono value on the right for
+counted objectives.
+
+### I-5 Locked territory
+
+On the map, unreached ground that is gated rather than merely unexplored gets
+a dashed `--rust` outline over diagonal hatching, with a round lock marker at
+its centre. Ordinary unexplored ground is flat `--map-fog` with no outline.
+The distinction matters: one is somewhere you have not been, the other is
+somewhere you cannot go yet.

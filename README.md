@@ -20,10 +20,14 @@ requirements, data model, and architecture decisions.
 
 ## Status
 
-Early. The auth, schema, CI, and design-system foundations are built; the
-product domain is being rebuilt against the PRD. The current screens are
-visual scaffolds and several still render placeholder data — see
-[`docs/repo-review.md`](./docs/repo-review.md) §3.6.
+Front end reface, running on mock data. There is no database: migrations are
+written to `supabase/migrations/` and deliberately unapplied, auth is off, and
+every screen reads through `lib/data`, which defaults to a mock source. See
+[`docs/reface-plan.md`](./docs/reface-plan.md) and `CLAUDE.md`.
+
+```bash
+npm install && npm run dev     # nothing else to configure
+```
 
 ## Docs
 
@@ -32,6 +36,9 @@ visual scaffolds and several still render placeholder data — see
 | [`docs/PRD.md`](./docs/PRD.md) | Product requirements, features, data model, architecture, release plan |
 | [`docs/data-pipeline.md`](./docs/data-pipeline.md) | How the Ireland dataset gets built — sources, licences, refinement passes, chain exclusion |
 | [`docs/repo-review.md`](./docs/repo-review.md) | Full code review, security audit, strip-back plan, order of work |
+| [`docs/design-system.md`](./docs/design-system.md) | Tokens, the square frame, navigation, illustration, patterns |
+| [`docs/ux-loops.md`](./docs/ux-loops.md) | Every screen as a loop: states, gestures, motion, edges |
+| [`docs/reface-plan.md`](./docs/reface-plan.md) | The current front end phase and its constraints |
 | [`docs/fog-of-war.md`](./docs/fog-of-war.md) | H3 territory storage architecture |
 | [`TODO.md`](./TODO.md) | Live punch list by release phase |
 

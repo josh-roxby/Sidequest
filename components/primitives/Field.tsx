@@ -16,7 +16,7 @@ export function Field({ label, hint, error, className, id, ...rest }: FieldProps
         aria-invalid={error ? true : undefined}
         aria-describedby={error || hint ? `${inputId}-d` : undefined}
         className={cn(
-          "h-11 w-full rounded-none border bg-surface px-3 text-[15px] text-ink",
+          "h-11 w-full rounded-[--r-sm] border bg-surface px-3 text-[15px] text-ink",
           "placeholder:text-mute",
           error ? "border-rust" : "border-ink",
           className,

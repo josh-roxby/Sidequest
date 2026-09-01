@@ -19,7 +19,7 @@ export function Button({ tone = "outline", className, ...rest }: ButtonProps) {
     <button
       type="button"
       className={cn(
-        "rounded-none border px-3.5 text-[12px] font-semibold uppercase tracking-[0.05em]",
+        "rounded-[--r-sm] border px-3.5 text-[12px] font-semibold uppercase tracking-[0.05em]",
         "inline-flex items-center justify-center gap-1.5",
         "transition-transform active:scale-[0.97] disabled:opacity-45",
         TONE[tone],

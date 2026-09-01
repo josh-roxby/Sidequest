@@ -4,7 +4,7 @@ import { isAuthDisabled, required } from "@/lib/env";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
-const APP_PATHS = ["/map", "/quests", "/journal", "/you"];
+const APP_PATHS = ["/home", "/map", "/quests", "/inventory", "/outposts"];
 const AUTH_PATHS = ["/login", "/signup"];
 
 function startsWithAny(pathname: string, prefixes: string[]) {
@@ -81,7 +81,7 @@ export async function updateSession(request: NextRequest) {
     //    or /login or /signup.
     if (onboarded && (isWelcome || isAuthPath)) {
       const redirect = url.clone();
-      redirect.pathname = "/map";
+      redirect.pathname = "/home";
       redirect.search = "";
       return NextResponse.redirect(redirect);
     }

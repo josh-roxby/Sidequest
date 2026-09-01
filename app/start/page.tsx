@@ -33,7 +33,7 @@ export default function StartScreen() {
       (pos) => {
         const acc = pos.coords.accuracy;
         setAccuracy(acc);
-        if (acc <= 100) router.push("/map");
+        if (acc <= 100) router.push("/home");
         else setPhase("waiting");
       },
       (err) => setPhase(err.code === err.PERMISSION_DENIED ? "denied" : "unsupported"),
@@ -88,7 +88,7 @@ export default function StartScreen() {
               {phase === "requesting" ? "Waiting for your phone" : "Use my location"}
             </Action>
           ) : null}
-          <Action tone="outline" onClick={() => router.push("/map")}>
+          <Action tone="outline" onClick={() => router.push("/home")}>
             Pick a place on the map
           </Action>
         </div>

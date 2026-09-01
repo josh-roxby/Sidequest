@@ -30,8 +30,10 @@ judgement call.
 The full system is in `docs/design-system.md`. These three are the ones that
 get broken by accident.
 
-1. **Two radii exist.** `rounded-none` on everything.  `rounded-full` only
-   inside `components/primitives/Action.tsx`. Any other radius is a bug.
+1. **Three radii exist**, all set from tokens, never from a Tailwind radius
+   utility: `--r-sm` 6px on controls, `--r-md` 10px on surfaces, `--r-full`
+   on identity and map objects (avatars, tabs, markers). A `rounded-lg` in a
+   diff is a defect.
 2. **Every number is mono.** Distances, durations, counts, coordinates, XP,
    dates, percentages. JetBrains Mono with tabular figures. Prose is Archivo.
 3. **Eight pixels.** Every floating surface sits `--gutter` from the screen
@@ -39,9 +41,10 @@ get broken by accident.
 
 Two more worth knowing before you build a screen.
 
-- **The thumb anchor never moves.** A 56px region at `right: 8px; bottom: 8px`
-  always holds something useful, and only the anchor component may render
-  there. See `docs/design-system.md` section B-4.
+- **Navigation has two forms.** `<NavBlock />` is the full-width 2×2 launcher
+  used on hub screens (Home, Quests). `<NavBar />` is the compact four-across
+  bar used everywhere else. `NavSwitch` picks between them by route. Outposts
+  is permanently rust in both.
 - **Frames are squares, not drawers.** They scale from the thumb corner and
   never touch the bottom of the screen. Two ratios, 1:1 and 1:1.28, and no
   full screen sheet.
@@ -60,8 +63,8 @@ PRD section 11. Costs nothing recurring, which is a hard product constraint.
 ```
 app/            routes. (app) group is the shell, everything else is public
 components/
-  primitives/   Action, Button, Tile, Field, Chip, Stat, Rule, Mark
-  shell/        ThumbBlock, Frame, Anchor, ScreenContainer
+  primitives/   Action, Button, Card, Tabs, Field, Chip, Stat, Marks, States
+  shell/        Nav, NavSwitch, Frame, RankHeader, Screen, PhoneFrame
   domain/       per feature composition
 lib/
   data/         the read interface. mock/ and supabase/ implement it
@@ -73,6 +76,10 @@ docs/           PRD, design system, UX loops, reface plan, data pipeline
 ```
 
 ## Commands
+
+Illustration lives in `/public/plates/` and is referenced by key, never
+inlined as SVG path data, so the whole layer can be swapped without touching
+a component. Every slot holds its own space before the asset exists.
 
 ```bash
 npm run dev

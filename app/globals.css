@@ -34,9 +34,13 @@
   --map-green:  #DEE4D7;
   --map-trail:  #2E4034;
 
-  /* shape — there are exactly two. See design-system §A-3. */
-  --r-0:        0px;
-  --r-action:   999px;
+  /* shape — three steps. See design-system §A-3.
+     Revised from the two-radius rule after the visual direction of
+     2026-08-31: cards and controls carry a small radius, and full round is
+     reserved for identity and map objects. */
+  --r-sm:       6px;    /* buttons, tiles, inputs, chips, checkboxes */
+  --r-md:       10px;   /* cards, frames, panels, nav tiles */
+  --r-full:     999px;  /* avatars, tabs, status chips, map markers */
 
   /* spacing — --gutter is a constant, not a scale step */
   --gutter:     8px;
@@ -50,9 +54,10 @@
   --s-12:       48px;
 
   /* sizes */
-  --tile:       56px;
-  --tile-gap:   2px;
-  --block:      114px;
+  --tile:       56px;   /* compact nav tile, also the minimum touch target */
+  --tile-gap:   8px;
+  --tile-lg:    108px;  /* launcher tile on hub screens */
+  --bar-h:      68px;   /* four-across nav bar on map and detail screens */
   --action-h:   48px;
   --btn-h:      40px;
 
@@ -90,8 +95,9 @@
   --font-sans: var(--f-sans);
   --font-mono: var(--f-mono);
 
-  --radius-none: var(--r-0);
-  --radius-action: var(--r-action);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-full: var(--r-full);
 
   --spacing-gutter: var(--gutter);
   --spacing-tile: var(--tile);

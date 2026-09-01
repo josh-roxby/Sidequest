@@ -48,6 +48,65 @@ Docs: [PRD](./docs/PRD.md) · [Data pipeline](./docs/data-pipeline.md) ·
 
 ---
 
+## Front end reface (current)
+
+Full plan in [`docs/reface-plan.md`](./docs/reface-plan.md). Runs on mock
+data with auth off and no database.
+
+- [x] Strip the previous visual layer: fake status bar, unused storage hook,
+      Leaflet, word-bank generator, old illustration and marks sets
+- [x] Field survey tokens, Archivo + JetBrains Mono, every number mono
+- [x] Primitives: Action, Button, Card, Tabs, Check, Field, Chip, Stat,
+      Marks, Skeleton, EmptyState, StatusStrip, LockedCallout
+- [x] `Frame`: square and tall ratios, 8px gutter, scale from the thumb
+      corner, focus trap, Escape, dismiss at the anchor
+- [x] Navigation, both forms: `NavBlock` 2×2 launcher, `NavBar` four-across,
+      press and hold with the ring affordance and the shortcut fan
+- [x] `lib/data` read interface with mock and Supabase implementations,
+      mock latency and failure switches
+- [x] Screens: landing, location priming, home, map, quests, inventory,
+      outposts, auth
+- [x] Migrations 0001 to 0006 written to `supabase/migrations/`, not applied
+- [x] Three-radius scale replacing the two-radius rule (visual direction,
+      2026-08-31)
+- [ ] Illustration slots filled: home plate, quest heroes, thumbnails,
+      category marks, badges (`docs/design-system.md` §H)
+- [ ] Quest detail screen: hero plate, objective checklist, rewards row,
+      Set active
+- [ ] Map: locked territory treatment (rust dashed over hatching with a lock),
+      zoom control, layers button, base camp card
+- [ ] Active walk screen and walk complete frame
+- [ ] Tale reader as its own route rather than a frame on the map
+- [ ] Collections
+- [ ] Left-handed mirror setting
+- [ ] Full pass on empty, loading, error and offline states per
+      [`docs/ux-loops.md`](./docs/ux-loops.md) §F
+- [ ] Accessibility pass: touch targets, focus, reduced motion, colour
+      independence
+- [ ] Vitest and Playwright, wired into CI
+
+### Gated on approval, do not start
+- [ ] Apply `supabase/migrations/` to a project
+- [ ] Switch `NEXT_PUBLIC_DATA_MODE` to live in a preview environment
+- [ ] Set `NEXT_PUBLIC_AUTH_ENABLED=1` and verify the redirect matrix
+- [ ] Delete `supabase/schema.sql` once the migrations are applied
+
+### Product questions raised by the visual direction
+- [ ] Confirm the IA: **Inventory** and **Outposts** replace Journal and You.
+      Inventory currently merges walk history, tales, badges and territory.
+      Outposts currently means saved start locations plus an active base
+      camp, backed by `saved_locations`. Neither is in the PRD yet.
+- [ ] Define leaves and stars. Two currencies now appear in the rank header
+      and in quest rewards. The PRD has XP and unlocks only.
+- [ ] Define rank. Currently distinct from level and from tier progress.
+- [ ] Confirm quest objectives are counted (`5 / 8` in the direction) rather
+      than reached once. Counted objectives change verification: proximity
+      alone cannot count eight soil samples.
+- [ ] Decide whether Home is a fifth destination or the shell that holds the
+      launcher. It is currently the latter and is not in the nav.
+
+---
+
 ## Phase v0.5 — Foundations
 
 *No new user-facing features. Make the repo honest and the data model right.*
@@ -322,7 +381,7 @@ PRD §17. Summary:
 | Q2 | Fog at H3 res 11 or res 12? | v1 |
 | Q3 | Tile count at res 11 (big, noisy) or res 9 (meaningful)? | v1 |
 | Q4 | Townland unlock threshold — 15% coverage? | v1 |
-| Q5 | **Aesthetic direction** — blocks strip-back tier two | v1 |
+| ~~Q5~~ | ~~Aesthetic direction~~ — settled: field survey | closed |
 | Q6 | Public collections: browse surface, or link-sharing only? | v1.5 |
 | Q7 | ODbL share-alike posture on the derived dataset | pre-launch |
 | Q8 | Re-walk a quest for progression? *(proposed: yes, count points once)* | v1 |

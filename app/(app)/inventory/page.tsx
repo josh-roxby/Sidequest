@@ -7,7 +7,7 @@ import { StatRow } from "@/components/primitives/Stat";
 import { data, TIERS } from "@/lib/data";
 import { useAsync } from "@/hooks/use-async";
 
-export default function JournalScreen() {
+export default function InventoryScreen() {
   const walks = useAsync(() => data.getWalks(), []);
   const list = walks.data ?? [];
   const km = list.reduce((n, w) => n + w.distanceM, 0) / 1000;
@@ -15,7 +15,7 @@ export default function JournalScreen() {
 
   return (
     <Screen>
-      <ScreenHead label="Journal" title="Everywhere you have been" />
+      <ScreenHead label="Inventory" title="Everything you have found" />
 
       {walks.loading ? (
         <div className="flex flex-col gap-2">
