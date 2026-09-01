@@ -1,14 +1,12 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { NavBar } from "./Nav";
+import { ThumbBlock } from "./Nav";
 
-/** Hub screens render <NavBlock /> inline in their own layout, where a
- *  full-width 2×2 launcher belongs. Everywhere else gets the compact bar
- *  fixed to the bottom, because vertical space is the constraint there. */
-const HUBS = ["/home", "/quests"];
-
+/** Home renders <NavBlock /> inline as a full-width launcher, so it gets no
+ *  floating nav. Every other screen gets the compact 2×2 in the thumb corner.
+ *  docs/design-system.md §C. */
 export function NavSwitch() {
   const pathname = usePathname();
-  if (HUBS.includes(pathname)) return null;
-  return <NavBar />;
+  if (pathname === "/home") return null;
+  return <ThumbBlock />;
 }

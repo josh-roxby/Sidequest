@@ -1,59 +1,67 @@
 "use client";
 import { useState } from "react";
-import { Action } from "@/components/primitives/Action";
 import { Button } from "@/components/primitives/Button";
-import { Data, Label, Rule } from "@/components/primitives/Text";
-import { StatRow } from "@/components/primitives/Stat";
+import { LockedCallout } from "@/components/primitives/Card";
+import { Tabs } from "@/components/primitives/Tabs";
+import { Label } from "@/components/primitives/Text";
 import { EmptyState, Skeleton } from "@/components/primitives/States";
-import { Frame } from "@/components/shell/Frame";
 import { Screen, ScreenHead } from "@/components/shell/Screen";
-import { data, TIERS, type Quest, type Tier } from "@/lib/data";
+import { QuestCard } from "@/components/domain/QuestCard";
+import { data, TIERS, type Tier } from "@/lib/data";
 import { useAsync } from "@/hooks/use-async";
 import { cn } from "@/lib/cn";
 
 export default function QuestsScreen() {
   const [tier, setTier] = useState<Tier>("stroll");
-  const [preview, setPreview] = useState<Quest | null>(null);
-  const [i, setI] = useState(0);
+  const [tab, setTab] = useState("available");
   const quests = useAsync(() => data.getQuests(tier), [tier]);
   const list = quests.data ?? [];
   const spec = TIERS.find((t) => t.id === tier)!;
 
   return (
     <Screen>
-      <ScreenHead label="How long have you got" title="Ennistymon"
-        sub="Pick a length. The rest is already planned." />
+      <ScreenHead label="Quests" title="Ennistymon" />
 
-      <div className="flex flex-col gap-2">
+      <Tabs
+        value={tab}
+        onChange={setTab}
+        items={[
+          { id: "active", label: "Active", count: 1 },
+          { id: "available", label: "Available", count: list.length },
+          { id: "completed", label: "Completed" },
+        ]}
+      />
+
+      <Label className="mt-5">How long have you got</Label>
+      <div className="mt-2 grid grid-cols-4 gap-1.5">
         {TIERS.map((t) => (
           <button
             key={t.id}
             type="button"
             aria-pressed={tier === t.id}
-            onClick={() => { setTier(t.id); setI(0); }}
+            onClick={() => setTier(t.id)}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-none border px-3 py-2.5 text-left",
-              tier === t.id ? "border-ink bg-field-soft" : "border-rule bg-surface",
+              "flex flex-col items-center gap-1 border px-1 py-2.5",
+              tier === t.id
+                ? "border-field bg-field text-field-ink"
+                : "border-rule bg-surface text-stone",
             )}
-            style={{ transition: "background-color var(--dur-state) var(--ease)" }}
+            style={{ borderRadius: "var(--r-sm)", transition: "background-color var(--dur-state)" }}
           >
-            <span className="h-2.5 w-2.5 shrink-0 bg-field" />
-            <span className="t-small flex-1 font-semibold text-ink">{t.label}</span>
-            <Data className="text-stone">{t.duration}</Data>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.05em]">
+              {t.label}
+            </span>
+            <span className="t-data text-[10px]">{t.duration}</span>
           </button>
         ))}
       </div>
 
-      <Rule className="my-5" />
-      <Label>Within reach</Label>
-
-      <div className="mt-2.5">
+      <div className="mt-5 flex flex-col gap-2">
         {quests.loading ? (
-          <div className="flex flex-col gap-2">
-            <Skeleton h={64} /><Skeleton h={64} />
-          </div>
+          <><Skeleton h={104} /><Skeleton h={104} /></>
         ) : quests.error ? (
-          <div className="flex flex-col items-start gap-3 border border-rule bg-surface p-3">
+          <div className="flex flex-col items-start gap-3 border border-rule bg-surface p-3.5"
+            style={{ borderRadius: "var(--r-md)" }}>
             <p className="t-small text-ink">
               Could not reach the quest list. Check your connection and try again.
             </p>
@@ -65,88 +73,16 @@ export default function QuestsScreen() {
             action={<Button onClick={() => setTier("stroll")}>Try a stroll</Button>}
           />
         ) : (
-          <div className="flex flex-col gap-2">
-            {list.map((q) => (
-              <button
-                key={q.id}
-                type="button"
-                onClick={() => setPreview(q)}
-                className="w-full border border-rule bg-surface p-3 text-left active:bg-field-soft"
-              >
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="t-small font-semibold text-ink">{q.title}</span>
-                  <Data className="shrink-0 text-stone">
-                    {(q.distanceM / 1000).toFixed(2)} KM
-                  </Data>
-                </div>
-                <p className="t-small mt-1 text-stone">{q.flavour}</p>
-                {q.startsAwayM > 0 ? (
-                  <Data className="mt-1.5 block text-[11px] uppercase text-mute">
-                    Starts {q.startsAwayM} m away
-                  </Data>
-                ) : null}
-              </button>
-            ))}
-          </div>
+          list.map((q, i) => <QuestCard key={q.id} quest={q} flag={i === 0} done={0} />)
         )}
       </div>
 
-      <Frame
-        open={preview !== null}
-        onDismiss={() => setPreview(null)}
-        ratio="tall"
-        label={`${spec.label} · ${spec.duration}`}
-        title={preview?.title ?? ""}
-        action={<Action onClick={() => setPreview(null)}>Begin</Action>}
-      >
-        {preview ? (
-          <div className="flex flex-col gap-4">
-            <StatRow
-              items={[
-                { value: (preview.distanceM / 1000).toFixed(2), key: "km" },
-                { value: `${preview.durationMin}`, key: "min" },
-                { value: `${preview.objectives.length}`, key: "points" },
-              ]}
-            />
-            <p className="t-body text-ink">{preview.flavour}</p>
-
-            <div className="flex flex-col gap-1.5">
-              <Label>Objectives</Label>
-              {preview.objectives.map((o) => (
-                <div key={o.id} className="flex items-center gap-2">
-                  <span
-                    className="h-2.5 w-2.5 shrink-0"
-                    style={o.required
-                      ? { boxShadow: "inset 0 0 0 2px var(--ink)" }
-                      : { background: "var(--field)" }}
-                  />
-                  <span className="t-small text-ink">{o.label}</span>
-                  {!o.required ? (
-                    <Data className="text-[10px] uppercase text-mute">optional</Data>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-
-            {/* Never suppressed to make a quest look better. Suppressing this
-                is the one thing that would break trust irrecoverably.
-                docs/ux-loops.md §D-2. */}
-            <div className="border border-rule bg-surface-2 p-3">
-              <Label>Before you go</Label>
-              <ul className="mt-1.5 flex flex-col gap-1">
-                {preview.honesty.map((h) => (
-                  <li key={h} className="t-small text-ink">{h}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="flex gap-2">
-              <Button onClick={() => setI(i + 1)}>Reroll</Button>
-              <Button tone="quiet">Save</Button>
-            </div>
-          </div>
-        ) : null}
-      </Frame>
+      <div className="mt-3">
+        <LockedCallout
+          title="New quest in 2h 14m"
+          hint="Or reach an outpost to unlock one now"
+        />
+      </div>
     </Screen>
   );
 }

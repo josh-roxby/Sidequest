@@ -50,6 +50,22 @@ export function MapSurface({ points = [], quest, fog = DEFAULT_FOG, onPoint }: M
         />
       ))}
 
+      <div
+        aria-hidden
+        className="absolute flex items-center justify-center border-2 border-dashed border-rust"
+        style={{
+          left: "62%", top: "6%", width: "34%", height: "26%",
+          borderRadius: "var(--r-md)",
+          backgroundImage:
+            "repeating-linear-gradient(45deg, var(--rust-soft) 0 6px, transparent 6px 12px)",
+        }}
+      >
+        <span className="flex h-7 w-7 items-center justify-center bg-rust text-[12px] text-field-ink"
+          style={{ borderRadius: "var(--r-full)" }}>
+          ▪
+        </span>
+      </div>
+
       {path.length > 1 ? (
         <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100"
           preserveAspectRatio="none" aria-hidden>
@@ -90,7 +106,10 @@ export function MapSurface({ points = [], quest, fog = DEFAULT_FOG, onPoint }: M
           style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%`, width: 32, height: 32,
             transform: "translate(-50%,-50%)" }}
         >
-          <span className="block h-2.5 w-2.5 border-2 border-ink bg-surface" />
+          <span className="flex h-6 w-6 items-center justify-center border border-field bg-surface text-field"
+            style={{ borderRadius: "var(--r-full)" }}>
+            <span className="block h-2 w-2 bg-field" style={{ borderRadius: "var(--r-full)" }} />
+          </span>
         </button>
       ))}
     </div>

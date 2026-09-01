@@ -10,6 +10,7 @@ import type { DataSource } from "../types";
 export const supabaseSource: DataSource = {
   getTerritory: notWired("getTerritory"),
   getQuests: notWired("getQuests"),
+  getQuest: notWired("getQuest"),
   getPointsNearby: notWired("getPointsNearby"),
   getWalks: notWired("getWalks"),
   getCategories: notWired("getCategories"),

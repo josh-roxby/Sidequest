@@ -110,6 +110,7 @@ export interface WalkRecord {
 export interface DataSource {
   getTerritory(): Promise<Territory>;
   getQuests(tier: Tier): Promise<Quest[]>;
+  getQuest(id: string): Promise<Quest | null>;
   getPointsNearby(): Promise<Point[]>;
   getWalks(): Promise<WalkRecord[]>;
   getCategories(): Promise<CategoryProgress[]>;

@@ -61,7 +61,7 @@ export function Frame({
         aria-label="Close"
         tabIndex={-1}
         onClick={onDismiss}
-        className="fixed inset-0 z-40 cursor-default"
+        className="fixed inset-0 z-50 cursor-default"
         style={{ background: "rgba(22,24,26,0.32)", transition: "opacity var(--dur-frame)" }}
       />
       <div
@@ -69,13 +69,14 @@ export function Frame({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="fixed z-50 flex flex-col overflow-hidden border border-ink bg-surface"
+        className="fixed z-[60] flex flex-col overflow-hidden border border-ink bg-surface"
         style={{
           left: "var(--gutter)",
           right: "var(--gutter)",
           bottom: "calc(var(--gutter) + env(safe-area-inset-bottom))",
           aspectRatio: ratio === "tall" ? "1 / 1.28" : "1 / 1",
           maxHeight: "calc(100dvh - var(--s-12))",
+          borderRadius: "var(--r-md)",
           transformOrigin: "bottom right",
           animation: "sq-frame-in var(--dur-frame) var(--ease-out)",
         }}

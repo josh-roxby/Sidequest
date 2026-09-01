@@ -20,6 +20,8 @@ export const mockSource: DataSource = {
   getTerritory: () => settle("getTerritory", TERRITORY),
   getQuests: (tier: Tier) =>
     settle<Quest[]>("getQuests", QUESTS.filter((q) => q.tier === tier)),
+  getQuest: (id: string) =>
+    settle<Quest | null>("getQuest", QUESTS.find((q) => q.id === id) ?? null),
   getPointsNearby: () => settle("getPointsNearby", POINTS),
   getWalks: () => settle("getWalks", WALKS),
   getCategories: () => settle("getCategories", CATEGORIES),

@@ -40,10 +40,11 @@ export default function InventoryScreen() {
             ]}
           />
           <Label className="mt-5">History</Label>
-          <div className="mt-2 flex flex-col gap-px bg-rule">
+          <div className="mt-2 flex flex-col gap-2">
             {list.map((w) => (
               <button key={w.id} type="button"
-                className="bg-surface p-3 text-left active:bg-field-soft">
+                className="border border-rule bg-surface p-3.5 text-left active:bg-field-soft"
+                style={{ borderRadius: "var(--r-md)" }}>
                 <div className="flex items-baseline justify-between gap-3">
                   <Data className="text-[11px] uppercase text-mute">
                     {w.dateISO}

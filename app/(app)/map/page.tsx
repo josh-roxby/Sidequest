@@ -4,6 +4,8 @@ import { MapSurface } from "@/components/map/MapSurface";
 import { Frame } from "@/components/shell/Frame";
 import { Action } from "@/components/primitives/Action";
 import { Button } from "@/components/primitives/Button";
+import { Card } from "@/components/primitives/Card";
+import { Mark } from "@/components/primitives/Marks";
 import { Data, Label } from "@/components/primitives/Text";
 import { Skeleton, StatusStrip } from "@/components/primitives/States";
 import { data, type Point } from "@/lib/data";
@@ -37,6 +39,43 @@ export default function MapScreen() {
             </Data>
           </>
         )}
+      </div>
+
+      {/* Stacked zoom and a layers button, clear of the thumb block. */}
+      <div className="absolute flex flex-col gap-1.5"
+        style={{ right: "var(--gutter)", top: "calc(env(safe-area-inset-top) + var(--gutter))" }}>
+        <div className="flex flex-col overflow-hidden border border-rule bg-surface"
+          style={{ borderRadius: "var(--r-sm)" }}>
+          <button type="button" aria-label="Zoom in"
+            className="h-9 w-9 text-[15px] text-ink active:bg-field-soft">+</button>
+          <span aria-hidden className="h-px w-full bg-rule" />
+          <button type="button" aria-label="Zoom out"
+            className="h-9 w-9 text-[15px] text-ink active:bg-field-soft">−</button>
+        </div>
+        <button type="button" aria-label="Layers"
+          className="flex h-9 w-9 items-center justify-center border border-rule bg-surface text-stone active:bg-field-soft"
+          style={{ borderRadius: "var(--r-full)" }}>
+          <Mark name="you" size={15} />
+        </button>
+      </div>
+
+      {/* Base camp card. Sits left of the thumb block, clear of its 120px
+          square plus the gutter. */}
+      <div className="absolute"
+        style={{ left: "var(--gutter)",
+                 right: "calc(var(--gutter) + var(--block) + var(--s-2))",
+                 bottom: "calc(var(--gutter) + env(safe-area-inset-bottom))" }}>
+        <Card>
+          <Label style={{ fontSize: 9 }}>Base camp</Label>
+          <p className="t-h2 mt-1 text-ink">Ennistymon</p>
+          <Data className="mt-1 block text-[11px] uppercase text-stone">You are here</Data>
+          <div className="mt-2.5">
+            <Button tone="solid" className="w-full"
+              style={{ background: "var(--field)", borderColor: "var(--field)" }}>
+              View outpost
+            </Button>
+          </div>
+        </Card>
       </div>
 
       {points.error ? (

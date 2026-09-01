@@ -54,10 +54,10 @@
   --s-12:       48px;
 
   /* sizes */
-  --tile:       56px;   /* compact nav tile, also the minimum touch target */
+  --tile:       56px;   /* thumb block tile, also the minimum touch target */
   --tile-gap:   8px;
-  --tile-lg:    108px;  /* launcher tile on hub screens */
-  --bar-h:      68px;   /* four-across nav bar on map and detail screens */
+  --block:      120px;  /* 56 + 8 + 56 */
+  --tile-lg:    108px;  /* launcher tile, Home only */
   --action-h:   48px;
   --btn-h:      40px;
 

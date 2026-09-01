@@ -72,19 +72,20 @@ function tileClass(active: boolean, accent: boolean) {
   return "bg-surface text-stone";
 }
 
-function Fan({ i, onClose }: { i: number; onClose: () => void }) {
+function Fan({ i, onClose, wide = false }: { i: number; onClose: () => void; wide?: boolean }) {
   return (
     <>
       <button type="button" aria-label="Close shortcuts" onClick={onClose}
-        className="fixed inset-0 z-40 cursor-default" />
+        className="fixed inset-0 z-30 cursor-default" />
       <nav
-        className="absolute bottom-full left-0 right-0 z-50 mb-2 flex flex-col gap-px overflow-hidden border border-ink bg-ink"
-        style={{ borderRadius: "var(--r-md)", transformOrigin: "bottom center",
+        className="absolute bottom-full right-0 z-40 mb-2 flex flex-col gap-px overflow-hidden border border-ink bg-ink"
+        style={{ borderRadius: "var(--r-md)", transformOrigin: "bottom right",
+                 width: wide ? "auto" : "var(--block)", left: wide ? 0 : undefined,
                  animation: "sq-frame-in var(--dur-frame) var(--ease-out)" }}
       >
         {DESTS[i].shortcuts.map((s) => (
           <Link key={s.label} href={s.href} onClick={onClose}
-            className="bg-surface px-3.5 py-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink active:bg-field-soft">
+            className="bg-surface px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink active:bg-field-soft">
             {s.label}
           </Link>
         ))}
@@ -111,7 +112,7 @@ export function NavBlock() {
 
   return (
     <div className="relative">
-      {fan !== null ? <Fan i={fan} onClose={() => setFan(null)} /> : null}
+      {fan !== null ? <Fan i={fan} onClose={() => setFan(null)} wide /> : null}
       <nav aria-label="Sections" className="grid grid-cols-2" style={{ gap: "var(--tile-gap)" }}>
         {DESTS.map((d, i) => {
           const active = pathname === d.href;
@@ -154,23 +155,48 @@ export function NavBlock() {
   );
 }
 
-/** Compact form: four across, fixed to the bottom, 8px gutter on all three
- *  sides so it never touches the screen edge. Used on the map and on detail
- *  screens, where vertical space is the constraint. */
-export function NavBar() {
+/** Compact form: a 2×2 square anchored 8px off the bottom-right, on every
+ *  screen except Home. It does not span the width, so it never reads as a tab
+ *  bar, and it leaves the whole left of the map clear.
+ *
+ *  This is what restores the thumb-anchor contract: the block's bottom-right
+ *  tile occupies exactly right:8 bottom:8, which is the same 56px square a
+ *  Frame's dismiss control lands on. Opening a frame swaps what is under your
+ *  thumb without moving your thumb. docs/design-system.md §B-4. */
+export function ThumbBlock() {
   const pathname = usePathname();
   const router = useRouter();
   const [fan, setFan] = useState<number | null>(null);
   const { holding, held, down, clear, HOLD_MS: ms } = useHold(setFan);
+  const taught = useSyncExternalStore(subscribeTaught, getTaught, getTaughtServer);
 
   return (
     <div
       className="fixed z-40"
-      style={{ left: "var(--gutter)", right: "var(--gutter)",
-               bottom: "calc(var(--gutter) + env(safe-area-inset-bottom))" }}
+      style={{
+        right: "var(--gutter)",
+        bottom: "calc(var(--gutter) + env(safe-area-inset-bottom))",
+      }}
     >
       {fan !== null ? <Fan i={fan} onClose={() => setFan(null)} /> : null}
-      <nav aria-label="Sections" className="grid grid-cols-4 gap-1.5">
+
+      {!taught ? (
+        <p
+          className="t-data pointer-events-none absolute bottom-0 right-full mr-3 whitespace-nowrap text-right text-[10px] uppercase leading-[1.5] text-mute"
+        >
+          Tap to switch<br />Hold for more
+        </p>
+      ) : null}
+
+      <nav
+        aria-label="Sections"
+        className="grid"
+        style={{
+          gridTemplateColumns: "var(--tile) var(--tile)",
+          gridTemplateRows: "var(--tile) var(--tile)",
+          gap: "var(--tile-gap)",
+        }}
+      >
         {DESTS.map((d, i) => {
           const active = pathname === d.href;
           return (
@@ -187,15 +213,14 @@ export function NavBar() {
                 setFan(null); router.push(d.href);
               }}
               className={cn(
-                "relative flex flex-col items-center justify-center gap-1 border border-rule",
+                "relative flex flex-col items-center justify-center gap-[3px] border border-rule",
                 "transition-colors active:scale-[0.97]",
                 tileClass(active, Boolean(d.accent)),
               )}
-              style={{ height: "var(--bar-h)", borderRadius: "var(--r-md)",
-                       transitionDuration: "var(--dur-state)" }}
+              style={{ borderRadius: "var(--r-md)", transitionDuration: "var(--dur-state)" }}
             >
-              <Mark name={d.mark} size={18} />
-              <span className="text-[9px] font-semibold uppercase tracking-[0.07em]">
+              <Mark name={d.mark} size={16} />
+              <span className="text-[8px] font-semibold uppercase tracking-[0.06em]">
                 {d.label}
               </span>
               {holding === i ? <HoldRing ms={ms} /> : null}
