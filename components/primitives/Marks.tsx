@@ -4,7 +4,7 @@
 
 export type MarkName =
   | "map" | "quest" | "journal" | "you" | "grid" | "pack" | "tale" | "badge"
-  | "flag" | "info" | "compass"
+  | "flag" | "info" | "compass" | "home" | "plus" | "target" | "layers"
   | "trot" | "stroll" | "sidequest" | "adventure"
   | "fort" | "sacred" | "ancient" | "water" | "green" | "height" | "built" | "table";
 
@@ -20,6 +20,10 @@ const PATHS: Record<MarkName, React.ReactNode> = {
   badge:   <><path d="M8 2l4.5 2.5v5L8 14l-4.5-4.5v-5z" /><path d="M8 6l1 2h2l-1.5 1.5.5 2L8 10.5 6 11.5l.5-2L5 8h2z" /></>,
   flag:    <><path d="M4 14V2.5" /><path d="M4 3h8l-2 2.5L12 8H4z" /></>,
   info:    <><rect x="2.5" y="2.5" width="11" height="11" /><path d="M8 7v4" /><rect x="7.25" y="4.5" width="1.5" height="1.5" fill="currentColor" stroke="none" /></>,
+  home:    <><path d="M2.5 7.5 8 2.5l5.5 5" /><path d="M4 7v6.5h8V7" /></>,
+  plus:    <><path d="M8 3v10M3 8h10" /></>,
+  target:  <><circle cx="8" cy="8" r="5" /><path d="M8 1v2M8 13v2M1 8h2M13 8h2" /></>,
+  layers:  <><path d="M8 2 2 5.5 8 9l6-3.5z" /><path d="M2 10.5 8 14l6-3.5" /></>,
   compass: <><rect x="2.5" y="2.5" width="11" height="11" /><path d="M8 4.5l1.8 3.5L8 11.5 6.2 8z" /></>,
   // The four lengths, drawn as the shape of the walk itself: a there and back,
   // a small loop, a loop with something on it, a loop over a hill.

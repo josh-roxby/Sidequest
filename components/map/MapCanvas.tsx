@@ -22,6 +22,11 @@ export interface MapCanvasProps {
   /** Hexes holding an available quest, drawn with a rust outline. */
   questTiles?: [number, number][];
   onMarker?: (id: string) => void;
+  /** Preview mode: no gestures, no compass, no hit testing. Used where the map
+   *  is illustration rather than a thing to drive. */
+  interactive?: boolean;
+  /** Initial zoom. Previews sit closer in than the full screen map. */
+  initialScale?: number;
 }
 
 interface Camera { x: number; y: number; scale: number; bearing: number }
@@ -43,10 +48,13 @@ const REVEAL_RADIUS = 900;    // world metres of cleared ground around origin
  *  The canvas owns its gestures outright via touch-action: none, so the
  *  browser never competes by scrolling the page or zooming the document
  *  underneath a drag. */
-export function MapCanvas({ markers = [], trail = [], questTiles = [], onMarker }: MapCanvasProps) {
+export function MapCanvas({
+  markers = [], trail = [], questTiles = [], onMarker,
+  interactive = true, initialScale = 1,
+}: MapCanvasProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const cam = useRef<Camera>({ x: 0, y: 0, scale: 1, bearing: 0 });
+  const cam = useRef<Camera>({ x: 0, y: 0, scale: initialScale, bearing: 0 });
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef<{ dist: number; angle: number; cx: number; cy: number } | null>(null);
   const frame = useRef<number | null>(null);
@@ -342,16 +350,17 @@ export function MapCanvas({ markers = [], trail = [], questTiles = [], onMarker 
     <div ref={wrapRef} className="absolute inset-0 overflow-hidden bg-map-paper">
       <canvas
         ref={canvasRef}
-        className="gesture block h-full w-full"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endPointer}
-        onPointerCancel={endPointer}
-        onPointerLeave={endPointer}
-        onWheel={onWheel}
-        onClick={onClick}
+        className={interactive ? "gesture block h-full w-full" : "pointer-events-none block h-full w-full"}
+        onPointerDown={interactive ? onPointerDown : undefined}
+        onPointerMove={interactive ? onPointerMove : undefined}
+        onPointerUp={interactive ? endPointer : undefined}
+        onPointerCancel={interactive ? endPointer : undefined}
+        onPointerLeave={interactive ? endPointer : undefined}
+        onWheel={interactive ? onWheel : undefined}
+        onClick={interactive ? onClick : undefined}
         onContextMenu={(e) => e.preventDefault()}
       />
+      {interactive ? (
       <button
         type="button"
         onClick={resetNorth}
@@ -369,6 +378,7 @@ export function MapCanvas({ markers = [], trail = [], questTiles = [], onMarker 
           <path d="M9 15.5 L6.4 9 L9 10.4 L11.6 9 Z" fill="var(--stone)" />
         </svg>
       </button>
+      ) : null}
     </div>
   );
 }

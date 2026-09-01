@@ -4,7 +4,7 @@ import { MapCanvas, type MapMarker } from "@/components/map/MapCanvas";
 import { Frame } from "@/components/shell/Frame";
 import { Action } from "@/components/primitives/Action";
 import { Button } from "@/components/primitives/Button";
-import { Card } from "@/components/primitives/Card";
+import { MapDock } from "@/components/map/MapDock";
 import { Plate } from "@/components/primitives/Plate";
 import { Data, Label } from "@/components/primitives/Text";
 import { Skeleton, StatusStrip } from "@/components/primitives/States";
@@ -23,6 +23,9 @@ export default function MapScreen() {
   const quests = useAsync(() => data.getQuests("stroll"), []);
   const [open, setOpen] = useState<Point | null>(null);
   const [tale, setTale] = useState(false);
+  const [layers, setLayers] = useState<Record<string, boolean>>({
+    fog: true, trail: true, points: true, quests: true,
+  });
 
   const markers = useMemo<MapMarker[]>(() => {
     const pts = (points.data ?? []).map((p) => ({
@@ -50,9 +53,9 @@ export default function MapScreen() {
   return (
     <div className="relative h-dvh w-full overflow-hidden">
       <MapCanvas
-        markers={markers}
-        trail={trail}
-        questTiles={questTiles}
+        markers={layers.points ? markers : markers.filter((m) => m.kind === "you")}
+        trail={layers.trail ? trail : []}
+        questTiles={layers.quests ? questTiles : []}
         onMarker={(id) => {
           const p = (points.data ?? []).find((x) => x.id === id);
           if (p) setOpen(p);
@@ -84,19 +87,24 @@ export default function MapScreen() {
         </div>
       ) : null}
 
-      {/* Base camp card, kept clear of the nav button's 56px square. */}
-      <div
-        className="absolute"
-        style={{ left: "var(--gutter)",
-                 right: "calc(var(--gutter) + var(--tile) + var(--s-2))",
-                 bottom: "calc(var(--gutter) + env(safe-area-inset-bottom))" }}
-      >
-        <Card>
-          <Label style={{ fontSize: 9 }}>Base camp</Label>
-          <p className="t-h2 mt-1 text-ink">Ennistymon</p>
-          <Data className="mt-1 block text-[11px] uppercase text-stone">You are here</Data>
-        </Card>
-      </div>
+      <MapDock
+        region={territory.data?.county ?? "In view"}
+        tilesInView={{ revealed: territory.data?.tiles ?? 0, total: 4200 }}
+        points={(points.data ?? []).map((p) => ({
+          id: p.id, name: p.name, category: p.category, unlocked: p.lore.length > 0,
+        }))}
+        badges={[
+          { label: "Rath finder", progress: 3, target: 5 },
+          { label: "Well read", progress: 7, target: 20 },
+          { label: "Parish bounds", progress: 14, target: 25 },
+        ]}
+        layers={layers}
+        onLayer={(k, on) => setLayers((l) => ({ ...l, [k]: on }))}
+        onPoint={(id) => {
+          const p = (points.data ?? []).find((x) => x.id === id);
+          if (p) setOpen(p);
+        }}
+      />
 
       <Frame
         open={open !== null && !tale}

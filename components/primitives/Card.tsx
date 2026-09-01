@@ -10,7 +10,10 @@ export function Card({ flag, inset = true, className, children, ...rest }: CardP
   return (
     <div
       className={cn(
-        "relative overflow-hidden border border-rule bg-surface",
+        // .card opts the whole tile out of text selection: a card is a tile you
+        // press, not a paragraph you quote. Prose inside one opts back in with
+        // .selectable.
+        "card relative overflow-hidden border border-rule bg-surface",
         inset && "p-3.5",
         className,
       )}

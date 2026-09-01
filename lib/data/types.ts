@@ -57,6 +57,12 @@ export interface Objective {
   pointId: string | null;
   label: string;
   required: boolean;
+  /** True once the walker has been inside the point's tile. Until then the
+   *  card shows a name and one line and nothing else: the detail is the
+   *  reward for going. */
+  reached: boolean;
+  /** Metres along the route from the start, for ordering and pacing. */
+  atM: number;
   x: number;
   y: number;
 }

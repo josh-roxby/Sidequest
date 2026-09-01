@@ -90,6 +90,37 @@ data with auth off and no database.
       and coarse tiles clearing only on a majority
 - [x] Terrain and ascent aware duration estimates
 - [x] Marquee of updates in the drawer footer
+- [x] Home shelf on a fixed height, with the countryside band taking the
+      leftover space
+- [x] Home button in the drawer header
+- [x] Outposts: add by map link or current location, for planning a trip from
+      somewhere you are not yet
+- [x] Full width media cards on About
+- [x] Start shows the real map and tiles, and planning takes over the screen
+      with the route drawing itself
+- [x] Walk screen: map takeover, points along the way, detail unlocked by
+      arrival
+- [x] Map dock: tiles in view, badges, points, layers
+- [ ] Unlock a point for real from a live position rather than a fixture flag
+- [ ] Tile counts in the dock computed from the camera rather than passed in
+
+### Artwork to generate
+
+All ink line on paper, transparent PNG, no sky.
+
+- [ ] `public/plates/hills-far.png` and `hills-near.png` — **1620 × 540, 3:1,
+      seamless left to right**. The scrolling band at the foot of Home. Far
+      layer simpler and lighter than the near one
+- [ ] `public/plates/about-hero.png` — 16:9, 1920 × 1080. Someone at a gate
+      deciding which way to go
+- [ ] `public/plates/about-local.png` — 16:9. A small cafe front
+- [ ] `public/plates/about-tales.png` — 16:9. A high cross in a field
+- [ ] `public/plates/about-collect.png` — 16:9. A ringfort bank from ground level
+- [ ] `public/plates/about-map.png` — 16:9. Fog lifting off a patchwork of fields
+- [ ] Community quest plates — **square, 1080 × 1080** without exception
+- [ ] Quest hero plates — 16:9. Quest thumbnails — square
+- [ ] Replace the placeholder leaf app mark
+
 - [ ] Replace the placeholder Ireland outline with the real coastline when
       the basemap lands
 - [ ] Replace the placeholder leaf mark with real artwork

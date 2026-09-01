@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 1.5 |
+| Version | 1.6 |
 | Date | 2026-08-31 |
 | Status | Locked. 1.2 replaces both nav forms with a single button, adds the canvas map and the hex tiling, and sets the interaction hygiene rules. |
 | Supersedes | The cream / sage / lavender token set in `app/globals.css` |
@@ -270,6 +270,11 @@ in every session get double-height tiles; the other six sit beneath as a 3×2.
 square gives them rather than carrying fixed heights, so the grid holds its
 proportions on a small phone instead of overflowing. A drawer that scrolls has
 stopped being a map of the app and become a list.
+
+**C-2-4 Home lives in the header.** Home is the shell the eight tiles sit on
+rather than a peer of them, so it is not one of the tiles. It takes the
+header's spare corner as a small square, at a size that cannot compete with
+the grid below.
 
 **C-2-3 The footer carries a marquee.** The strip left of the dismiss control
 would otherwise sit empty, so it runs updates. The track holds its items twice
@@ -622,11 +627,17 @@ hour.
 Used for tales, which are three to five cards read one at a time, and for the
 home shelf.
 
-**I-5-1 Mixed ratios, one row.** Home cards come in portrait 9:16 for quests,
-square for updates and landscape 16:9 for banners. Sizing runs off
-`aspect-ratio` with `height: 100%` and `width: auto`, so the browser derives
-each width from whatever height the row was given. That is what lets three
-ratios sit flush at any screen height with no measuring in JavaScript.
+**I-5-1 Mixed ratios, one fixed-height row.** Home cards come in portrait
+9:16 for quests, square for updates and landscape 16:9 for banners. The row
+has a **fixed** height per breakpoint, 248px and 300px, and each card is
+`height: 100%` with `width: auto` off its `aspect-ratio`, so the browser
+derives every width.
+
+The height is fixed rather than flexible on purpose. Sized off a flexible
+row, a portrait card swells on a tall phone and shrinks on a short one, which
+makes the same card feel like a different component between devices. A known
+height means a card is the same size everywhere and the leftover space goes
+somewhere it can be used.
 
 **I-5-2 Snap start, not centre.** Cards align to the page's left gutter, so
 the row reads as a shelf rather than as a slideshow.
@@ -695,6 +706,32 @@ Rules that stop the app feeling like a web page.
 
 ---
 
+## K1. The countryside band
+
+The strip along the foot of Home. Two layers travelling at different speeds,
+which is what makes it read as distance rather than as a picture sliding.
+
+Each layer holds its artwork twice and translates by exactly -50%, the same
+trick as the marquee, so the loop has no seam. That is also why the artwork
+itself has to tile: its right edge butts against its left edge every cycle.
+
+**Artwork specification**
+
+| File | Size | Notes |
+|---|---|---|
+| `public/plates/hills-far.png` | 1620 × 540 | Seamless left to right, transparent, simpler and lighter |
+| `public/plates/hills-near.png` | 1620 × 540 | Seamless left to right, transparent, more detail |
+
+Ratio 3:1. Rendered around 180px tall, so 540 stays crisp at 3× DPR. No sky:
+the paper shows through, so the band survives a palette change. Until the
+files exist the component draws its own ridge lines, so the layout is never
+waiting on art.
+
+The band takes whatever height Home has left and collapses to nothing on a
+short screen rather than pushing the grid off the bottom.
+
+---
+
 ## K. Installing
 
 The app is a PWA and is meant to live on a home screen.
@@ -723,6 +760,49 @@ wants a fetch handler before it will offer to install, and that is most of what
 it is for today. The offline story that matters, holding an active walk's
 route and tales through a loss of signal, belongs with the walk flow.
 
+
+---
+
+## M. The walk
+
+The map takes the screen and the quest sits over it.
+
+**M-1 Points unlock by arrival.** A point along the route shows a name, a
+distance in, and one line until the walker has been inside its tile. The
+detail is the reward for going, not something to read on the sofa instead of
+going. The locked card is dashed; the reached card is solid `--field`.
+
+**M-2 End walk sits beside the nav button, not on it.** The rest of the app
+stays reachable mid-walk, because checking your badges should not mean ending
+your walk. Ending always confirms in a frame, and that frame says the tiles
+already uncovered are kept, because people assume otherwise and will not end
+early rather than risk it.
+
+**M-3 Planning is shown, not hidden.** Generating a quest takes over the
+screen for the duration of the work: the route draws itself stage by stage,
+anchor then route then check, which is the honest shape of what is happening.
+The fetch and the animation run together and the result is held until the
+animation finishes, so the takeover is a floor rather than a fake delay. When
+real routing lands it simply stays up until the work is done.
+
+---
+
+## N. Map controls
+
+Square buttons bottom left, clear of the nav button, each opening a panel
+above it. One panel at a time.
+
+| Button | Answers |
+|---|---|
+| Tiles | How much of what you are looking at you have walked, as revealed over total in view |
+| Badges | Which badges the ground in front of you could move |
+| Points | Everything in view, found and locked, tapping through to the point |
+| Layers | What is drawn: fog, trail, points, quest tiles |
+
+Every one answers a question about the ground currently on screen, which is
+why they are panels over the map rather than links away from it. The tile
+count moves as you pan, so it reads as a survey of what is in front of you
+rather than a lifetime total.
 
 ---
 

@@ -82,8 +82,8 @@ export const QUESTS: Quest[] = [
     distanceM: 2840, durationMin: 47, startsAwayM: 0, townland: "Cloonanaha",
     honesty: ["Two stiles", "Unpaved for 400m after the second gate"],
     objectives: [
-      { id: "o-1", pointId: "p-cahercalla", label: "Cahercalla ringfort", required: true, x: 0.68, y: 0.34 },
-      { id: "o-2", pointId: null, label: "Cross the stream", required: false, x: 0.44, y: 0.55 },
+      { id: "o-1", pointId: "p-cahercalla", label: "Cahercalla ringfort", required: true, reached: true, atM: 1450, x: 0.68, y: 0.34 },
+      { id: "o-2", pointId: null, label: "Cross the stream", required: false, reached: false, atM: 2200, x: 0.44, y: 0.55 },
     ],
     path: [[0.16, 0.72], [0.3, 0.6], [0.44, 0.55], [0.6, 0.42], [0.68, 0.34], [0.62, 0.5], [0.4, 0.66], [0.16, 0.72]],
   },
@@ -94,7 +94,7 @@ export const QUESTS: Quest[] = [
     distanceM: 3160, durationMin: 52, startsAwayM: 220, townland: "Dysert",
     honesty: ["Road without a pavement for 300m", "Likely mud after rain"],
     objectives: [
-      { id: "o-3", pointId: "p-dysert", label: "Dysert O'Dea", required: true, x: 0.31, y: 0.62 },
+      { id: "o-3", pointId: "p-dysert", label: "Dysert O'Dea", required: true, reached: false, atM: 1600, x: 0.31, y: 0.62 },
     ],
     path: [[0.2, 0.8], [0.24, 0.72], [0.31, 0.62], [0.42, 0.6], [0.38, 0.74], [0.2, 0.8]],
   },
@@ -105,7 +105,7 @@ export const QUESTS: Quest[] = [
     distanceM: 1080, durationMin: 16, startsAwayM: 0, townland: "Toonagh",
     honesty: ["Made paths throughout"],
     objectives: [
-      { id: "o-4", pointId: "p-toonagh", label: "Toonagh mill", required: true, x: 0.79, y: 0.68 },
+      { id: "o-4", pointId: "p-toonagh", label: "Toonagh mill", required: true, reached: false, atM: 540, x: 0.79, y: 0.68 },
     ],
     path: [[0.64, 0.78], [0.72, 0.72], [0.79, 0.68], [0.7, 0.82], [0.64, 0.78]],
   },
@@ -116,9 +116,9 @@ export const QUESTS: Quest[] = [
     distanceM: 6140, durationMin: 94, startsAwayM: 410, townland: "Inchiquin",
     honesty: ["Steep for 600m on the return", "Finishes after sunset if you start now"],
     objectives: [
-      { id: "o-5", pointId: "p-inchiquin", label: "Inchiquin Lough", required: true, x: 0.52, y: 0.78 },
-      { id: "o-6", pointId: "p-cahercalla", label: "Cahercalla ringfort", required: true, x: 0.68, y: 0.34 },
-      { id: "o-7", pointId: null, label: "The high point", required: false, x: 0.86, y: 0.5 },
+      { id: "o-5", pointId: "p-inchiquin", label: "Inchiquin Lough", required: true, reached: true, atM: 1200, x: 0.52, y: 0.78 },
+      { id: "o-6", pointId: "p-cahercalla", label: "Cahercalla ringfort", required: true, reached: false, atM: 3800, x: 0.68, y: 0.34 },
+      { id: "o-7", pointId: null, label: "The high point", required: false, reached: false, atM: 4900, x: 0.86, y: 0.5 },
     ],
     path: [[0.3, 0.88], [0.44, 0.82], [0.52, 0.78], [0.68, 0.62], [0.78, 0.44], [0.68, 0.34], [0.5, 0.5], [0.3, 0.88]],
   },

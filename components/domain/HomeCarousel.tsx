@@ -59,7 +59,7 @@ export function HomeCarousel({ cards, loading }: { cards: HomeCard[]; loading: b
           <Link
             key={c.id}
             href={c.href}
-            className="relative flex h-full shrink-0 snap-start flex-col overflow-hidden border border-rule bg-surface active:scale-[0.99]"
+            className="relative flex h-full shrink-0 select-none snap-start flex-col overflow-hidden border border-rule bg-surface active:scale-[0.99]"
             style={{
               aspectRatio: RATIO[c.ratio],
               width: "auto",

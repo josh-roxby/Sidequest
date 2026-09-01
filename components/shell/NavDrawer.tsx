@@ -34,6 +34,27 @@ export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () =>
       title="Side Quest"
       scroll={false}
       footerLeft={<Marquee items={updates.data ?? []} className="w-full" />}
+      headerRight={
+        // Home is not one of the eight tiles, because it is the shell the
+        // tiles sit on rather than a peer of them. It still needs a way back,
+        // so it takes the header's spare corner at a size that cannot compete
+        // with the grid below.
+        <Link
+          href="/home"
+          onClick={onDismiss}
+          aria-label="Home"
+          aria-current={pathname === "/home" ? "page" : undefined}
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center border active:scale-[0.96]",
+            pathname === "/home"
+              ? "border-field bg-field text-field-ink"
+              : "border-rule bg-surface text-stone",
+          )}
+          style={{ borderRadius: "var(--r-sm)", transitionDuration: "var(--dur-tap)" }}
+        >
+          <Mark name="home" size={16} />
+        </Link>
+      }
     >
       <div className="flex h-full flex-col gap-2">
         <div className="grid min-h-0 flex-[1.15] grid-cols-2 gap-2">

@@ -35,8 +35,8 @@ export function Action({
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        "w-full rounded-full border-0 px-5 text-[14px] font-semibold tracking-[0.01em]",
-        "flex items-center justify-center gap-2",
+        "relative w-full rounded-full border-0 px-5 text-[14px] font-semibold tracking-[0.01em]",
+        "flex items-center justify-center",
         "transition-transform active:scale-[0.985] disabled:opacity-45",
         TONE[tone],
         className,
@@ -44,8 +44,15 @@ export function Action({
       style={{ height: "var(--action-h)", transitionDuration: "var(--dur-tap)" }}
       {...rest}
     >
-      {loading ? <LoadingMark inverse={tone !== "outline"} /> : null}
-      {children}
+      {/* Absolutely placed rather than inline: prepending a mark to a flex row
+          shifts the label sideways, which reads as the text jumping the moment
+          you press. The label stays put and the mark appears beside it. */}
+      {loading ? (
+        <span className="absolute left-5 flex items-center">
+          <LoadingMark inverse={tone !== "outline"} />
+        </span>
+      ) : null}
+      <span className={cn(loading && "opacity-70")}>{children}</span>
     </button>
   );
 }

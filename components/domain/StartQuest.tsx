@@ -3,7 +3,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Action } from "@/components/primitives/Action";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
-import { Plate } from "@/components/primitives/Plate";
+import { MapCanvas } from "@/components/map/MapCanvas";
+import { QuestGenerating } from "./QuestGenerating";
 import { ShapeChip } from "@/components/primitives/ShapeChip";
 import { Data, Label } from "@/components/primitives/Text";
 import { data, TIERS, type Quest, type QuestShape, type Tier } from "@/lib/data";
@@ -24,26 +25,36 @@ export function StartQuest() {
   const [tier, setTier] = useState<Tier>("stroll");
   const [shape, setShape] = useState<ShapePref>("either");
   const [working, setWorking] = useState(false);
+  const [pending, setPending] = useState<Quest | null>(null);
   const [result, setResult] = useState<Quest | null>(null);
 
   const spec = TIERS.find((t) => t.id === tier)!;
 
+  /** The fetch and the animation run together, and the result is held back
+   *  until the animation finishes. Planning a real route will take longer than
+   *  a mock read, so the takeover is the floor rather than a fake delay: when
+   *  routing is live it simply stays up until the work is actually done. */
   async function generate() {
     setWorking(true);
     setResult(null);
     const all = await data.getQuests(tier);
     const match = all.filter((q) => shape === "either" || q.shape === shape);
-    setResult((match.length ? match : all)[0] ?? null);
-    setWorking(false);
+    setPending((match.length ? match : all)[0] ?? null);
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* Full-bleed plate. The controls sit over its foot rather than beneath
-          it, so the image is the screen rather than a header on one. */}
-      <div className="relative min-h-0 flex-1 overflow-hidden"
+      {working ? (
+        <QuestGenerating onDone={() => { setResult(pending); setPending(null); setWorking(false); }} />
+      ) : null}
+
+      {/* The map itself, not a picture of one: you are choosing a walk from
+          where you are standing, so seeing your own ground and the tiles you
+          have already cleared is the honest header for that decision. */}
+      <div className="relative min-h-0 flex-1 overflow-hidden border border-rule"
         style={{ borderRadius: "var(--r-md)" }}>
-        <Plate ratio="1/1" label="Ennistymon" className="h-full w-full rounded-none border-0" />
+        <MapCanvas interactive={false} initialScale={1.6}
+          markers={[{ id: "you", x: 0, y: 0, kind: "you" }]} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
           style={{ background: "linear-gradient(to top, var(--paper) 12%, transparent)" }} />
         <div className="absolute inset-x-0 bottom-0 p-4">

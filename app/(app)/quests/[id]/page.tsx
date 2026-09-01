@@ -101,7 +101,7 @@ export default function QuestDetail({ params }: { params: Promise<{ id: string }
           </Card>
 
           <div className="mt-5 flex items-center gap-2">
-            <Action>Set active</Action>
+            <Action onClick={() => router.push(`/quests/${q.id}/walk`)}>Set active</Action>
             <Button tone="solid" aria-label="Add to a collection"
               className="shrink-0" style={{ background: "var(--rust)", borderColor: "var(--rust)" }}>
               +

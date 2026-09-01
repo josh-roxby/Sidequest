@@ -12,6 +12,8 @@ interface FrameProps {
    *  docs/design-system.md §B-1. */
   ratio?: "square" | "tall";
   action?: React.ReactNode;
+  /** Rendered in the header, flexed to the right of the title. */
+  headerRight?: React.ReactNode;
   /** Rendered in the footer to the left of the dismiss control, where a frame
    *  has a strip of space that would otherwise sit empty. */
   footerLeft?: React.ReactNode;
@@ -28,7 +30,8 @@ interface FrameProps {
  *  single decision that most separates this from a drawer, and it ties every
  *  frame visually to the block it was opened from. */
 export function Frame({
-  open, onDismiss, label, title, ratio = "square", action, footerLeft, scroll = true, children,
+  open, onDismiss, label, title, ratio = "square", action, footerLeft, headerRight,
+  scroll = true, children,
 }: FrameProps) {
   const ref = useRef<HTMLDivElement>(null);
   const restoreTo = useRef<HTMLElement | null>(null);
@@ -103,9 +106,12 @@ export function Frame({
           animation: "sq-frame-in var(--dur-frame) var(--ease-out)",
         }}
       >
-        <header className="border-b border-rule px-4 pb-2.5 pt-3.5">
-          <p className="t-label text-stone">{label}</p>
-          <h2 className="t-h2 mt-1 text-ink">{title}</h2>
+        <header className="flex items-start justify-between gap-3 border-b border-rule px-4 pb-2.5 pt-3.5">
+          <div className="min-w-0">
+            <p className="t-label text-stone">{label}</p>
+            <h2 className="t-h2 mt-1 text-ink">{title}</h2>
+          </div>
+          {headerRight}
         </header>
 
         <div className={cn("min-h-0 flex-1 px-4 py-3.5", scroll ? "overflow-y-auto" : "overflow-hidden")}>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
 import { RankHeader } from "@/components/shell/RankHeader";
 import { HomeCarousel } from "@/components/domain/HomeCarousel";
+import { HillsBand } from "@/components/domain/HillsBand";
 import { data } from "@/lib/data";
 import { useAsync } from "@/hooks/use-async";
 
@@ -36,8 +37,17 @@ export default function HomeScreen() {
         <RankHeader initials="JD" name="Josh" rank={8} leaves={420} stars={12} />
       </div>
 
-      <div className="min-h-0 flex-1">
+      {/* Fixed height rather than flexible. Cards hold their ratio off a known
+          height, so a portrait card is the same size on every phone instead of
+          swelling on a tall one. The band below absorbs the difference. */}
+      <div className="h-[248px] shrink-0 sm:h-[300px]">
         <HomeCarousel cards={cards.data ?? []} loading={cards.loading} />
+      </div>
+
+      {/* Takes whatever height is left. Collapses to nothing on a short screen
+          rather than pushing the grid off the bottom. */}
+      <div className="min-h-0 flex-1">
+        <HillsBand />
       </div>
 
       <nav aria-label="Shortcuts" className="grid shrink-0 grid-cols-2 gap-2">
