@@ -4,8 +4,9 @@ Live punch list, organised by the release phases in
 [`docs/PRD.md`](./docs/PRD.md) §15. `README.md` stays lean; this is the
 authoritative "what's left".
 
-Docs: [PRD](./docs/PRD.md) · [Data pipeline](./docs/data-pipeline.md) ·
-[Repo review](./docs/repo-review.md) · [Fog of war](./docs/fog-of-war.md)
+Docs: [Audit](./docs/audit.md) · [PRD](./docs/PRD.md) ·
+[Data pipeline](./docs/data-pipeline.md) · [Repo review](./docs/repo-review.md) ·
+[Fog of war](./docs/fog-of-war.md)
 
 **Standing constraints** (PRD §3): **C1** zero third-party spend to MVP ·
 **C2** we own the GIS · **C3** no chains, ever · **C4** no invented history.
@@ -17,7 +18,8 @@ Docs: [PRD](./docs/PRD.md) · [Data pipeline](./docs/data-pipeline.md) ·
 ### Foundations
 - [x] Next 16 App Router + React 19 + TypeScript strict + Tailwind v4
 - [x] Design tokens in `:root` bridged to Tailwind via `@theme inline`
-- [x] Fraunces + Plus Jakarta Sans via `next/font`
+- [x] Archivo + JetBrains Mono via `next/font` *(replaced Fraunces and
+      Plus Jakarta Sans in the reface)*
 - [x] `prefers-reduced-motion` global guard
 - [x] `lib/cn.ts`, `lib/env.ts` (`required()` + auth-disabled preview mode)
 
@@ -25,7 +27,8 @@ Docs: [PRD](./docs/PRD.md) · [Data pipeline](./docs/data-pipeline.md) ·
 - [x] Supabase browser / server / middleware clients with session rotation
 - [x] `proxy.ts` (Next 16 convention), matcher excluding `/api/*`
 - [x] Route protection + onboarding redirect matrix
-- [x] `/auth/callback`, `/auth/signout`, `/login`, `/signup`, `/welcome`
+- [x] `/auth/callback`, `/auth/signout`, `/login`, `/signup`
+      *(`/welcome` was removed with the location priming screen)*
 - [x] `NEXT_PUBLIC_AUTH_DISABLED` preview mode with `DEMO_USER`
 
 ### Schema
@@ -60,8 +63,8 @@ data with auth off and no database.
       Marks, Skeleton, EmptyState, StatusStrip, LockedCallout
 - [x] `Frame`: square and tall ratios, 8px gutter, scale from the thumb
       corner, focus trap, Escape, dismiss at the anchor
-- [x] Navigation, both forms: `NavBlock` 2×2 launcher, `NavBar` four-across,
-      press and hold with the ring affordance and the shortcut fan
+- [x] ~~Navigation, both forms: `NavBlock` 2×2 launcher, `NavBar`
+      four-across~~ *(superseded by the single button below)*
 - [x] `lib/data` read interface with mock and Supabase implementations,
       mock latency and failure switches
 - [x] Screens: landing, location priming, home, map, quests, badges,
@@ -138,22 +141,105 @@ data with auth off and no database.
 - [ ] Unlock a point for real from a live position rather than a fixture flag
 - [ ] Tile counts in the dock computed from the camera rather than passed in
 
+## Audit punch list
+
+From [`docs/audit.md`](./docs/audit.md), taken 2 September 2026 against a built
+app driven in a browser. IDs match that document, where the reasoning and the
+measurements live. Ordered so that finishing a block leaves the app better
+rather than half-migrated.
+
+### Block 1: wrong on a screen you can reach today
+
+- [ ] **X-01 Touch targets.** 55 controls render under 44px in at least one
+      dimension, across 15 of 20 routes. `--hit-min: 44px` is defined,
+      documented as the absolute minimum, and referenced by no code. Fix in
+      the primitives by separating hit area from visual size, not by inflating
+      every control: `Button`, `Check`, `Tabs`, the shape chips, the map dock
+      and the back buttons cover most of it
+- [ ] **A-01 / S-02 Unlabelled inputs.** `/login`, `/signup` and
+      `/profile/edit` each have an input with no accessible name
+- [ ] **S-08 The walk's "Read the tale" is hard-coded to `t-1`** and shows the
+      wrong tale for every other point
+- [ ] **S-01** One 2px radius on the landing page, outside the three-token
+      scale
+- [ ] **M-01 App icons.** See the artwork section below. Blocks reinstalling
+      the PWA with real branding
+
+### Block 2: before live data goes anywhere near this
+
+- [ ] **X-03 Errors are invisible.** `useAsync` returns `error`; one screen of
+      seventeen reads it. Standardise it in `Screen` with `StatusStrip`
+- [ ] **X-04 Empty states.** Four screens of seventeen have one. A new account
+      is empty everywhere
+- [ ] **D-03 Replace `useAsync`.** Fetch-on-mount with no caching,
+      refetching or invalidation, by its own comment. Wrong for a walk that
+      runs three hours
+- [ ] **D-05 Writes.** Notes, community points, profile edits and outposts all
+      write to local state and are lost on navigation. Profile edit is the
+      worst of them: it reports "Saved" and discards every field (S-13)
+- [ ] **X-07 Tests.** Start with `lib/map/hex.ts`, `lib/walking.ts` and
+      `lib/geo.ts`: pure, exact, cheap to test and expensive to get wrong
+- [ ] **P-03 / L-06 Offline.** The service worker skips `/_next/`, which now
+      holds every optimised plate. A walk that loses signal loses its artwork
+
+### Block 3: the walk loop, which is the product
+
+Everything that reads is built. Almost nothing that writes is. This block is
+the remaining risk.
+
+- [ ] **L-05 / D-04 Close the loop.** Wire `useLiveLocation` into the walk:
+      position watch, tile entry, arrival, progress that moves with the walker
+      rather than jumping between waypoints
+- [ ] **E-2** Objective completion: detect reaching a point and unlock it
+- [ ] **E-3** Walk complete: summary, record written, rewards
+- [ ] **C-2 / S-09** Territory and dock tile counts derived from revealed
+      tiles and the camera, not fixtures
+- [ ] **B-2 / L-02** Location priming before a walk, not only on outposts
+
+### Block 4: refinement
+
+- [ ] **X-02 Type scale.** 26 hard-coded 9px sizes and 2 at 8px against a
+      scale whose floor is 11px. Either add a sanctioned micro size or remove
+      the overrides
+- [ ] **X-06 Dead code.** Delete `HomeLauncher`, `QuestCard` and `Chip`. Note
+      `use-live-location`, `routing`, `auth` and `supabase/client` as
+      deliberately ahead of their phase so they do not read as rot
+- [ ] **S-07** The briefing frame's body scrolls with no cue there is more
+- [ ] **S-04** The home carousel has no keyboard path and no scroll cue
+- [ ] **S-03** Keyboard users can reach the nav button but not the shortcut
+- [ ] **S-14** `MapCanvas` is 544 lines holding three separable concerns, and
+      will not shrink when MapLibre arrives
+- [ ] **A-04** Colour contrast has never been measured. Check `--mute` on
+      `--surface` at small sizes first
+- [ ] **L-07** The map canvas has no accessible fallback and is invisible to
+      assistive technology
+- [ ] **P-04** No bundle or route weight budget in CI
+- [ ] **M-03** Recheck page weight once all 41 plates have landed
+
+### Block 5: open questions, not tasks
+
+- [ ] **P-01** If the canvas still glitches on the phone after this session's
+      changes, instrument marker hit-testing and per-frame hex set
+      construction. Neither is memoised across frames, and neither was
+      reproducible in a desktop harness
+- [ ] **Z-03** Keep the loop table in `docs/audit.md` §5 current, or the gap
+      between spec and build gets rediscovered every pass
+
+---
+
 ### Artwork to generate
 
-All ink line on paper, transparent PNG, no sky.
+`docs/media-manifest.json` is the register: every key the app asks for, with
+ratio, pixel size, priority and a brief. `npm run media` prints what has
+landed and what is still waiting, so this list is not duplicated here and
+cannot go stale.
 
-- [ ] `public/plates/hills-far.png` and `hills-near.png` — **1620 × 540, 3:1,
-      seamless left to right**. The scrolling band at the foot of Home. Far
-      layer simpler and lighter than the near one
-- [ ] `public/plates/about-hero.png` — 16:9, 1920 × 1080. Someone at a gate
-      deciding which way to go
-- [ ] `public/plates/about-local.png` — 16:9. A small cafe front
-- [ ] `public/plates/about-tales.png` — 16:9. A high cross in a field
-- [ ] `public/plates/about-collect.png` — 16:9. A ringfort bank from ground level
-- [ ] `public/plates/about-map.png` — 16:9. Fog lifting off a patchwork of fields
-- [ ] Community quest plates — **square, 1080 × 1080** without exception
-- [ ] Quest hero plates — 16:9. Quest thumbnails — square
-- [ ] Replace the placeholder leaf app mark
+- [ ] **`app-mark` and `app-mark-maskable`**, 1024 × 1024. Until these land
+      the installed PWA icon and the favicon are the placeholder leaf, and
+      reinstalling picks up the placeholder again (audit M-01)
+- [ ] The remaining 21 plates, priority order in `npm run media`
+- [ ] Decide the hills band: build the component or cut it from
+      `docs/design-system.md` §H (audit S-05, Z-02)
 
 - [ ] Replace the placeholder Ireland outline with the real coastline when
       the basemap lands

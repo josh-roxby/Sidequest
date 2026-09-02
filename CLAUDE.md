@@ -77,7 +77,8 @@ lib/
   fog/          H3 quantiser and local store, when it lands
 supabase/
   migrations/   written, not applied
-docs/           PRD, design system, UX loops, reface plan, data pipeline
+docs/           PRD, design system, UX loops, reface plan, data pipeline,
+                audit (what needs work, with the measurements behind it)
 ```
 
 ## Commands
