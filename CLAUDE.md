@@ -78,6 +78,7 @@ lib/
 supabase/
   migrations/   written, not applied
 docs/           PRD, design system, UX loops, reface plan, data pipeline,
+                map infrastructure (layers, shards, the quest builder),
                 audit (what needs work, with the measurements behind it)
 ```
 

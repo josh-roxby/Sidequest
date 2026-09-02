@@ -4,9 +4,9 @@ Live punch list, organised by the release phases in
 [`docs/PRD.md`](./docs/PRD.md) §15. `README.md` stays lean; this is the
 authoritative "what's left".
 
-Docs: [Audit](./docs/audit.md) · [PRD](./docs/PRD.md) ·
-[Data pipeline](./docs/data-pipeline.md) · [Repo review](./docs/repo-review.md) ·
-[Fog of war](./docs/fog-of-war.md)
+Docs: [Audit](./docs/audit.md) · [Map infrastructure](./docs/map-infrastructure.md) ·
+[PRD](./docs/PRD.md) · [Data pipeline](./docs/data-pipeline.md) ·
+[Repo review](./docs/repo-review.md) · [Fog of war](./docs/fog-of-war.md)
 
 **Standing constraints** (PRD §3): **C1** zero third-party spend to MVP ·
 **C2** we own the GIS · **C3** no chains, ever · **C4** no invented history.
@@ -221,6 +221,25 @@ the remaining risk.
       assistive technology
 - [ ] **P-04** No bundle or route weight budget in CI
 - [ ] **M-03** Recheck page weight once all 41 plates have landed
+
+### Block 4b: waiting on you, from the map infrastructure plan
+
+Full reasoning in [`docs/map-infrastructure.md`](./docs/map-infrastructure.md)
+§8 and §9. None of these block the work in §10 of that document.
+
+- [ ] **Limit 1.** The basemap cannot live in git: GitHub rejects files over
+      100MB. Accept "every script in the repo, every artefact reproducible from
+      scratch, artefacts in object storage", or cut the map down until it fits
+- [ ] **Limit 2.** Free-tier storage and egress against a few hundred MB of
+      tiles served to every walker. Must be measured before any public launch.
+      This is the most likely place free stops being true, and it fails quietly
+- [ ] **Limit 3.** ODbL share-alike on an OSM-derived points database, against
+      PRD §16. Worth an hour with someone who knows ODbL before pass 0 runs
+- [ ] **Limit 4.** Dúchas licence: approach UCD early or accept link-only
+- [ ] Island wide or Clare first. Clare proves every step and makes Limit 2 a
+      non-issue for months
+- [ ] Quest anchor density, contours, how much basemap, offline support, and
+      what happens outside Ireland
 
 ### Block 5: open questions, not tasks
 

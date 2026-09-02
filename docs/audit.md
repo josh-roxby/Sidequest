@@ -45,8 +45,11 @@ Ten things, in the order I would do them.
    (L-05)
 7. **`useLiveLocation` exists and is wired to nothing.** The one piece that
    turns the walk from a mock into a walk. (D-04)
-8. **Three components are dead** and four more are built ahead of a phase that
-   has not started. (X-06)
+8. ~~Three components are dead~~ **Resolved.** `HomeLauncher`, `QuestCard` and
+   `Chip` are deleted, along with `Quest.thumb` which only existed for
+   `QuestCard`, and a pre-reface `data/types.ts` that had been sitting at the
+   repo root with a competing `Quest` type while three live modules imported
+   `LatLng` from it. (X-06)
 9. **`TODO.md` describes a font stack and a route the repo no longer has.**
    The authoritative checklist is out of date in its "Done" section, which is
    the worst place for it to be wrong. (Z-01)
@@ -139,20 +142,17 @@ Never imported anywhere:
 
 | Module | Lines | Verdict |
 |---|---|---|
-| `components/domain/HomeLauncher.tsx` | 36 | Dead. Superseded by the home rebuild. |
-| `components/domain/QuestCard.tsx` | 47 | Dead. No quest list renders cards any more. |
-| `components/primitives/Chip.tsx` | 21 | Dead. `ShapeChip` and inline spans replaced it. |
-| `hooks/use-live-location.ts` | 50 | Waiting. This is the walk loop's missing half. |
+| ~~`components/domain/HomeLauncher.tsx`~~ | 36 | Deleted. |
+| ~~`components/domain/QuestCard.tsx`~~ | 47 | Deleted. `Quest.thumb` went with it. |
+| ~~`components/primitives/Chip.tsx`~~ | 21 | Deleted. |
+| ~~`data/types.ts`~~ | 66 | Deleted. Pre-reface, competing `Quest` type, and the source of `LatLng` for three live modules. `LatLng` now lives in `lib/data/types.ts`. |
+| `hooks/use-live-location.ts` | 50 | Waiting, and now correctly typed. This is the walk loop's missing half. |
 | `lib/routing.ts` | 91 | Waiting. Route generation, not yet called. |
 | `lib/auth.ts` | 36 | Waiting on the auth switch. |
 | `lib/supabase/client.ts` | 9 | Waiting on the auth switch. |
 
-The three dead ones should go. The four waiting ones should be listed
-somewhere as deliberate, because "unused export" reads as rot to the next
-person and two of them are load-bearing for the next phase.
-
-`QuestCard` being dead is also why `quest-thumb-*` artwork has nowhere to
-land.
+The four remaining are deliberate rather than rot: two are load-bearing for the
+next phase and two wait on the auth switch.
 
 ### X-07 No tests. Before live.
 
@@ -365,8 +365,11 @@ geolocation from a press.
   route, because a `FriendQuest` carries no path of its own. The shape shown is
   therefore illustrative. Either the type gains a path or the preview should
   stop drawing one.
-- **S-16.** "Try this quest" routes to the tier picker rather than starting
-  anything, which is honest while nothing writes, and is the same gap as L-05.
+- **S-16. Resolved.** "Try this quest", and "Set active" on a quest, now run
+  through the loading takeover to the walk. `StartGate` checks the walker is
+  within 400m of the quest's start first and otherwise offers walking
+  directions that open the platform's own maps app. Starting anyway is always
+  available, because a fix under trees is routinely out by fifty metres.
 - Outposts stores to local state only (S-13).
 - Friend requests and challenges are not wired to anything.
 
