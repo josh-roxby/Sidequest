@@ -1,15 +1,16 @@
 import type { MetadataRoute } from "next";
+import { APP_MARK } from "@/lib/media";
 import { mediaFile } from "@/lib/media.server";
 
 /** Android crops the icon to a circle or a squircle, so the maskable variant
- *  keeps its subject inside the centre 60 percent. It is listed only once its
- *  file is actually in the media folder: a manifest that points at a missing
- *  icon can fail an install outright, and no entry just means the plain icon
- *  gets cropped instead. */
-const MASKABLE = "app-mark-maskable";
+ *  keeps its subject inside the centre 60 percent. `/maskable-icon` derives it
+ *  from the app mark, so it exists whenever the mark does and can never drift
+ *  away from the favicon. It is listed only when the mark is actually in the
+ *  media folder: a manifest pointing at an icon that 404s can fail an install
+ *  outright, and no entry just means the plain icon gets cropped instead. */
 
 export default function manifest(): MetadataRoute.Manifest {
-  const maskable = mediaFile(MASKABLE);
+  const maskable = mediaFile(APP_MARK);
 
   return {
     name: "Side Quest",
@@ -27,7 +28,7 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       { src: "/icon", sizes: "512x512", type: "image/png", purpose: "any" },
       maskable
-        ? { src: maskable.url, sizes: "512x512", type: maskable.type, purpose: "maskable" as const }
+        ? { src: "/maskable-icon", sizes: "512x512", type: "image/png", purpose: "maskable" as const }
         : { src: "/icon", sizes: "512x512", type: "image/png", purpose: "maskable" as const },
       { src: "/apple-icon", sizes: "180x180", type: "image/png" },
     ],

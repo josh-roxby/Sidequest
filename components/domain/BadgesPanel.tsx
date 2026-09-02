@@ -21,6 +21,7 @@ export function BadgesPanel() {
   const [tab, setTab] = useState("collected");
   const items = useAsync(() => data.getCollectibles(), []);
   const badges = useAsync(() => data.getBadges(), []);
+  const groups = useAsync(() => data.getCategories(), []);
 
   const collected = items.data ?? [];
   const earnedList = badges.data ?? [];
@@ -35,6 +36,7 @@ export function BadgesPanel() {
         items={[
           { id: "collected", label: "Collected", count: total },
           { id: "earned", label: "Earned", count: earned },
+          { id: "groups", label: "Kinds" },
         ]}
       />
 
@@ -70,6 +72,56 @@ export function BadgesPanel() {
                   </div>
                 </Card>
               ))}
+            </div>
+          )}
+        </div>
+      ) : tab === "groups" ? (
+        <div className="mt-4">
+          {/* What is out there by kind, and how much of each you have stood in
+              front of. The denominator is post reachability and visibility, so
+              it is honest; where the dataset does not know it says so rather
+              than inventing one. */}
+          {groups.loading ? (
+            <div className="grid grid-cols-2 gap-2">
+              <Skeleton h={150} /><Skeleton h={150} />
+              <Skeleton h={150} /><Skeleton h={150} />
+            </div>
+          ) : (groups.data ?? []).length === 0 ? (
+            <EmptyState line="Nothing surveyed near you yet." />
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {(groups.data ?? []).map((g) => {
+                const pct = g.total ? Math.min(1, g.reached / g.total) : 0;
+                return (
+                  <Card key={g.group} inset={false} className="overflow-hidden">
+                    <Plate ratio="1/1" plate={`category-${g.group}`} label={g.label} sizes="50vw"
+                      className="border-0 border-b border-rule" />
+                    <div className="p-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <Mark name={g.group} size={12} />
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-ink">
+                          {g.label}
+                        </p>
+                      </div>
+                      <div className="mt-2 flex items-baseline gap-1.5">
+                        <Data size="lg" className="text-ink">{g.reached}</Data>
+                        <Data className="text-stone">
+                          {g.total === null ? "found" : `/ ${g.total}`}
+                        </Data>
+                      </div>
+                      {g.total === null ? (
+                        <Data className="mt-1.5 block text-[10px] uppercase text-mute">
+                          Total unknown
+                        </Data>
+                      ) : (
+                        <div className="mt-2 h-1 w-full bg-surface-2">
+                          <div className="h-full bg-field" style={{ width: `${pct * 100}%` }} />
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>

@@ -6,6 +6,7 @@ import { Data, Label } from "@/components/primitives/Text";
 import { Skeleton } from "@/components/primitives/States";
 import { RankHeader } from "@/components/shell/RankHeader";
 import { ThumbAction } from "@/components/shell/ThumbAction";
+import { CountryBand } from "@/components/domain/CountryBand";
 import { HomeCarousel } from "@/components/domain/HomeCarousel";
 import { data, TIERS } from "@/lib/data";
 import { useSettings } from "@/lib/settings";
@@ -70,7 +71,7 @@ export default function HomeScreen() {
         </div>
       </Link>
 
-      <div className="min-h-[172px] max-h-[240px] flex-1">
+      <div className="min-h-[172px] max-h-[240px] shrink-0">
         <HomeCarousel cards={cards.data ?? []} loading={cards.loading} />
       </div>
 
@@ -103,6 +104,13 @@ export default function HomeScreen() {
           {territory.data.tiles.toLocaleString()} tiles · {territory.data.townlands} townlands · {territory.data.countryPct.toFixed(2)}% of Ireland
         </Data>
       ) : null}
+
+      {/* Takes whatever height Home has left and collapses to nothing on a
+          short screen, rather than pushing the grid off the bottom.
+          docs/design-system.md §H. */}
+      <div className="-mx-4 min-h-0 flex-1">
+        <CountryBand />
+      </div>
 
       <ThumbAction onClick={() => router.push("/quests")}>
         Begin a {tier.label.toLowerCase()}

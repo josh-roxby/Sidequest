@@ -1,7 +1,7 @@
 {
   "$schema": "sidequest.media.manifest/1",
   "project": "Side Quest",
-  "generated": "2026-09-01",
+  "generated": "2026-09-02",
   "notes": "Every image slot the app renders, and nothing else. Keys map to files in public/plates/: drop `<key>.png` in and the slot picks it up, no code change. png, webp, jpg and svg all resolve. A key with no file shows its placeholder at the correct ratio, so the folder can fill a plate at a time. Run `npm run media` to see what has landed and what is still waiting.",
   "style": {
     "direction": "Nineteenth century field survey plate. Hand drawn naturalist engraving.",
@@ -483,6 +483,120 @@
       "priority": 2,
       "subject": "Turf cutter",
       "prompt": "A badge device: a slean, the two sided turf spade, crossed with a stack of cut turf."
+    },
+    {
+      "key": "category-fort",
+      "path": "public/plates/category-fort.png",
+      "slot": "badges, Kinds tab, Fortified",
+      "ratio": "1:1",
+      "width": 512,
+      "height": 512,
+      "priority": 3,
+      "subject": "Fortified",
+      "prompt": "A survey plate of a tower house in silhouette with its bawn wall, centred with generous margin. Renders around 170px square."
+    },
+    {
+      "key": "category-sacred",
+      "path": "public/plates/category-sacred.png",
+      "slot": "badges, Kinds tab, Sacred",
+      "ratio": "1:1",
+      "width": 512,
+      "height": 512,
+      "priority": 3,
+      "subject": "Sacred",
+      "prompt": "A survey plate of a high cross, centred with generous margin. Renders around 170px square."
+    },
+    {
+      "key": "category-ancient",
+      "path": "public/plates/category-ancient.png",
+      "slot": "badges, Kinds tab, Ancient",
+      "ratio": "1:1",
+      "width": 512,
+      "height": 512,
+      "priority": 3,
+      "subject": "Ancient",
+      "prompt": "A survey plate of a portal dolmen, two uprights and a capstone, centred with generous margin. Renders around 170px square."
+    },
+    {
+      "key": "category-water",
+      "path": "public/plates/category-water.png",
+      "slot": "badges, Kinds tab, Water",
+      "ratio": "1:1",
+      "width": 512,
+      "height": 512,
+      "priority": 3,
+      "subject": "Water",
+      "prompt": "A survey plate of a small waterfall over a rock step, centred with generous margin. Renders around 170px square."
+    },
+    {
+      "key": "category-green",
+      "path": "public/plates/category-green.png",
+      "slot": "badges, Kinds tab, Green",
+      "ratio": "1:1",
+      "width": 512,
+      "height": 512,
+      "priority": 3,
+      "subject": "Green",
+      "prompt": "A survey plate of an oak in full crown, centred with generous margin. Renders around 170px square."
+    },
+    {
+      "key": "category-height",
+      "path": "public/plates/category-height.png",
+      "slot": "badges, Kinds tab, Elevation",
+      "ratio": "1:1",
+      "width": 512,
+      "height": 512,
+      "priority": 3,
+      "subject": "Elevation",
+      "prompt": "A survey plate of a cairn on a summit, centred with generous margin. Renders around 170px square."
+    },
+    {
+      "key": "category-built",
+      "path": "public/plates/category-built.png",
+      "slot": "badges, Kinds tab, Built",
+      "ratio": "1:1",
+      "width": 512,
+      "height": 512,
+      "priority": 3,
+      "subject": "Built",
+      "prompt": "A survey plate of a stone arch bridge of one span, centred with generous margin. Renders around 170px square."
+    },
+    {
+      "key": "category-table",
+      "path": "public/plates/category-table.png",
+      "slot": "badges, Kinds tab, Table",
+      "ratio": "1:1",
+      "width": 512,
+      "height": 512,
+      "priority": 3,
+      "subject": "Table",
+      "prompt": "A survey plate of a cup and saucer beside a pint glass, centred with generous margin. Renders around 170px square."
+    },
+    {
+      "key": "hills-far",
+      "path": "public/plates/hills-far.png",
+      "slot": "home, country band",
+      "ratio": "3:1",
+      "width": 1620,
+      "height": 540,
+      "seamless": "horizontal",
+      "priority": 2,
+      "subject": "Distant ridge line",
+      "prompt": "A far ridge of low Irish hills across the full width, outline and the lightest hatching only, sitting in the top eighth of the frame with everything below it transparent.",
+      "constraints": "MUST tile horizontally with no seam: the right edge butts against the left edge every cycle. No sky, no ground fill."
+    },
+    {
+      "key": "hills-near",
+      "path": "public/plates/hills-near.png",
+      "slot": "home, country band, near layer. NOT CURRENTLY RENDERED",
+      "ratio": "3:1",
+      "width": 1620,
+      "height": 540,
+      "seamless": "horizontal",
+      "priority": 2,
+      "subject": "Near fields and hedgerows",
+      "prompt": "Nearer ground across the full width: field boundaries, a hedgerow, a gate, one or two hawthorns. Heavier hatching than hills-far because it travels faster and reads as closer. Keep the skyline in the bottom third.",
+      "constraints": "MUST tile horizontally with no seam, and MUST be transparent above and below the ground. The plate currently in the folder is a stag portrait with alpine peaks and a full sky: it fills the frame edge to edge, does not tile (107 alpha units of difference between its edges) and is held out of the band until redrawn. See docs/audit.md M-05."
     }
   ],
   "folder": "public/plates"

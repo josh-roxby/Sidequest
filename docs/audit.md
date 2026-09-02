@@ -210,8 +210,10 @@ tier row, the carousel, the four-button grid, the territory line, the docked
 - Two header stat buttons at 60 x 26 and 52 x 26 (X-01).
 - The carousel has no keyboard affordance and no visible scroll cue; it is
   discoverable only by swiping (S-04).
-- The hills band specified in the design system, section H, does not exist.
-  Either build it or cut the spec (S-05).
+- The country band from design system section H now exists as `CountryBand`,
+  running one layer at 46px along the foot of the screen and taking whatever
+  height Home has left. It has no parallax until `hills-near` is redrawn
+  (M-05).
 
 ### Quests
 
@@ -275,7 +277,10 @@ rather than blink, compass, recentre, add-note and add-community-point.
 
 ### Badges
 
-Two tabs, collected and earned. Badge devices now render as full plates.
+Three tabs: collected, earned, and Kinds. Badge devices render as full plates.
+Kinds was added to give the eight category plates a home and is the first
+consumer of `getCategories()`, which was on the read interface with no screen
+calling it. Progress there is still fixture data.
 
 - Tab buttons 32px tall (X-01).
 - No empty state on either tab when the account is new (X-04).
@@ -509,11 +514,36 @@ What has to be true before the switch:
 
 ## 9. Media
 
-**M-01. Blocking for the PWA.** 18 of 41 plates have landed. Missing:
-`app-mark` and `app-mark-maskable`, which is why the installed icon is still
-the placeholder leaf; all five `about-*`; `home-ready` and `home-close`;
-`quest-cloonanaha`; all five `poi-*`; three of four `tale-*`; two
-`collectible-*`; three `community-*`. `npm run media` prints the live list.
+**M-01. Resolved for the icon, 12 plates outstanding.** 39 of 51 have landed.
+`app-mark` arrived and the icon, favicon and Apple touch icon all serve it,
+downscaled at the route. Still missing: `quest-cloonanaha`, all five `poi-*`,
+`tale-cahercalla`, two `collectible-*` and three `community-*`.
+`npm run media` prints the live list.
+
+**M-05. `hills-near` cannot be used as drawn. Needs redrawing.** The brief
+asked for near ground, hedgerows and a gate, tiling horizontally, transparent
+above and below. What arrived is a stag portrait against alpine peaks with a
+full sky, filling the frame edge to edge. It does not tile: its left and right
+edges differ by 108 alpha units per pixel against 10 for `hills-far`, so it
+would jump visibly twice a minute in a looping band. It is held out of
+`CountryBand`'s layer list with a comment rather than shipped, so the band runs
+on one layer and no parallax until it is redrawn. `hills-far` is correct and is
+in use.
+
+**M-06. `app-mark-maskable` cannot be used as drawn, and is no longer needed.**
+It is a full landscape scene with a stag, so Android's circular crop would
+frame the animal's midsection, and it does not match the oak leaf that is the
+actual mark. `/maskable-icon` now derives the Android icon from `app-mark`
+instead: the mark's ink runs 57% wide and 87% tall of its square, so the square
+is placed at 67% and the ink lands 29% from centre against Android's 30%
+guarantee, measured. The ground is sampled from the mark's own corner rather
+than taken from the paper token, because the plates are drawn on a near-white
+a shade off ours. Deriving it means the launcher icon can never drift from the
+favicon, so the maskable plate can be dropped from the brief entirely.
+
+**M-07. Icon weight.** The mark is a 1.2MB engraving and a favicon is fetched
+on every cold load, so the icon routes downscale with sharp: 512px at 306kB,
+Apple touch at 33kB, maskable at 138kB.
 
 **M-02.** The about page is the one screen that will look unfinished until its
 artwork arrives, because its plates are structural rather than decorative.

@@ -234,12 +234,18 @@ ratio, pixel size, priority and a brief. `npm run media` prints what has
 landed and what is still waiting, so this list is not duplicated here and
 cannot go stale.
 
-- [ ] **`app-mark` and `app-mark-maskable`**, 1024 × 1024. Until these land
-      the installed PWA icon and the favicon are the placeholder leaf, and
-      reinstalling picks up the placeholder again (audit M-01)
-- [ ] The remaining 21 plates, priority order in `npm run media`
-- [ ] Decide the hills band: build the component or cut it from
-      `docs/design-system.md` §H (audit S-05, Z-02)
+- [x] `app-mark` landed. The icon, favicon and Apple touch icon all serve it,
+      downscaled at the route. The PWA can be reinstalled with real branding
+- [ ] **Redraw `hills-near`** (audit M-05). What arrived is a stag against
+      alpine peaks with a full sky, filling the frame. It does not tile, so it
+      is held out of the band and Home runs one layer with no parallax. Needs:
+      near ground, hedgerows, a gate, skyline in the bottom third, transparent
+      above and below, and the right edge butting cleanly against the left
+- [ ] The remaining 12 plates, priority order in `npm run media`
+- [ ] `app-mark-maskable` can be dropped from the brief (audit M-06). The
+      Android icon is now derived from `app-mark` at `/maskable-icon`, which
+      keeps the launcher icon and the favicon from ever drifting apart
+- [ ] `quest-thumb-cloonanaha.png` still has nothing to render it (X-06)
 
 - [ ] Replace the placeholder Ireland outline with the real coastline when
       the basemap lands
