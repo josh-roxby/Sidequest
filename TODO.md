@@ -204,6 +204,12 @@ the remaining risk.
 - [ ] **X-06 Dead code.** Delete `HomeLauncher`, `QuestCard` and `Chip`. Note
       `use-live-location`, `routing`, `auth` and `supabase/client` as
       deliberately ahead of their phase so they do not read as rot
+- [ ] **X-09** `getCollectibles()` has no consumer since Collected was
+      removed. Either the concept returns or the method, fixtures and plates go
+- [ ] **S-15** The shared quest preview draws a borrowed path because
+      `FriendQuest` carries none of its own
+- [ ] **S-16** "Try this quest" routes to the tier picker rather than starting
+      anything. Same root as the walk loop
 - [ ] **S-07** The briefing frame's body scrolls with no cue there is more
 - [ ] **S-04** The home carousel has no keyboard path and no scroll cue
 - [ ] **S-03** Keyboard users can reach the nav button but not the shortcut
@@ -246,6 +252,9 @@ cannot go stale.
       Android icon is now derived from `app-mark` at `/maskable-icon`, which
       keeps the launcher icon and the favicon from ever drifting apart
 - [ ] `quest-thumb-cloonanaha.png` still has nothing to render it (X-06)
+- [ ] The four `collectible-*` plates lost their slot when the Collected tab
+      was removed (audit X-09). Two are drawn and are in the folder rendering
+      nothing. Decide whether collectibles come back before regenerating any
 
 - [ ] Replace the placeholder Ireland outline with the real coastline when
       the basemap lands

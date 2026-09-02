@@ -6,26 +6,26 @@ import { Plate } from "@/components/primitives/Plate";
 import { Tabs } from "@/components/primitives/Tabs";
 import { Data, Label } from "@/components/primitives/Text";
 import { EmptyState, Skeleton } from "@/components/primitives/States";
-import { Button } from "@/components/primitives/Button";
 import { cn } from "@/lib/cn";
 import { data } from "@/lib/data";
 import { useAsync } from "@/hooks/use-async";
 
-/** Everything you have collected, in one place.
+/** What you have earned, and what is out there to earn.
  *
- *  Two kinds sit here because they answer the same question in different
- *  grains. Collected is what you picked up from individual points. Earned is
- *  what those add up to. Splitting them across two destinations made the
- *  progression feel further apart than it is. */
+ *  Earned leads because it is the progression people actually track. Kinds is
+ *  the denominator behind it: what exists near you by category, and how much of
+ *  each you have stood in front of.
+ *
+ *  There was a third tab, Collected, holding a per-point trinket alongside the
+ *  badge it counted toward. It was removed rather than reworked: two currencies
+ *  for the same act of arriving somewhere is one more than the walk earns, and
+ *  nobody could say what a collectible was for that a badge was not. */
 export function BadgesPanel() {
-  const [tab, setTab] = useState("collected");
-  const items = useAsync(() => data.getCollectibles(), []);
+  const [tab, setTab] = useState("earned");
   const badges = useAsync(() => data.getBadges(), []);
   const groups = useAsync(() => data.getCategories(), []);
 
-  const collected = items.data ?? [];
   const earnedList = badges.data ?? [];
-  const total = collected.reduce((n, i) => n + i.count, 0);
   const earned = earnedList.filter((b) => b.earnedAt).length;
 
   return (
@@ -34,48 +34,12 @@ export function BadgesPanel() {
         value={tab}
         onChange={setTab}
         items={[
-          { id: "collected", label: "Collected", count: total },
           { id: "earned", label: "Earned", count: earned },
           { id: "groups", label: "Kinds" },
         ]}
       />
 
-      {tab === "collected" ? (
-        <div className="mt-4">
-          {items.loading ? (
-            <div className="grid grid-cols-2 gap-2">
-              <Skeleton h={132} /><Skeleton h={132} />
-              <Skeleton h={132} /><Skeleton h={132} />
-            </div>
-          ) : collected.length === 0 ? (
-            <EmptyState
-              line="Nothing collected yet. Reach a point on a walk and it lands here."
-              action={<Button>Find a trot</Button>}
-            />
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              {collected.map((i) => (
-                <Card key={i.id} inset={false} className="overflow-hidden">
-                  <Plate ratio="1/1" plate={i.plate} label={i.category} sizes="50vw"
-                    className="border-0 border-b border-rule" />
-                  <div className="p-2.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-[11px] font-semibold uppercase leading-tight tracking-[0.04em] text-ink">
-                        {i.name}
-                      </p>
-                      <Data className="shrink-0 text-stone">×{i.count}</Data>
-                    </div>
-                    <div className="mt-1.5 flex items-center gap-1.5 text-mute">
-                      <Mark name={i.group} size={12} />
-                      <Data className="text-[10px] uppercase">{i.townland}</Data>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      ) : tab === "groups" ? (
+      {tab === "groups" ? (
         <div className="mt-4">
           {/* What is out there by kind, and how much of each you have stood in
               front of. The denominator is post reachability and visibility, so

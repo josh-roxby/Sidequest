@@ -1,10 +1,11 @@
 "use client";
 import { Card } from "@/components/primitives/Card";
+import { Mark } from "@/components/primitives/Marks";
 import { Plate } from "@/components/primitives/Plate";
 import { ShapeChip } from "@/components/primitives/ShapeChip";
 import { Data } from "@/components/primitives/Text";
 import { Skeleton } from "@/components/primitives/States";
-import { data, TIERS } from "@/lib/data";
+import { data } from "@/lib/data";
 import { formatDistance } from "@/lib/walking";
 import { useAsync } from "@/hooks/use-async";
 
@@ -33,15 +34,26 @@ export function CommunityQuests() {
             <p className="text-[11px] font-semibold uppercase leading-tight tracking-[0.04em] text-ink">
               {q.title}
             </p>
-            <div className="flex items-center gap-1.5">
-              <Data className="text-[10px] uppercase text-mute">
-                {TIERS.find((t) => t.id === q.tier)?.label} · {formatDistance(q.distanceM)}
+            <div className="flex items-center gap-1.5 text-mute">
+              <Mark name={q.tier} size={12} />
+              <Data className="text-[10px] uppercase">
+                {formatDistance(q.distanceM)}
               </Data>
             </div>
             <ShapeChip shape={q.shape} tip={false} />
-            <Data className="text-[10px] uppercase text-stone">
-              {q.author} · {q.walkers} walked
-            </Data>
+            {/* The same two glyphs the map uses for a person and for the
+                community, so a contributor and a walker count read the same
+                wherever they appear. */}
+            <div className="flex items-center gap-2.5 text-stone">
+              <span className="flex items-center gap-1">
+                <Mark name="user" size={12} />
+                <Data className="text-[10px] uppercase">{q.author}</Data>
+              </span>
+              <span className="flex items-center gap-1">
+                <Mark name="friends" size={12} />
+                <Data className="text-[10px] uppercase">{q.walkers}</Data>
+              </span>
+            </div>
           </div>
         </Card>
       ))}

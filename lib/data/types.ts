@@ -322,8 +322,10 @@ export interface DataSource {
   getHomeCards(): Promise<HomeCard[]>;
   getActivity(): Promise<ActivityEvent[]>;
   getFriends(): Promise<Friend[]>;
+  getFriend(id: string): Promise<Friend | null>;
   getFriendRequests(): Promise<Friend[]>;
   getFriendQuests(): Promise<FriendQuest[]>;
+  getFriendQuest(id: string): Promise<FriendQuest | null>;
   getChallenges(): Promise<Challenge[]>;
   getWalkDetail(id: string): Promise<WalkDetail | null>;
   getNotes(): Promise<Note[]>;

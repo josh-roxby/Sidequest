@@ -5,7 +5,7 @@ import { Screen, ScreenHead } from "@/components/shell/Screen";
 export default function HistoryScreen() {
   return (
     <Screen>
-      <ScreenHead label="History" title="Every walk you have taken" />
+      <ScreenHead label="History" title="Every quest you have taken" />
       <HistoryList />
     </Screen>
   );

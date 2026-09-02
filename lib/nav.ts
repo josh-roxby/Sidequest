@@ -12,7 +12,7 @@ export interface Dest {
 export const DESTS: Dest[] = [
   { href: "/map",      label: "Map",      mark: "map",     blurb: "Where you are" },
   { href: "/quests",   label: "Quests",   mark: "quest",   blurb: "What to walk" },
-  { href: "/badges",   label: "Badges",   mark: "badge",   blurb: "What you collected" },
+  { href: "/badges",   label: "Badges",   mark: "badge",   blurb: "What you have earned" },
   { href: "/history",  label: "History",  mark: "journal", blurb: "Where you went" },
   { href: "/tales",    label: "Tales",    mark: "tale",    blurb: "What you learned" },
   { href: "/outposts", label: "Outposts", mark: "flag",    blurb: "Where you start" },

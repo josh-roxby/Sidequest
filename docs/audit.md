@@ -277,14 +277,24 @@ rather than blink, compass, recentre, add-note and add-community-point.
 
 ### Badges
 
-Three tabs: collected, earned, and Kinds. Badge devices render as full plates.
-Kinds was added to give the eight category plates a home and is the first
-consumer of `getCategories()`, which was on the read interface with no screen
-calling it. Progress there is still fixture data.
+Two tabs: Earned, which leads, and Kinds. Badge devices render as full plates.
+Kinds gave the eight category plates a home and is the first consumer of
+`getCategories()`, which had sat on the read interface with no screen calling
+it. Progress there is still fixture data.
+
+The Collected tab was removed. It held a per-point trinket alongside the badge
+it counted toward, which is two currencies for the same act of arriving
+somewhere, and nobody could say what a collectible was for that a badge was
+not.
 
 - Tab buttons 32px tall (X-01).
-- No empty state on either tab when the account is new (X-04).
-- Collectible count and badge progress are fixtures.
+- No empty state on Earned when the account is new (X-04).
+- Badge progress is fixture data.
+- **X-09.** Removing Collected left `getCollectibles()` on the read interface
+  with no consumer, the same shape of gap `getCategories()` was in. Either the
+  collectible concept comes back somewhere or the method, its fixtures and its
+  four plates come out. Two of those plates are drawn and now sit in the folder
+  rendering nothing.
 
 ### History, history detail
 
@@ -337,12 +347,26 @@ Three-tab profile with referral tile; edit screen with handle, colour, privacy.
 - Nothing persists. `save()` sets a flag and navigates, so the screen
   reports "Saved" and discards every field (S-13).
 
-### Friends, activity, outposts
+### Friends, friend, shared quest, activity, outposts
 
-Friends has the cleanest tab-slide implementation and three empty states.
-Activity is a simple feed. Outposts has add-by-link and use-current-location,
-and correctly only calls geolocation from a press.
+Friends has the cleanest tab-slide implementation and three empty states. A row
+now opens `/friends/[id]`, a deliberately thin profile: who they are, what you
+have walked together, and the quests of theirs you can take. No feed, no last
+seen, no location. A shared quest opens `/friends/quests/[id]`, a preview
+carrying the route's shape on a map, its length, what it will cost at your
+pace, and one way in.
 
+Activity is a simple feed and now shares its glyph map with the drawer ticker
+through `lib/activity.ts`, so an update cannot change icon between the two.
+Outposts has add-by-link and use-current-location, and correctly only calls
+geolocation from a press.
+
+- **S-15.** The shared quest preview borrows a real quest's path to draw its
+  route, because a `FriendQuest` carries no path of its own. The shape shown is
+  therefore illustrative. Either the type gains a path or the preview should
+  stop drawing one.
+- **S-16.** "Try this quest" routes to the tier picker rather than starting
+  anything, which is honest while nothing writes, and is the same gap as L-05.
 - Outposts stores to local state only (S-13).
 - Friend requests and challenges are not wired to anything.
 
@@ -399,8 +423,8 @@ Mapped against `docs/ux-loops.md`.
 | F-1 Point popover | F-1 | Yes | Media now optional, reads well without |
 | F-2 Tale reader | F-2 | Yes | None material |
 | G. Journal | G | Partial | Reads fixtures; nothing writes |
-| H. You | H | Partial | Edit does not persist (S-13) |
-| I. Collections | I | Partial | Browse works, creating does not |
+| H. You | H | Partial | Edit does not persist (S-13). Friend profiles now exist |
+| I. Collections | I | Partial | Browse works, creating does not. Taking a friend's quest is a preview only (S-16) |
 | J. Auth | J | Built, off | Deliberate for this phase |
 | K. Admin | K | No | Review queue and media console both deferred |
 

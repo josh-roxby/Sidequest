@@ -1,7 +1,7 @@
 {
   "$schema": "sidequest.media.manifest/1",
   "project": "Side Quest",
-  "generated": "2026-09-02",
+  "generated": "2026-09-03",
   "notes": "Every image slot the app renders, and nothing else. Keys map to files in public/plates/: drop `<key>.png` in and the slot picks it up, no code change. png, webp, jpg and svg all resolve. A key with no file shows its placeholder at the correct ratio, so the folder can fill a plate at a time. Run `npm run media` to see what has landed and what is still waiting.",
   "style": {
     "direction": "Nineteenth century field survey plate. Hand drawn naturalist engraving.",
@@ -274,50 +274,6 @@
       "priority": 3,
       "subject": "Lough shore at dusk",
       "prompt": "A square composition: a low sun over a lough, reeds in silhouette, heavier hatching in the sky to carry the light."
-    },
-    {
-      "key": "collectible-ringfort-bank",
-      "path": "public/plates/collectible-ringfort-bank.png",
-      "slot": "collectible c-1",
-      "ratio": "1:1",
-      "width": 1080,
-      "height": 1080,
-      "priority": 2,
-      "subject": "Ringfort bank specimen",
-      "prompt": "A single specimen study on blank ground, museum plate style: a cutaway section of a ringfort bank and ditch. One object, centred, nothing behind it."
-    },
-    {
-      "key": "collectible-holy-well-cup",
-      "path": "public/plates/collectible-holy-well-cup.png",
-      "slot": "collectible c-2",
-      "ratio": "1:1",
-      "width": 1080,
-      "height": 1080,
-      "priority": 2,
-      "subject": "Holy well cup specimen",
-      "prompt": "A single specimen study on blank ground: a battered tin cup on a chain, of the kind left at a holy well."
-    },
-    {
-      "key": "collectible-mill-race-stone",
-      "path": "public/plates/collectible-mill-race-stone.png",
-      "slot": "collectible c-3",
-      "ratio": "1:1",
-      "width": 1080,
-      "height": 1080,
-      "priority": 3,
-      "subject": "Mill race stone specimen",
-      "prompt": "A single specimen study on blank ground: a dressed limestone block worn smooth on one face by running water."
-    },
-    {
-      "key": "collectible-lough-shore-reed",
-      "path": "public/plates/collectible-lough-shore-reed.png",
-      "slot": "collectible c-4",
-      "ratio": "1:1",
-      "width": 1080,
-      "height": 1080,
-      "priority": 3,
-      "subject": "Lough reed specimen",
-      "prompt": "A single specimen study on blank ground: one reed stem with its seed head, drawn as a botanical plate."
     },
     {
       "key": "tale-cahercalla",

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Mark } from "@/components/primitives/Marks";
 import { Marquee } from "@/components/primitives/Marquee";
+import { ACTIVITY_MARK } from "@/lib/activity";
 import { Frame } from "./Frame";
 import { data } from "@/lib/data";
 import { useAsync } from "@/hooks/use-async";
@@ -30,7 +31,9 @@ export function NavDrawer({ open, onDismiss }: { open: boolean; onDismiss: () =>
   // that the app is alive, and it costs no space at all down there.
   const activity = useAsync(() => data.getActivity(), []);
   const tickerOn = useSettings().activityInDrawer;
-  const recent = tickerOn ? (activity.data ?? []).slice(0, 10).map((e) => e.text) : [];
+  const recent = tickerOn
+    ? (activity.data ?? []).slice(0, 10).map((e) => ({ mark: ACTIVITY_MARK[e.kind], text: e.text }))
+    : [];
 
   return (
     <Frame

@@ -1,15 +1,11 @@
 "use client";
-import { Mark, type MarkName } from "@/components/primitives/Marks";
+import { Mark } from "@/components/primitives/Marks";
 import { Data } from "@/components/primitives/Text";
 import { Skeleton } from "@/components/primitives/States";
 import { Screen, ScreenHead } from "@/components/shell/Screen";
-import { data, type ActivityKind } from "@/lib/data";
+import { ACTIVITY_MARK } from "@/lib/activity";
+import { data } from "@/lib/data";
 import { useAsync } from "@/hooks/use-async";
-
-const KIND_MARK: Record<ActivityKind, MarkName> = {
-  badge: "badge", quest: "quest", poi: "map", tale: "tale",
-  friend: "friends", joined: "leaf", collection: "flag",
-};
 
 /** What everyone else is up to.
  *
@@ -37,7 +33,7 @@ export default function ActivityScreen() {
           {list.map((e) => (
             <li key={e.id}
               className="flex items-center gap-2.5 border-b border-rule py-2.5 last:border-b-0">
-              <span className="shrink-0 text-mute"><Mark name={KIND_MARK[e.kind]} size={13} /></span>
+              <span className="shrink-0 text-mute"><Mark name={ACTIVITY_MARK[e.kind]} size={13} /></span>
               <span className="t-small min-w-0 flex-1 truncate text-ink">{e.text}</span>
               <Data className="shrink-0 text-[10px] uppercase text-mute">{e.at}</Data>
             </li>

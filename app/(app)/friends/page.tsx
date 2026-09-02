@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
@@ -57,22 +58,25 @@ export default function FriendsScreen() {
           ) : (
             <div className="flex flex-col gap-2">
               {(friends.data ?? []).map((f) => (
-                <Card key={f.id} className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center border border-ink bg-field-soft text-[12px] font-semibold text-field"
-                    style={{ borderRadius: "var(--r-full)" }}>
-                    {f.initials}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <p className="t-small font-semibold text-ink">{f.name}</p>
-                    <Data className="text-[10px] uppercase text-mute">
-                      Rank {String(f.rank).padStart(2, "0")} · {f.townland}
-                    </Data>
-                  </span>
-                  <span className="shrink-0 text-right">
-                    <Data className="block text-ink">{f.walksTogether}</Data>
-                    <p className="t-label text-mute" style={{ fontSize: 9 }}>together</p>
-                  </span>
-                </Card>
+                <Link key={f.id} href={`/friends/${f.id}`} className="block active:scale-[0.99]"
+                  style={{ transitionDuration: "var(--dur-tap)" }}>
+                  <Card className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center border border-ink bg-field-soft text-[12px] font-semibold text-field"
+                      style={{ borderRadius: "var(--r-full)" }}>
+                      {f.initials}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <p className="t-small font-semibold text-ink">{f.name}</p>
+                      <Data className="text-[10px] uppercase text-mute">
+                        Rank {String(f.rank).padStart(2, "0")} · {f.townland}
+                      </Data>
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <Data className="block text-ink">{f.walksTogether}</Data>
+                      <Label className="text-mute">together</Label>
+                    </span>
+                  </Card>
+                </Link>
               ))}
             </div>
           )
@@ -84,16 +88,22 @@ export default function FriendsScreen() {
           ) : (
             <div className="flex flex-col gap-2">
               {(quests.data ?? []).map((q) => (
-                <Card key={q.id}>
-                  <Label style={{ fontSize: 9 }}>{q.friend} made this</Label>
-                  <p className="t-h2 mt-1 text-ink">{q.title}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <ShapeChip shape={q.shape} tip={false} />
-                    <Data className="text-[10px] uppercase text-mute">
-                      {TIERS.find((t) => t.id === q.tier)?.label} · {formatDistance(q.distanceM)} · {q.townland}
-                    </Data>
-                  </div>
-                </Card>
+                <Link key={q.id} href={`/friends/quests/${q.id}`} className="block active:scale-[0.99]"
+                  style={{ transitionDuration: "var(--dur-tap)" }}>
+                  <Card>
+                    <div className="flex items-center gap-1.5 text-stone">
+                      <Mark name="user" size={12} />
+                      <Data className="text-[10px] uppercase">{q.friend} made this</Data>
+                    </div>
+                    <p className="t-h2 mt-1 text-ink">{q.title}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <ShapeChip shape={q.shape} tip={false} />
+                      <Data className="text-[10px] uppercase text-mute">
+                        {TIERS.find((t) => t.id === q.tier)?.label} · {formatDistance(q.distanceM)} · {q.townland}
+                      </Data>
+                    </div>
+                  </Card>
+                </Link>
               ))}
             </div>
           )

@@ -18,7 +18,7 @@ import { useAsync } from "@/hooks/use-async";
 const SPAN_M = 2000;
 const toWorld = (n: number) => (n - 0.5) * SPAN_M;
 
-/** A walk you already did, kept as a record rather than a receipt.
+/** A quest you already took, kept as a record rather than a receipt.
  *
  *  The map, then what it earned you, then what you learned, then what you
  *  wrote down. Distance and time are the least interesting things here, so
@@ -41,7 +41,7 @@ export default function TrailScreen({ params }: { params: Promise<{ id: string }
       {detail.loading ? (
         <div className="flex flex-col gap-3"><Skeleton h={200} /><Skeleton h={80} /></div>
       ) : !d ? (
-        <p className="t-body text-stone">That walk is no longer here.</p>
+        <p className="t-body text-stone">That quest is no longer here.</p>
       ) : (
         <>
           <div className="relative -mx-4 h-[220px] overflow-hidden border-y border-rule">
@@ -80,7 +80,7 @@ export default function TrailScreen({ params }: { params: Promise<{ id: string }
 
           <Rule className="my-6" />
 
-          <Label>Earned on this walk</Label>
+          <Label>Earned on this quest</Label>
           <div className="mt-2">
             {d.badges.length === 0 ? (
               <p className="t-small text-stone">No badges from this one.</p>
@@ -105,7 +105,7 @@ export default function TrailScreen({ params }: { params: Promise<{ id: string }
           <Label className="mt-6">Tales opened</Label>
           <div className="mt-2">
             {d.tales.length === 0 ? (
-              <p className="t-small text-stone">Nothing new opened on this walk.</p>
+              <p className="t-small text-stone">Nothing new opened on this quest.</p>
             ) : (
               <div className="flex flex-col gap-2">
                 {d.tales.map((t) => (

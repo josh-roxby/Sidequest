@@ -26,14 +26,14 @@ export function HistoryList({ showStats = true }: { showStats?: boolean }) {
     return (
       <div className="flex flex-col items-start gap-3 border border-rule bg-surface p-3.5"
         style={{ borderRadius: "var(--r-md)" }}>
-        <p className="t-small text-ink">Could not load your walks. Try again in a moment.</p>
+        <p className="t-small text-ink">Could not load your quests. Try again in a moment.</p>
         <Button>Retry</Button>
       </div>
     );
   }
   if (list.length === 0) {
     // The shortest tier is offered, because the barrier is always time.
-    return <EmptyState line="Nothing walked yet." action={<Button>Find a trot</Button>} />;
+    return <EmptyState line="No quests yet." action={<Button>Find a trot</Button>} />;
   }
 
   return (
@@ -41,7 +41,7 @@ export function HistoryList({ showStats = true }: { showStats?: boolean }) {
       {showStats ? (
         <StatRow
           items={[
-            { value: `${list.length}`, key: "walks" },
+            { value: `${list.length}`, key: "quests" },
             { value: km.toFixed(1), key: "km" },
             { value: tiles.toLocaleString(), key: "tiles" },
           ]}

@@ -1,5 +1,6 @@
 import type {
-  CommunityPoint, DataSource, Note, Quest, Tale, Tier, WalkDetail,
+  CommunityPoint, DataSource, Friend, FriendQuest, Note, Quest, Tale, Tier,
+  WalkDetail,
 } from "../types";
 import {
   ACTIVITY, BADGES, CATEGORIES, CHALLENGES, COLLECTIBLES, COMMUNITY,
@@ -43,8 +44,12 @@ export const mockSource: DataSource = {
   getHomeCards: () => settle("getHomeCards", HOME_CARDS),
   getActivity: () => settle("getActivity", ACTIVITY),
   getFriends: () => settle("getFriends", FRIENDS),
+  getFriend: (id: string) =>
+    settle<Friend | null>("getFriend", FRIENDS.find((f) => f.id === id) ?? null),
   getFriendRequests: () => settle("getFriendRequests", REQUESTS),
   getFriendQuests: () => settle("getFriendQuests", FRIEND_QUESTS),
+  getFriendQuest: (id: string) =>
+    settle<FriendQuest | null>("getFriendQuest", FRIEND_QUESTS.find((q) => q.id === id) ?? null),
   getChallenges: () => settle("getChallenges", CHALLENGES),
 
   getCommunityPoints: () =>

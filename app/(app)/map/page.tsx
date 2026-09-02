@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { MapCanvas, type MapMarker } from "@/components/map/MapCanvas";
 import { Frame } from "@/components/shell/Frame";
 import { Action } from "@/components/primitives/Action";
+import { Mark } from "@/components/primitives/Marks";
 import { MapDock } from "@/components/map/MapDock";
 import { MapAdd, type AddMode } from "@/components/map/MapAdd";
 import { Plate } from "@/components/primitives/Plate";
@@ -244,9 +245,12 @@ export default function MapScreen() {
         {openCp ? (
           <div className="flex flex-col gap-3">
             <p className="selectable t-body text-ink">{openCp.description}</p>
-            <Data className="text-[11px] uppercase text-mute">
-              Added by {openCp.author} · {openCp.createdAt}
-            </Data>
+            <div className="flex items-center gap-1.5 text-mute">
+              <Mark name="user" size={12} />
+              <Data className="text-[10px] uppercase">
+                Added by {openCp.author} · {openCp.createdAt}
+              </Data>
+            </div>
             <p className="t-small border-t border-rule pt-3 text-stone">
               Once reviewed this will be available for every sidequester.
             </p>
