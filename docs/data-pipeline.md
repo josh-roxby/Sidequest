@@ -64,6 +64,28 @@ this table is a compliance artefact, not a convenience.
 | **Dúchas** — National Folklore Collection, Schools' Collection | 1937–38 folklore, townland by townland | **CC BY-NC 4.0** | ❌ **non-commercial only** |
 | **Wikipedia** | Prose articles | **CC BY-SA** | ⚠️ share-alike — link, don't embed |
 
+### Added 3 September 2026
+
+| Source | What it gives | Licence | Commercial |
+|---|---|---|---|
+| **Ordnance Survey Letters** (O'Donovan, 1834–41) | Antiquities and placenames, parish by parish, 29 counties. Digitised on askaboutireland.ie | **Public domain** (text) | ✅ but see note |
+| **Lewis, *A Topographical Dictionary of Ireland*** (1837) | Parish descriptions of the whole island. Full text on libraryireland.com | **Public domain** (text) | ✅ but see note |
+| **Open Topographic LiDAR** — data.gov.ie, ESRI REST + WMS | National LiDAR. Contours and honest ascent without buying elevation data | data.gov.ie open | ✅ |
+| **TII digital heritage** via the Digital Repository of Ireland | Hundreds of excavation reports, site by site | Per collection, verify | ⚠️ verify |
+| **Logainm API** — Gaois Developer Hub | The CC BY data as an API rather than a dump. **Needs an account** | CC BY 4.0 | ✅ |
+
+**Note on the public domain texts.** The *text* is out of copyright and free to
+use. A particular *digitisation* may carry its own site terms or database
+rights, which is a separate question with a separate answer. Prefer scans we
+OCR ourselves, or an explicitly open host such as the Internet Archive, over
+scraping a reading-room site in a loop.
+
+These two are the answer to the Dúchas problem below, and arguably a better one
+for our purpose: they are antiquarian description *of places*, written by the
+people surveying them, which is the shape of a tale attached to a point.
+Folklore collected by schoolchildren is wonderful and harder to verify against
+C4.
+
 ### To verify before use
 
 NPWS designated sites · Coillte forest recreation · OPW heritage sites ·

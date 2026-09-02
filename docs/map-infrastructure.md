@@ -1,6 +1,11 @@
 # Side Quest: map infrastructure, points library and quest building
 
-Written 3 September 2026. This is the engineering plan behind decisions that
+Written 3 September 2026, revised the same day after the budget and scope
+questions were answered. **Cost is now acceptable and the target is the whole
+island.** Section 11 records what changed and why, and it materially simplifies
+several things below. Read it alongside the rest rather than after it.
+
+This is the engineering plan behind decisions that
 are already made: PRD §11 chose MapLibre over self-built tiles, Valhalla run
 offline, and our own places data; `docs/data-pipeline.md` covers how the
 dataset is sourced and cleaned; `docs/fog-of-war.md` covers territory. None of
@@ -16,8 +21,10 @@ those need a decision from you rather than from me.
 
 Your words turned into things a build can be checked against.
 
-1. **Nothing costs money to run.** No metered API, no paid tier, no per-request
-   billing anywhere in the runtime path.
+1. ~~Nothing costs money to run.~~ **Revised.** A predictable monthly bill is
+   fine. What is not fine is a *per-use meter on the core loop*: a walking app
+   opens its map constantly, and anything charged per map load turns the
+   product's central action into a cost centre. See §11.2.
 2. **No third-party API at runtime.** External services may be used to *build*
    artefacts on a laptop. Nothing the app does while a person is walking may
    depend on one.
@@ -396,3 +403,179 @@ In order, and none of it needs a decision above to start.
    key in this document depends on it.
 4. Implement the scoring function from §6 against fixtures. It is pure, it is
    testable, and it is the part most likely to need iterating on taste.
+
+
+---
+
+## 11. Revisions after the budget and scope answers
+
+Three answers came back: a monthly cost is acceptable, Supabase and a render
+host are both feasible, and the target is Ireland wide rather than one county.
+That changes four things.
+
+### 11.1 Yes, Postgres. For most of it.
+
+**"Is Supabase too slow" is the wrong axis.** It is very fast at the thing we
+need most and the wrong tool for exactly one thing.
+
+**What belongs in Postgres, comfortably:**
+
+| | Volume | Verdict |
+|---|---|---|
+| Points library | ~35,000 rows | Trivial. A GiST index over 35k rows answers a radius query in well under a millisecond. Postgres starts caring somewhere north of a few million |
+| Quest corpus | ~12,000 rows, 3 to 5kB each, ~50MB | Trivial |
+| Fog cells, walks, notes, profiles | Per user | What a database is for |
+
+The Pro plan includes 8GB of database, and everything above lands around 100MB
+before user data. There is no capacity question here at all.
+
+**What does not belong in Postgres: the basemap.** A PMTiles archive of a few
+hundred megabytes is a file, not a table. Two ways it goes wrong:
+
+- **As a blob.** Every tile read goes through the connection pool and the
+  compute you rent, to do a job static object storage and a CDN do for
+  effectively nothing.
+- **Generated live with `ST_AsMVT`.** This is a real and respectable pattern,
+  and it is the one place the answer to "too slow?" is genuinely yes at our
+  size. Every pan is dozens of tile requests, each a spatial query plus a
+  geometry clip plus a protobuf encode. A Micro instance is 2 ARM cores and 1GB
+  of RAM. It will not hold up, and scaling compute to fix it means paying by
+  the hour for work a pre-built file does once.
+
+**So: Postgres for points, corpus and user state. Storage for tiles.** Pro
+includes 100GB of storage and 250GB of egress a month, then $0.09/GB. A few
+hundred megabytes of archive served as byte ranges is not close to either
+ceiling.
+
+**What this simplifies.** §3 of this document designed static per-cell shards
+for the points library specifically to avoid needing a backend. With Postgres
+available and paid for, that whole layer can go: the client queries points and
+quests directly through PostgREST, always fresh, no shard build step, no cache
+invalidation when a tale is edited. The shard design stays in §3 as the
+fallback if we ever want to run with no database at all, but it is no longer
+the plan.
+
+The one thing the shards were also buying is **offline**, and that has to be
+solved anyway: cache the active walk's points, tales and tiles on device when a
+walk starts. That is `docs/audit.md` P-03 and it is now the only reason left to
+care about local copies.
+
+### 11.2 OSM: the licence and the vendor are two different questions
+
+Worth separating, because ODbL is a licence and Mapbox is a company, and they
+constrain different things.
+
+**The licence layer applies whoever you use.** Every vendor below serves the
+same OSM data under the same terms. Choosing Mapbox does not launder ODbL out
+of a database we derive from OSM.
+
+- **Attribution** is required, always, in all cases. Cheap and non negotiable.
+- **Share-alike** applies to a *Derivative Database*, not to a picture. Drawing
+  a map from OSM produces a Produced Work and only needs attribution. Combining
+  OSM geometry with our own curated records into a new database is where it may
+  bite. This is still Limit 3 and still worth an hour of proper advice, and the
+  likely mitigation is keeping the OSM-derived geometry and our own records as
+  separable databases rather than one merged table.
+
+**The vendor layer is a cost and control question.**
+
+| Option | Shape of the deal | Fits us? |
+|---|---|---|
+| **Mapbox** | 50,000 web map loads a month free, then $5 per 1,000, falling to $3 above 200,000. Vector tile requests included in a load | Poor. A "map load" is the exact action our app is built around. 100,000 loads is around $250 a month and it grows with engagement, which is the opposite of what you want |
+| **MapTiler** | Free self-hosted, cloud from around $29 a month, billed on two meters, sessions and tile requests | Reasonable fallback. Cheaper than Mapbox, no routing |
+| **Stadia Maps** | Credit based, generally the most predictable managed pricing, and includes geocoding and routing | The best managed option if we ever want out of self-hosting |
+| **Protomaps, self-hosted PMTiles** | Open source. One archive on our own storage. No vendor, no meter | The plan. See below |
+| **Google Maps** | Per-request, heavily branded, limited restyling | No. The survey plate look is not achievable and the cost model is worse than Mapbox's |
+
+**Self-hosted PMTiles stays the recommendation, and money is only the third
+reason.**
+
+1. **No per-use meter on the core loop.** We never have to think about how
+   often someone opens the map. For a walking app that is the whole product.
+2. **No runtime third party.** Nobody is on a hillside in Clare waiting on
+   somebody else's uptime.
+3. **Total style control.** The aesthetic is a specific and unusual one and it
+   wants the whole stylesheet, not a vendor's approximation of it.
+
+The honest cost of that choice: **we own the Planetiler build and we own
+uptime.** Neither is hard, both are real work, and MapTiler or Stadia are the
+fallback if the build turns out to be more trouble than it is worth.
+
+### 11.3 Sources beyond Dúchas
+
+Dúchas is CC BY-NC and commercially blocked, and it is still the best folklore
+source in the country. It is not the only way to have something true to say
+about a place, and one of the alternatives is arguably better suited to what we
+actually do.
+
+**Open-licence modern datasets, commercially usable:**
+
+| Source | What it gives | Notes |
+|---|---|---|
+| Archaeological Survey of Ireland, National Monuments Service | ~140k records, class and description | CC BY 4.0. Already in the register |
+| NIAH | Description and Appraisal prose for post-1700 buildings | CC BY. Already the tale, needs editing not writing |
+| **Logainm** | Townland names, Irish forms, meanings | CC BY 4.0, and it has a **real API** through the Gaois Developer Hub. **Needs an account, so it needs you.** See §11.5 |
+| **Open Topographic LiDAR, data.gov.ie** | National LiDAR, ESRI REST and WMS | New to this plan. This is contours and honest ascent numbers without buying elevation data. Worth a proper look |
+| TII digital heritage, via the Digital Repository of Ireland | Hundreds of excavation reports | Site-by-site archaeological detail |
+| Wikidata | Identifiers, dates, cross-links | CC0 |
+
+**Public domain nineteenth century texts. This is the real Dúchas substitute.**
+
+Copyright expired long ago, so there is no licence question about the text
+itself:
+
+- **O'Donovan's Ordnance Survey Letters, 1834 to 1841.** Twenty-nine counties,
+  excluding Cork, Antrim and Tyrone. John O'Donovan and his colleagues walked
+  the country recording antiquities and placenames parish by parish, and this
+  is the work that standardised Irish placenames in the first place. Digitised
+  and publicly readable on askaboutireland.ie.
+- **Lewis's Topographical Dictionary of Ireland, 1837.** Parish by parish
+  descriptions of the whole island. Full text on libraryireland.com.
+- **Ordnance Survey Memoirs**, mainly Ulster, same period.
+- First edition OS six-inch mapping, Griffith's Valuation.
+
+**Why this may be better than Dúchas for us, not just legally available.**
+Dúchas is folklore collected by schoolchildren in 1937: wonderful, and harder
+to verify against PRD constraint C4, no invented history. The Ordnance Survey
+Letters are antiquarian description *of places*, written by the people
+surveying them, which is exactly the shape of a tale attached to a point.
+
+**The caveat, and it matters.** The *text* is public domain; a particular
+*digitisation* may carry its own site terms or database rights. Taking the text
+is fine. Scraping someone's website is a separate question with a separate
+answer. Prefer scans we OCR ourselves, or an explicitly open host such as the
+Internet Archive, over hitting askaboutireland.ie in a loop.
+
+**On search and location APIs generally:** Nominatim and Overpass are both free
+and both have usage policies that rule out being a runtime dependency. They are
+build-time tools. Nothing in this section changes the rule that the app calls
+no third-party API while somebody is walking.
+
+### 11.4 Ireland wide, confirmed
+
+Question 1 in §9 is answered. Consequences:
+
+- The corpus is built for the island, not for Clare, so the anchor density
+  question in §9 now sets the real number rather than a pilot's.
+- Limit 2 stops being a launch blocker, because Pro's 250GB of egress a month
+  and $0.09/GB after it is a bill rather than a wall. It is still worth
+  measuring, but as budgeting rather than as a risk.
+- The fixture data staying in Clare is fine and deliberate. It exercises the
+  whole app at a scale that can be reasoned about by hand.
+
+### 11.5 Still needs you
+
+Reduced from four to two, plus one new one.
+
+- **Limit 3, ODbL share-alike, unchanged.** Still worth an hour of advice
+  before pass 0. Using a vendor does not solve it.
+- **Limit 4, Dúchas.** Downgraded. Approaching UCD is still worth doing because
+  the collection is extraordinary, but §11.3 means it is no longer the
+  difference between having tales and not having them.
+- **New: the Logainm API needs an account on the Gaois Developer Hub.** Irish
+  placename meanings are close to load-bearing for this product, so it is worth
+  having. I have not created it and will not: it is a service account, so it is
+  yours to make.
+
+Limits 1 and 2 are effectively closed. The basemap still cannot live in git,
+but with paid storage that is now a filing decision rather than a constraint.

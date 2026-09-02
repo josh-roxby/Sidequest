@@ -227,17 +227,22 @@ the remaining risk.
 Full reasoning in [`docs/map-infrastructure.md`](./docs/map-infrastructure.md)
 §8 and §9. None of these block the work in §10 of that document.
 
-- [ ] **Limit 1.** The basemap cannot live in git: GitHub rejects files over
-      100MB. Accept "every script in the repo, every artefact reproducible from
-      scratch, artefacts in object storage", or cut the map down until it fits
-- [ ] **Limit 2.** Free-tier storage and egress against a few hundred MB of
-      tiles served to every walker. Must be measured before any public launch.
-      This is the most likely place free stops being true, and it fails quietly
+- [x] **Limit 1.** Closed. Paid storage makes it a filing decision: scripts in
+      the repo, artefacts reproducible from scratch, tiles in Supabase Storage
+- [x] **Limit 2.** Closed as a risk. Pro includes 250GB egress a month then
+      $0.09/GB, so it is a bill rather than a wall. Still worth measuring
 - [ ] **Limit 3.** ODbL share-alike on an OSM-derived points database, against
-      PRD §16. Worth an hour with someone who knows ODbL before pass 0 runs
-- [ ] **Limit 4.** Dúchas licence: approach UCD early or accept link-only
-- [ ] Island wide or Clare first. Clare proves every step and makes Limit 2 a
-      non-issue for months
+      PRD §16. Worth an hour with someone who knows ODbL before pass 0 runs.
+      **Using a vendor does not solve this**: Mapbox and MapTiler serve the same
+      OSM under the same terms
+- [ ] **Limit 4.** Dúchas. Downgraded, not closed. The Ordnance Survey Letters
+      and Lewis's Topographical Dictionary are public domain and better suited
+      to a tale attached to a place, so this is no longer the difference between
+      having tales and not. Still worth approaching UCD
+- [ ] **New: create the Gaois Developer Hub account for the Logainm API.**
+      Irish placename meanings are close to load-bearing. It is a service
+      account, so it is yours to make, not mine
+- [x] Island wide, confirmed
 - [ ] Quest anchor density, contours, how much basemap, offline support, and
       what happens outside Ireland
 
