@@ -579,3 +579,116 @@ Reduced from four to two, plus one new one.
 
 Limits 1 and 2 are effectively closed. The basemap still cannot live in git,
 but with paid storage that is now a filing decision rather than a constraint.
+
+
+---
+
+## 12. Where quests are actually assembled
+
+Recorded 3 September 2026, because the shorthand "query nearby points and
+generate a quest" is one word away from a different architecture and the word
+is *where*.
+
+### The two halves of a quest
+
+**Choosing the points is cheap.** A radius query against the points table
+returns candidates in under a millisecond, and the scoring in §6 is arithmetic
+over a few dozen rows. This can happen anywhere, any time, on demand.
+
+**Joining them into a walk is not.** Turning four points into a route needs a
+routing engine: real walking distance over real paths, real ascent, and a line
+that follows ground a person can actually cross. That is the expensive half and
+it is the half that decides the architecture.
+
+So "we query a range of nearby points and have them returned" is exactly right,
+and it is the input to quest assembly rather than the whole of it.
+
+### Three ways to do the expensive half
+
+| | How | Cost | Coverage | Safety |
+|---|---|---|---|---|
+| **A. Pre-built corpus** | Route ~12,000 quests offline, ship rows | None at runtime | Anchored. A walker away from an anchor gets an approximation | Every quest human reviewed before publishing |
+| **B. Live assembly** | Query points, route on demand | One always-on routing service | Perfect. A quest from exactly where you stand | Nothing is reviewed before a person walks it |
+| **C. Live, with the safety rules encoded** | As B, with a strict costing profile, an automated validator and a cache | Same as B | Perfect | Rules enforced per route rather than eyes per route |
+
+§5 chose A, and it chose it **only because routing had to cost nothing**. That
+constraint is gone, so the choice is worth reopening on its merits.
+
+### What actually argues for each, now that money is not the argument
+
+**For A:** a human looks at every published quest. For a product that sends
+people down boreens, that is not nothing. It is the strongest remaining
+argument and it is a safety argument, not a cost one.
+
+**Against A:** the corpus is a fixed set of walks anchored to fixed points. It
+has a coverage problem that §5 solves with on-device re-anchoring, which is a
+workaround for a limitation we no longer have to accept. It also creates a
+review backlog of twelve thousand items before launch, and every dataset
+refresh invalidates part of it.
+
+**For B and C:** the product's promise is a walk from where you are, right now,
+for the time you have. Live assembly is that promise met literally rather than
+approximately. It also deletes the corpus build, the corpus review and the
+re-anchoring code.
+
+### The recommendation: C
+
+Human review does not have to mean human eyes on each route. It can mean the
+rules those eyes would apply, written down and enforced:
+
+- **A strict costing profile.** The router is only allowed on ways we have
+  decided are walkable. A road above a speed threshold with no footway is not
+  routable at all, so no generated quest can use one.
+- **An automated validator after routing.** Re-check the assembled route
+  against the same rules the offline builder would have applied in §6 step 8,
+  and reject rather than ship a walk that fails.
+- **Reviewed points, not reviewed routes.** The places are curated and carry
+  their own safety and access attributes. That review still happens, offline,
+  where it belongs.
+- **A cache.** Key on rounded position, tier and shape. Popular ground warms up
+  and costs nothing after the first walker, which also gives back most of A's
+  efficiency without any of its rigidity.
+
+This keeps the safety property that made A attractive, meets the product
+promise that made B attractive, and the cache means the routing service is
+sized for cold requests rather than for every request.
+
+### What C costs and what it needs
+
+A self-hosted Valhalla for Ireland, always on. The OSM extract is on the order
+of a gigabyte and the built routing tiles are a few gigabytes on disk, so this
+is a small instance rather than a large one. **The exact figure needs
+measuring, not guessing**, and it is the same Planetiler-and-Valhalla build the
+plan already calls for, just deployed rather than run on a laptop.
+
+**This is a new always-on service and a new monthly line item, so it is a
+decision rather than an assumption.** §5 stays as written until it is taken.
+
+---
+
+## 13. Sequencing the basemap: ours now, a vendor later
+
+Right instinct, with one caveat about which vendor.
+
+**Ours first is the cheap direction to move in.** MapLibre reads standard
+vector tiles, so a PMTiles archive today and a hosted tile URL tomorrow is a
+config change, not a rewrite.
+
+**MapTiler and Stadia are the frictionless later.** Both serve standard vector
+tiles that MapLibre consumes with no code change and no licence question.
+
+**Mapbox is a bigger jump than it looks**, for two reasons worth knowing before
+it becomes the assumption:
+
+1. **The SDK went proprietary.** Mapbox GL JS v2 and later is not open source.
+   Moving to their SDK is a licence decision, not just a dependency bump, and
+   MapLibre exists precisely because of that split.
+2. **Using Mapbox tiles with MapLibre is contested.** Their product terms
+   restrict interfering with what a Mapbox SDK reports, and whether that
+   extends to serving their tiles into a non-Mapbox client is argued rather than
+   settled. **Verify with Mapbox directly before designing around it.** It is a
+   cheap email and an expensive assumption.
+
+None of that rules Mapbox out. It means "our tiles now, Mapbox later" should be
+"our tiles now, a vendor later, and Mapbox is the one that needs a conversation
+first".

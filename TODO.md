@@ -243,6 +243,16 @@ Full reasoning in [`docs/map-infrastructure.md`](./docs/map-infrastructure.md)
       Irish placename meanings are close to load-bearing. It is a service
       account, so it is yours to make, not mine
 - [x] Island wide, confirmed
+- [ ] **Decide where quests are assembled** (map-infrastructure §12). The
+      pre-built corpus was chosen only because routing had to cost nothing, and
+      that constraint is gone. Live assembly with the safety rules encoded in
+      the routing profile plus a cache meets the product promise literally
+      rather than approximately, and deletes the corpus build, its review
+      backlog and the re-anchoring code. It needs one always-on routing
+      service, so it is a new monthly line item and therefore yours
+- [ ] **Ask Mapbox directly** whether their tiles may be served into MapLibre
+      (map-infrastructure §13). Contested rather than settled, cheap to ask,
+      expensive to assume. MapTiler and Stadia have no such question
 - [ ] Quest anchor density, contours, how much basemap, offline support, and
       what happens outside Ireland
 
