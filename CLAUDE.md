@@ -106,6 +106,9 @@ npm run build
 - British English in copy and comments. Irish placenames carry their Irish
   form where the dataset has one.
 - No em dashes in interface copy or documentation prose.
+- Inside `lib/`, a module importing a sibling uses a relative path rather than
+  `@/`. The alias needs a bundler, and these are the pure modules the test
+  runner loads directly. Everything outside `lib/` keeps `@/`.
 - Comments explain why, not what. The existing comments in `lib/env.ts` and
   `lib/supabase/middleware.ts` are the standard to match.
 - Distances are metric by default, written in mono, uppercase unit.

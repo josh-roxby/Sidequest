@@ -154,14 +154,19 @@ Never imported anywhere:
 The four remaining are deliberate rather than rot: two are load-bearing for the
 next phase and two wait on the auth switch.
 
-### X-07 No tests. Before live.
+### X-07 Tests. Started 3 September.
 
-There is no test runner, no test, and no CI step beyond lint, type-check and
-build. Everything in this audit was verified by driving a browser today. The
-things most worth pinning down first are not React component tests: they are
-`lib/map/hex.ts` (pure functions, exact arithmetic, cheap to test and
-catastrophic to get wrong), `lib/walking.ts` (duration estimates people will
-plan around) and `lib/geo.ts`.
+Was: no test runner, no test, no CI step beyond lint, type-check and build.
+
+Now: twenty tests on Node's own runner, no new dependency, running in CI.
+Covering exactly what this finding named first, `lib/map/project.ts`,
+`lib/map/hex.ts` and `lib/geo.ts`, plus the fixture geography. **They found
+three real bugs on their first run**, all hidden by the fake coordinate space:
+a route drawing 1200m while printing 1080m, a loop ending 78m from its own
+start, and a waypoint ten kilometres off the quest that visits it.
+
+Still outstanding: `lib/walking.ts`, whose duration estimates people plan
+around, and anything above the pure modules.
 
 ### X-08 What is clean. No action.
 

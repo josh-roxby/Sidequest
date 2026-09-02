@@ -148,10 +148,10 @@ Full plan with what each slice replaces and how you know it worked in
 [`docs/v1-map-build.md`](./docs/v1-map-build.md). Slices 0 to 3 are the map,
 4 to 7 are the product, and they can run in parallel once 0 is done.
 
-- [ ] **Slice 0. Real coordinates.** One projection, used everywhere. Delete
-      `SPAN_M` and `toWorld` from all four screens, swap the axial hex
-      stand-in for real H3, put real coordinates on the fixtures. Ships nothing
-      visible and blocks everything else, which is why it is its own step
+- [x] **Slice 0. Real coordinates.** Done 3 September. One projection,
+      `SPAN_M` and `toWorld` gone, real H3 on `h3-js`, real fixture geography,
+      `fit` replacing magic zoom numbers, and tests on Node's own runner wired
+      into CI. Notes in [`docs/v1-map-build.md`](./docs/v1-map-build.md)
 - [ ] **Measure the Planetiler build.** Run it full and trimmed. This is the
       number the whole storage plan waits on. Do it alongside slice 0
 - [ ] **Slice 1. The basemap on screen.** MapLibre plus PMTiles. Carries the

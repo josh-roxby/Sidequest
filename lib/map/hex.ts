@@ -1,156 +1,142 @@
-/** Pointy-top hexagonal tiling in axial coordinates.
+import {
+  cellToBoundary, cellToChildren, cellToLatLng, getResolution,
+  gridDisk, latLngToCell,
+} from "h3-js";
+import { distanceM } from "../geo.ts";
+import type { LatLng } from "../data/index.ts";
+import { project } from "./project.ts";
+
+/** Territory tiles, on real H3.
  *
- *  Stands in for H3 while the map is a placeholder. The maths is the same
- *  shape as the real thing: a hexagon has one neighbour distance, tiles
- *  without gaps, and counts as an integer. So the fog and territory UI built
- *  against this does not change when H3 lands behind it.
- *  docs/PRD.md §11.5, docs/fog-of-war.md. */
+ *  This replaces an axial hex grid that was a stand-in for H3 while the app
+ *  had no real coordinates. H3 rather than our own grid because it is what
+ *  `docs/fog-of-war.md` specified, because Postgres has an extension that
+ *  speaks the same cell ids, and because a cell index that two people can
+ *  compare has to be a standard rather than something we invented.
+ *
+ *  Resolutions, edge length on the ground:
+ *
+ *  | res | edge  | note                         |
+ *  |-----|-------|------------------------------|
+ *  | 10  | 76m   | the finest fog cell          |
+ *  | 9   | 201m  |                              |
+ *  | 8   | 531m  |                              |
+ *  | 7   | 1.4km |                              |
+ *  | 6   | 3.7km |                              |
+ *  | 5   | 9.9km | the whole island in a screen |
+ */
 
-export interface Axial { q: number; r: number }
+/** A single field. Fine enough that walking a boreen clears ground rather than
+ *  a parish, coarse enough that a county is not a million rows. */
+export const RES_FINEST = 10;
+/** Any coarser and the island is a dozen cells, which reads as nothing. */
+export const RES_COARSEST = 5;
 
-const SQRT3 = Math.sqrt(3);
+/** Pick the resolution whose cells land near `targetPx` across on screen.
+ *
+ *  H3 resolutions step by about 2.65 in edge length rather than doubling, so
+ *  this walks the table instead of taking a logarithm. Six comparisons is
+ *  nothing and it stays right if the table ever changes. */
+const EDGE_M: Record<number, number> = {
+  5: 9854, 6: 3725, 7: 1406, 8: 531, 9: 201, 10: 76,
+};
 
-/** Centre of a hex in world units, for a given circumradius. */
-export function hexCentre(h: Axial, size: number): { x: number; y: number } {
-  return { x: size * SQRT3 * (h.q + h.r / 2), y: size * 1.5 * h.r };
-}
-
-/** World point to the hex containing it. Rounds in cube space, which is the
- *  only way to round hex coordinates without opening gaps at the seams. */
-export function hexAt(x: number, y: number, size: number): Axial {
-  const r = (2 / 3) * (y / size);
-  const q = (SQRT3 / 3) * (x / size) - r / 2;
-  return cubeRound(q, r);
-}
-
-function cubeRound(q: number, r: number): Axial {
-  const s = -q - r;
-  let rq = Math.round(q);
-  let rr = Math.round(r);
-  const rs = Math.round(s);
-  const dq = Math.abs(rq - q);
-  const dr = Math.abs(rr - r);
-  const ds = Math.abs(rs - s);
-  if (dq > dr && dq > ds) rq = -rr - rs;
-  else if (dr > ds) rr = -rq - rs;
-  return { q: rq, r: rr };
-}
-
-export function hexKey(h: Axial): string {
-  return `${h.q},${h.r}`;
-}
-
-/** Corner offsets for a pointy-top hex, from its centre. */
-export function hexCorners(size: number): [number, number][] {
-  const pts: [number, number][] = [];
-  for (let i = 0; i < 6; i++) {
-    const a = (Math.PI / 180) * (60 * i - 30);
-    pts.push([size * Math.cos(a), size * Math.sin(a)]);
+export function resForScale(scale: number, lat: number, targetPx = 64): number {
+  /* scale is pixels per Mercator metre, and Mercator over-reads the ground by
+     the secant of the latitude, so an edge of E ground metres draws
+     E * scale / cos(lat) pixels. */
+  const stretch = 1 / Math.cos((lat * Math.PI) / 180);
+  let best = RES_COARSEST;
+  let bestErr = Infinity;
+  for (let r = RES_COARSEST; r <= RES_FINEST; r++) {
+    const px = EDGE_M[r] * 2 * scale * stretch;
+    const err = Math.abs(Math.log(px / targetPx));
+    if (err < bestErr) { bestErr = err; best = r; }
   }
-  return pts;
+  return best;
 }
 
-/** Every hex whose centre falls inside a world rectangle, with a one-ring
- *  margin so tiles clipped by the edge still draw. */
-export function hexesInRect(
-  minX: number, minY: number, maxX: number, maxY: number, size: number,
-): Axial[] {
-  const out: Axial[] = [];
-  const rMin = Math.floor((2 / 3) * (minY / size)) - 1;
-  const rMax = Math.ceil((2 / 3) * (maxY / size)) + 1;
-  for (let r = rMin; r <= rMax; r++) {
-    const xOffset = (size * SQRT3 * r) / 2;
-    const qMin = Math.floor((minX - xOffset) / (size * SQRT3)) - 1;
-    const qMax = Math.ceil((maxX - xOffset) / (size * SQRT3)) + 1;
-    for (let q = qMin; q <= qMax; q++) out.push({ q, r });
+/** The cell containing a place. */
+export function cellAt(p: LatLng, res: number): string {
+  return latLngToCell(p.lat, p.lng, res);
+}
+
+/** Boundaries are projected once and kept. A pan re-uses almost every cell it
+ *  had last frame, and projecting six corners each is a logarithm and an
+ *  arctangent apiece: cheap once, wasteful sixty times a second. */
+const boundaryCache = new Map<string, [number, number][]>();
+
+export function cellBoundary(cell: string): [number, number][] {
+  const hit = boundaryCache.get(cell);
+  if (hit) return hit;
+  const ring = cellToBoundary(cell).map(([lat, lng]) => {
+    const { x, y } = project({ lat, lng });
+    return [x, y] as [number, number];
+  });
+  /* Unbounded growth would be a leak on a long walk. Ten thousand cells is far
+     more than any view holds and a trivial amount of memory. */
+  if (boundaryCache.size > 10_000) boundaryCache.clear();
+  boundaryCache.set(cell, ring);
+  return ring;
+}
+
+/** Cells covering a rectangle of Mercator space.
+ *
+ *  Grown outward from the centre with `gridDisk` rather than asked for with
+ *  `polygonToCells`: the rectangle is rotated by the camera, so the honest
+ *  polygon is not axis aligned, and a disk that covers the diagonal is both
+ *  simpler and faster than describing the true shape. */
+export function cellsInView(
+  centre: LatLng, res: number, radiusMerc: number,
+): string[] {
+  const stretch = 1 / Math.cos((centre.lat * Math.PI) / 180);
+  const radiusGround = radiusMerc / stretch;
+  const rings = Math.min(60, Math.ceil(radiusGround / (EDGE_M[res] * 1.5)) + 1);
+  return gridDisk(cellAt(centre, res), rings);
+}
+
+/** Stable pseudo-random in 0..1 from a cell id. Used for the scattered
+ *  clearings that make unwalked country read as unknown rather than as empty,
+ *  and for the occasional green tile. Deterministic, so the same ground looks
+ *  the same on every device. */
+export function cellNoise(cell: string, seed = 1): number {
+  let h = 2166136261 ^ seed;
+  for (let i = 0; i < cell.length; i++) {
+    h ^= cell.charCodeAt(i);
+    h = Math.imul(h, 16777619);
   }
-  return out;
+  return ((h >>> 0) % 1000) / 1000;
 }
 
-/** Deterministic pseudo-random in 0..1 from a hex. Decides which tiles read as
- *  revealed in the placeholder, so the map looks identical on every render and
- *  between reloads rather than shimmering as you pan. */
-export function hexNoise(h: Axial, seed = 1): number {
-  const n = Math.sin(h.q * 127.1 + h.r * 311.7 + seed * 74.7) * 43758.5453;
-  return n - Math.floor(n);
+/** Has this ground been cleared?
+ *
+ *  Ground metres, not Mercator metres: the radius means a real distance a
+ *  person walked, and H3 lets us ask that question directly. Placeholder until
+ *  the fog is written from a live position in slice 7. */
+export function cellRevealed(cell: string, centre: LatLng, radiusM: number): boolean {
+  const [lat, lng] = cellToLatLng(cell);
+  if (distanceM({ lat, lng }, centre) < radiusM) return true;
+  return cellNoise(cell) > 0.62;
 }
 
-
-/** Base resolution, in world metres. Every coarser level is this doubled. */
-/** Mercator metres per ground metre at Ireland's middle latitude.
+/** A coarse cell is only clear when most of the ground inside it is. A single
+ *  cleared field must not clear a forty kilometre tile.
  *
- *  Mercator stretches with latitude, so a grid sized in Mercator metres is
- *  smaller on the ground the further north it sits. Across Ireland that
- *  variation is about seven percent, which is invisible in a fog grid, so one
- *  reference latitude is used rather than varying the grid and breaking
- *  tessellation. Real H3 handles this properly and replaces the whole file. */
-const MERC_PER_GROUND_M = 1 / Math.cos((53.4 * Math.PI) / 180);
-
-/** Finest hex, about 90 metres of real ground across. */
-export const BASE_HEX = 90 * MERC_PER_GROUND_M;
-
-/** The tiling stops subdividing here.
- *
- *  Past this the hexes are so large that they stop describing territory and
- *  start being a second, competing map. Beyond MAX_LEVEL the grid holds its
- *  size and fades out instead, so a fully zoomed out view shows the island and
- *  the colour of what you have walked, not a lattice over the whole country. */
-export const MAX_LEVEL = 5;
-
-/** Which hex size to draw at a given zoom, so an on-screen hex stays around
- *  64px whatever the scale. Without this the tile layer is either a solid mat
- *  of hairlines when zoomed out, or four hexes filling the screen when zoomed
- *  in. Clamped at MAX_LEVEL. */
-export function levelForScale(scale: number, targetPx = 64): number {
-  const wanted = targetPx / scale;
-  const raw = Math.round(Math.log2(wanted / BASE_HEX));
-  return Math.max(0, Math.min(MAX_LEVEL, raw));
+ *  The children are H3's own, so the majority is over the real subdivision
+ *  rather than over seven points sampled around a centre. */
+export function majorityRevealed(cell: string, centre: LatLng, radiusM: number): boolean {
+  const res = getResolution(cell);
+  if (res >= RES_FINEST) return cellRevealed(cell, centre, radiusM);
+  const kids = cellToChildren(cell, res + 1);
+  let hits = 0;
+  for (const k of kids) if (cellRevealed(k, centre, radiusM)) hits++;
+  return hits * 2 > kids.length;
 }
 
-/** How present the tile layer is at a given zoom, 0 to 1.
- *
- *  Full strength close in, then fading through the last two levels so the grid
- *  leaves before it can turn into visual noise. Fill fades more slowly than
- *  stroke: the colour of walked ground is the useful signal at a distance, the
- *  hairlines are not. */
+/** How strongly the tile layer draws at this zoom. It fades out rather than
+ *  vanishing, so a zoomed out map shows the island rather than a lattice. */
 export function tileStrength(scale: number): { stroke: number; fill: number } {
-  const wanted = 64 / scale;
-  const raw = Math.log2(wanted / BASE_HEX);
-  if (raw <= MAX_LEVEL - 2) return { stroke: 1, fill: 1 };
-  // Two levels of fade above the clamp, then nothing.
-  const over = Math.min(1, (raw - (MAX_LEVEL - 2)) / 3);
-  return { stroke: Math.max(0, 1 - over * 1.4), fill: Math.max(0, 1 - over * 0.75) };
-}
-
-export function sizeForLevel(level: number): number {
-  return BASE_HEX * 2 ** level;
-}
-
-/** Whether the base-resolution hex containing a world point is revealed.
- *  Deterministic, so the map looks identical between renders and reloads. */
-export function revealedAt(
-  x: number, y: number, revealRadius: number, centre: { x: number; y: number },
-): boolean {
-  if (Math.hypot(x - centre.x, y - centre.y) < revealRadius) return true;
-  return hexNoise(hexAt(x, y, BASE_HEX)) > 0.62;
-}
-
-/** A coarse hex counts as revealed only when MOST of the ground inside it is.
- *
- *  Sampled at the centre and six points around it rather than by walking every
- *  child, which at level 9 would be seven to the ninth. Seven samples is a
- *  fair read of a hexagon and it costs the same at every level, so zooming out
- *  stays smooth. */
-export function majorityRevealed(
-  cx: number, cy: number, size: number, revealRadius: number,
-  centre: { x: number; y: number },
-): boolean {
-  if (size <= BASE_HEX) return revealedAt(cx, cy, revealRadius, centre);
-  let hits = revealedAt(cx, cy, revealRadius, centre) ? 1 : 0;
-  const r = size * 0.58;
-  for (let i = 0; i < 6; i++) {
-    const a = (Math.PI / 3) * i;
-    if (revealedAt(cx + r * Math.cos(a), cy + r * Math.sin(a), revealRadius, centre)) hits++;
-  }
-  return hits >= 4;
+  const fade = (a: number, b: number) =>
+    Math.max(0, Math.min(1, (scale - a) / (b - a)));
+  return { stroke: fade(0.004, 0.02), fill: fade(0.008, 0.03) };
 }

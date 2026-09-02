@@ -1,11 +1,11 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  hexCentre, hexCorners, hexesInRect, hexKey, hexNoise,
-  levelForScale, majorityRevealed, sizeForLevel, tileStrength,
+  cellAt, cellBoundary, cellNoise, cellsInView, majorityRevealed,
+  RES_COARSEST, RES_FINEST, resForScale, tileStrength,
 } from "@/lib/map/hex";
 import { IRELAND } from "@/lib/map/ireland";
-import { DEFAULT_CENTRE, IRELAND_RECT, project } from "@/lib/map/project";
+import { DEFAULT_CENTRE, IRELAND_RECT, project, unproject } from "@/lib/map/project";
 import type { LatLng } from "@/lib/data";
 
 export interface MapMarker {
@@ -21,8 +21,10 @@ export interface MapCanvasProps {
   /** The active trail, as [lng, lat] pairs. GeoJSON order, because that is
    *  what it becomes when real routing lands. */
   trail?: [number, number][];
-  /** Hexes holding an available quest, drawn with a rust outline. */
-  questTiles?: [number, number][];
+  /** Where the available quests start, drawn as a rust outline on the cell
+   *  each one falls in. The resolution is the map's, not the caller's, so this
+   *  is places rather than cell ids. */
+  questTiles?: LatLng[];
   onMarker?: (id: string) => void;
   /** Recentre target. Defaults to where the app opens. */
   home?: LatLng;
@@ -56,10 +58,10 @@ const TOKENS = [
 
 const MIN_SCALE = 0.0008;
 const MAX_SCALE = 4;
-/** Cleared ground around the opening position, in Mercator metres. About
- *  900 metres of real ground at Ireland's latitude. Placeholder until the fog
- *  is written from a live position in slice 7. */
-const REVEAL_RADIUS = 900 / Math.cos((53.4 * Math.PI) / 180);
+/** Cleared ground around the opening position, in real metres now that H3
+ *  answers the question directly. Placeholder until the fog is written from a
+ *  live position in slice 7. */
+const REVEAL_RADIUS_M = 900;
 
 /** Canvas map with pan, pinch zoom and twist rotation.
  *
@@ -79,7 +81,8 @@ export function MapCanvas({
   /** Everything below works in Mercator metres. Projection happens once, here,
    *  rather than in four screens each rolling their own arithmetic. */
   const { lat: homeLat, lng: homeLng } = home;
-  const homeXY = useMemo(() => project({ lat: homeLat, lng: homeLng }), [homeLat, homeLng]);
+  const homeLL = useMemo(() => ({ lat: homeLat, lng: homeLng }), [homeLat, homeLng]);
+  const homeXY = useMemo(() => project(homeLL), [homeLL]);
   const markersXY = useMemo(
     () => markers.map((m) => ({ ...m, ...project(m) })),
     [markers],
@@ -163,21 +166,16 @@ export function MapCanvas({
     ctx.rotate(-c.bearing);
     ctx.translate(-c.x, -c.y);
 
-    // Resolution follows zoom, so an on-screen hex stays about 64px whatever
-    // the camera is doing.
-    const level = levelForScale(c.scale);
-    const hexSize = sizeForLevel(level);
-    const corners = hexCorners(hexSize);
+    // Resolution follows zoom, so an on-screen cell stays about 64px across
+    // whatever the camera is doing.
+    const here = unproject({ x: c.x, y: c.y });
+    const res = resForScale(c.scale, here.lat);
 
-    // World rectangle covering the rotated viewport, padded by the diagonal so
-    // nothing pops in at the corners while turning.
-    const reach = (Math.hypot(w, h) / c.scale) / 2 + hexSize * 2;
-    const minX = c.x - reach, maxX = c.x + reach;
-    const minY = c.y - reach, maxY = c.y + reach;
+    // Padded by the viewport diagonal so nothing pops in at the corners while
+    // the camera is turning.
+    const reach = (Math.hypot(w, h) / c.scale) / 2;
     const questSet = new Set(
-      level === 0
-        ? questTiles.map(([x, y]) => hexKey({ q: Math.round(x), r: Math.round(y) }))
-        : [],
+      res === RES_FINEST ? questTiles.map((q) => cellAt(q, res)) : [],
     );
 
     const fog = css("--map-fog");
@@ -188,7 +186,7 @@ export function MapCanvas({
     // The island silhouette. A placeholder outline until the real basemap
     // lands, drawn beneath the tiles so zooming out reads as Ireland rather
     // than as an empty grid.
-    if (level >= 4) {
+    if (res <= RES_COARSEST + 1) {
       ctx.beginPath();
       IRELAND.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
       ctx.closePath();
@@ -202,19 +200,19 @@ export function MapCanvas({
     }
 
     const strength = tileStrength(c.scale);
-    const hexes = strength.fill <= 0.02 && strength.stroke <= 0.02
+    const cells = strength.fill <= 0.02 && strength.stroke <= 0.02
       ? []
-      : hexesInRect(minX, minY, maxX, maxY, hexSize);
-    for (const hx of hexes) {
-      const { x, y } = hexCentre(hx, hexSize);
-      const n = hexNoise(hx);
-      // At a coarse level the hex is only clear when most of the ground inside
-      // it is. A single revealed field must not clear a forty kilometre tile.
-      const revealed = majorityRevealed(x, y, hexSize, REVEAL_RADIUS, homeXY);
+      : cellsInView(here, res, reach);
+    for (const cell of cells) {
+      const n = cellNoise(cell);
+      // At a coarse resolution the cell is only clear when most of the ground
+      // inside it is. A single cleared field must not clear a parish.
+      const revealed = majorityRevealed(cell, homeLL, REVEAL_RADIUS_M);
 
+      const ring = cellBoundary(cell);
       ctx.beginPath();
-      ctx.moveTo(x + corners[0][0], y + corners[0][1]);
-      for (let i = 1; i < 6; i++) ctx.lineTo(x + corners[i][0], y + corners[i][1]);
+      ctx.moveTo(ring[0][0], ring[0][1]);
+      for (let i = 1; i < ring.length; i++) ctx.lineTo(ring[i][0], ring[i][1]);
       ctx.closePath();
 
       if (!revealed) {
@@ -222,7 +220,7 @@ export function MapCanvas({
         ctx.globalAlpha = 0.72 * strength.fill;
         ctx.fill();
         ctx.globalAlpha = 1;
-      } else if (level === 0 && n > 0.86) {
+      } else if (res === RES_FINEST && n > 0.86) {
         ctx.fillStyle = green;
         ctx.globalAlpha = strength.fill;
         ctx.fill();
@@ -237,7 +235,7 @@ export function MapCanvas({
         ctx.globalAlpha = 1;
       }
 
-      if (questSet.has(hexKey(hx)) && (a.quests ?? 1) > 0.01) {
+      if (questSet.has(cell) && (a.quests ?? 1) > 0.01) {
         ctx.strokeStyle = rust;
         ctx.globalAlpha = a.quests ?? 1;
         ctx.lineWidth = 2 / c.scale;
@@ -311,7 +309,7 @@ export function MapCanvas({
     if (settling && frame.current === null) {
       frame.current = requestAnimationFrame(() => drawRef.current());
     }
-  }, [markersXY, trailXY, questTiles, hiddenKey, homeXY]);
+  }, [markersXY, trailXY, questTiles, hiddenKey, homeLL]);
 
   useEffect(() => { drawRef.current = draw; }, [draw]);
 

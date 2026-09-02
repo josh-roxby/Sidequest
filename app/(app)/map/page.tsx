@@ -10,8 +10,7 @@ import { Plate } from "@/components/primitives/Plate";
 import { Data, Label } from "@/components/primitives/Text";
 import { Skeleton, StatusStrip } from "@/components/primitives/States";
 import { data, type CommunityPoint, type Note, type Point } from "@/lib/data";
-import { hexAt } from "@/lib/map/hex";
-import { DEFAULT_CENTRE, project } from "@/lib/map/project";
+import { DEFAULT_CENTRE } from "@/lib/map/project";
 import { useAsync } from "@/hooks/use-async";
 import { useSettings } from "@/lib/settings";
 
@@ -56,15 +55,11 @@ export default function MapScreen() {
     [quests.data],
   );
 
-  /** Tiles holding a quest start, so available quests read as territory
-   *  rather than as pins floating above it. */
-  const questTiles = useMemo<[number, number][]>(
-    () => (quests.data ?? []).map((q) => {
-      const [x, y] = q.path[0];
-      const { x: mx, y: my } = project({ lat: y, lng: x });
-      const h = hexAt(mx, my, 90);
-      return [h.q, h.r] as [number, number];
-    }),
+  /** Where the available quests start, so they read as territory rather than
+   *  as pins floating above it. The map turns these into cells at whatever
+   *  resolution it is drawing. */
+  const questTiles = useMemo(
+    () => (quests.data ?? []).map((q) => ({ lat: q.path[0][1], lng: q.path[0][0] })),
     [quests.data],
   );
 

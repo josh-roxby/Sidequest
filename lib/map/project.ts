@@ -1,4 +1,4 @@
-import type { LatLng } from "@/lib/data";
+import type { LatLng } from "../data/index.ts";
 
 /** Web Mercator, the projection the whole app works in.
  *

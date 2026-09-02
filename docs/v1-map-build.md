@@ -36,7 +36,7 @@ hide inside a bigger one.
 
 | # | Slice | Replaces | Visible? | Size |
 |---|---|---|---|---|
-| 0 | Real coordinates | The 0-1 surface, axial hexes, traced outline | No | M |
+| 0 | ~~Real coordinates~~ **Done** | The 0-1 surface, axial hexes, traced outline | No | M |
 | 1 | The basemap on screen | Blank ground under the hexes | Yes, hugely | L |
 | 2 | The survey plate style | Default MapLibre styling | Yes | M |
 | 3 | Ground types | `surface` as a fixture string | Yes, and in every estimate | S once 1 is done |
@@ -72,6 +72,38 @@ that is what tiles are in and it keeps the maths linear.
 `distanceM` between two fixture points matches what a map ruler says.
 
 **Why first.** Everything below assumes it.
+
+### Done, 3 September 2026
+
+Shipped as specified, plus four things the slice turned up.
+
+- **`lib/map/project.ts`** is the one projection. Web Mercator, y south.
+  `SPAN_M` and `toWorld` are gone from all four screens.
+- **`lib/map/hex.ts` is real H3**, on `h3-js` (Apache-2.0). Resolutions 10 to 5,
+  76m to 9.9km edges. Cell boundaries are projected once and cached, because a
+  pan re-uses almost every cell it had last frame and six corners each is a
+  logarithm and an arctangent apiece. A coarse cell's majority test now uses
+  H3's own children rather than seven sampled points.
+- **The reveal radius is honest ground metres again.** It had been silently
+  shrunk by a third: Mercator over-reads the ground by 1.66 at Ireland's
+  latitude, and the old grid was sized in the projected units without correcting
+  for it.
+- **`MapCanvas` gained `fit`.** Real coordinates mean the view can be computed
+  rather than guessed, so the call sites dropped their magic zoom numbers. A
+  caller should not have to know a 2.8km loop wants a scale of 0.26.
+- **The app opens at Corofin, not Ennistymon.** The fixture points are Dysert,
+  Inchiquin, Toonagh and Cahercalla, which cluster round Corofin. Opening
+  fifteen kilometres west of all of them showed an empty map, which the fake
+  coordinate space had hidden.
+- **Tests exist**, on Node's own runner with no new dependency, wired into CI.
+  `docs/audit.md` X-07 named these three files first and it was right: the
+  fixture tests found three real bugs the moment they ran. A route that drew
+  1200m while printing 1080m beside it, a loop that ended 78m from its own
+  start, and a waypoint sitting ten kilometres off the quest that visits it.
+  All three were invisible while the coordinates were made up.
+- **Inside `lib/`, sibling imports are relative and carry their extension.**
+  The `@/` alias needs a bundler; these are the pure modules the test runner
+  loads directly.
 
 ---
 
