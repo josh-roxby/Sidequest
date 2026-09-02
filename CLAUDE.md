@@ -78,7 +78,8 @@ lib/
 supabase/
   migrations/   written, not applied
 docs/           PRD, design system, UX loops, reface plan, data pipeline,
-                map infrastructure (layers, shards, the quest builder),
+                map infrastructure (layers, storage, the quest builder),
+                v1 map build (the slice order to build it in),
                 audit (what needs work, with the measurements behind it)
 ```
 

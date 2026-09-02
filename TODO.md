@@ -4,9 +4,10 @@ Live punch list, organised by the release phases in
 [`docs/PRD.md`](./docs/PRD.md) §15. `README.md` stays lean; this is the
 authoritative "what's left".
 
-Docs: [Audit](./docs/audit.md) · [Map infrastructure](./docs/map-infrastructure.md) ·
-[PRD](./docs/PRD.md) · [Data pipeline](./docs/data-pipeline.md) ·
-[Repo review](./docs/repo-review.md) · [Fog of war](./docs/fog-of-war.md)
+Docs: [Audit](./docs/audit.md) · [V1 map build](./docs/v1-map-build.md) ·
+[Map infrastructure](./docs/map-infrastructure.md) · [PRD](./docs/PRD.md) ·
+[Data pipeline](./docs/data-pipeline.md) · [Repo review](./docs/repo-review.md) ·
+[Fog of war](./docs/fog-of-war.md)
 
 **Standing constraints** (PRD §3): **C1** zero third-party spend to MVP ·
 **C2** we own the GIS · **C3** no chains, ever · **C4** no invented history.
@@ -140,6 +141,38 @@ data with auth off and no database.
 - [ ] Admin review queue for community points, alongside the media console
 - [ ] Unlock a point for real from a live position rather than a fixture flag
 - [ ] Tile counts in the dock computed from the camera rather than passed in
+
+## The v1 map, in build order
+
+Full plan with what each slice replaces and how you know it worked in
+[`docs/v1-map-build.md`](./docs/v1-map-build.md). Slices 0 to 3 are the map,
+4 to 7 are the product, and they can run in parallel once 0 is done.
+
+- [ ] **Slice 0. Real coordinates.** One projection, used everywhere. Delete
+      `SPAN_M` and `toWorld` from all four screens, swap the axial hex
+      stand-in for real H3, put real coordinates on the fixtures. Ships nothing
+      visible and blocks everything else, which is why it is its own step
+- [ ] **Measure the Planetiler build.** Run it full and trimmed. This is the
+      number the whole storage plan waits on. Do it alongside slice 0
+- [ ] **Slice 1. The basemap on screen.** MapLibre plus PMTiles. Carries the
+      biggest decision in the plan: the canvas does not survive, and the fog,
+      trail and markers are reimplemented as layers. Its decisions survive as
+      specification
+- [ ] **Slice 2. The survey plate style.** Taste work, timeboxed. Layer table
+      in the build doc
+- [ ] **Slice 3. Ground types.** One source, three consumers that must agree:
+      routing cost, duration estimate, and the line on the map. Ascent and
+      contours both from the national LiDAR
+- [ ] **Slice 4. The points library.** Pipeline passes 0 to 8 into Postgres.
+      Run Clare first as a build tactic, then nationally
+- [ ] **Slice 5. Routing and assembly.** Graph build offline, A* at request
+      time. Check pgRouting before writing either
+- [ ] **Slice 6. Collecting a point.** The loop. `useLiveLocation` into the
+      walk, arrival by H3 cell rather than radius, rows written. Watch the
+      battery: it decides whether anyone finishes an adventure
+- [ ] **Slice 7. Fog for real.** Cells written from the live position
+
+---
 
 ## Audit punch list
 
