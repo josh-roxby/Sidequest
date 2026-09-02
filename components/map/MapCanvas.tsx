@@ -40,6 +40,12 @@ interface Camera { x: number; y: number; scale: number; bearing: number }
 /** Low enough to hold the whole island on a phone, high enough to see a
  *  field boundary. Four decimal places of range, which is why the tile layer
  *  has to change resolution rather than just scale. */
+/** Every custom property the draw pass needs, read once into a cache. */
+const TOKENS = [
+  "--map-paper", "--map-fog", "--map-green", "--map-trail",
+  "--rule", "--rust", "--stone", "--ink", "--field", "--surface",
+] as const;
+
 const MIN_SCALE = 0.0008;
 const MAX_SCALE = 4;
 const REVEAL_RADIUS = 900;    // world metres of cleared ground around origin
@@ -75,6 +81,13 @@ export function MapCanvas({
   /** Lets draw schedule its own next frame without referencing itself, which
    *  would be a use-before-declaration inside its own callback. */
   const drawRef = useRef<() => void>(() => {});
+
+  /** The palette, resolved once. Reading a custom property means
+   *  getComputedStyle on the root element, which forces a style recalculation;
+   *  doing that ten times inside a draw that runs on every frame of a pan is
+   *  most of the cost of a pan. Tokens only change when the stylesheet or the
+   *  colour scheme does, so they are read on mount and cached. */
+  const palette = useRef<Record<string, string>>({});
 
   /** Screen point to world point, undoing rotation and zoom. */
   const toWorld = useCallback((sx: number, sy: number) => {
@@ -112,8 +125,7 @@ export function MapCanvas({
     const { w, h, dpr } = size.current;
     const c = cam.current;
 
-    const css = (n: string) =>
-      getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const css = (n: string) => palette.current[n] ?? "";
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = css("--map-paper");
@@ -277,6 +289,22 @@ export function MapCanvas({
 
   useEffect(() => { drawRef.current = draw; }, [draw]);
 
+  /** Tokens are read here rather than in draw. A colour scheme change is the
+   *  only thing that moves them, and that fires this again. */
+  useEffect(() => {
+    const read = () => {
+      const cs = getComputedStyle(document.documentElement);
+      const next: Record<string, string> = {};
+      for (const n of TOKENS) next[n] = cs.getPropertyValue(n).trim();
+      palette.current = next;
+      drawRef.current();
+    };
+    read();
+    const scheme = window.matchMedia("(prefers-color-scheme: dark)");
+    scheme.addEventListener("change", read);
+    return () => scheme.removeEventListener("change", read);
+  }, []);
+
   const invalidate = useCallback(() => {
     if (frame.current === null) frame.current = requestAnimationFrame(draw);
   }, [draw]);
@@ -290,9 +318,16 @@ export function MapCanvas({
     const ro = new ResizeObserver(() => {
       const r = wrap.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.round(r.width * dpr);
+      const h = Math.round(r.height * dpr);
+      // Assigning canvas.width clears the canvas even when the value is
+      // unchanged, so an observer tick that reports the same box would blank
+      // the map for a frame. A phone fires those constantly as browser chrome
+      // settles, which reads as the map flickering while you move around.
+      if (canvas.width === w && canvas.height === h) return;
       size.current = { w: r.width, h: r.height, dpr };
-      canvas.width = Math.round(r.width * dpr);
-      canvas.height = Math.round(r.height * dpr);
+      canvas.width = w;
+      canvas.height = h;
       canvas.style.width = `${r.width}px`;
       canvas.style.height = `${r.height}px`;
       invalidate();
@@ -351,7 +386,10 @@ export function MapCanvas({
 
       gesture.current = { dist, angle, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
       clamp();
-      setBearing(c.bearing);
+      // Only when the compass would visibly move. Pushing the raw bearing into
+      // state re-rendered this component, and everything under it, on every
+      // frame of a two finger gesture.
+      setBearing((b0) => (Math.abs(b0 - c.bearing) > 0.01 ? c.bearing : b0));
       invalidate();
     }
   }, [invalidate, toWorld, clamp]);
@@ -363,11 +401,14 @@ export function MapCanvas({
 
   const onWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
     const c = cam.current;
-    const anchor = toWorld(e.clientX - (wrapRef.current?.getBoundingClientRect().left ?? 0),
-                           e.clientY - (wrapRef.current?.getBoundingClientRect().top ?? 0));
+    // One rect read per tick. Four of them, inside a handler that fires at
+    // wheel rate, is a layout thrash for a number that cannot change midway.
+    const r = wrapRef.current?.getBoundingClientRect();
+    const px = e.clientX - (r?.left ?? 0);
+    const py = e.clientY - (r?.top ?? 0);
+    const anchor = toWorld(px, py);
     c.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, c.scale * (e.deltaY > 0 ? 0.92 : 1.08)));
-    const after = toWorld(e.clientX - (wrapRef.current?.getBoundingClientRect().left ?? 0),
-                          e.clientY - (wrapRef.current?.getBoundingClientRect().top ?? 0));
+    const after = toWorld(px, py);
     c.x += anchor.x - after.x;
     c.y += anchor.y - after.y;
     clamp();

@@ -69,7 +69,7 @@ export default function MapScreen() {
   );
 
   return (
-    <div className="relative h-dvh w-full overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden">
       <MapCanvas
         markers={markers}
         trail={trail}
@@ -154,7 +154,7 @@ export default function MapScreen() {
             {/* Full-bleed plate, then the name, then the tags. The picture is
                 what tells you whether it is worth the walk, so it goes first
                 and it goes edge to edge. */}
-            <Plate ratio="16/9" plate={open.plate} label={open.townland}
+            <Plate ratio="16/9" plate={open.plate} collapse
               className="rounded-none border-0 border-b border-rule" />
             <div className="flex flex-col gap-2 px-4 pt-3.5">
               {open.nameGa ? (

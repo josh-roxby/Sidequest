@@ -100,7 +100,7 @@ export function Frame({
           right: "var(--gutter)",
           bottom: "calc(var(--gutter) + env(safe-area-inset-bottom))",
           aspectRatio: ratio === "tall" ? "1 / 1.28" : "1 / 1",
-          maxHeight: "calc(100dvh - var(--s-12))",
+          maxHeight: "calc(var(--app-h) - var(--s-12))",
           borderRadius: "var(--r-md)",
           transformOrigin: "bottom right",
           animation: "sq-frame-in var(--dur-frame) var(--ease-out)",

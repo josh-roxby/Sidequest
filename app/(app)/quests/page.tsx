@@ -14,7 +14,7 @@ export default function QuestsScreen() {
 
   return (
     <div
-      className="flex h-dvh flex-col gap-3 overflow-hidden px-4"
+      className="flex h-full flex-col gap-3 overflow-hidden px-4"
       style={{
         paddingTop: "calc(env(safe-area-inset-top) + var(--s-3))",
         paddingBottom: "calc(var(--tile) + var(--gutter) * 2 + env(safe-area-inset-bottom))",

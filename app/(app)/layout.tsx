@@ -4,7 +4,7 @@ import { PhoneFrame } from "@/components/shell/PhoneFrame";
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <PhoneFrame>
-      <main className="relative min-h-dvh">{children}</main>
+      <main className="relative h-full">{children}</main>
       <NavSwitch />
     </PhoneFrame>
   );

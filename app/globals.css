@@ -118,6 +118,22 @@ html, body {
 }
 body { min-height: 100dvh; margin: 0; }
 
+/* The app shell's height. `dvh` tracks the browser chrome, so on a phone it
+ * grows the moment the URL bar collapses and every fixed surface, the map
+ * canvas included, resizes under the walker's thumb. `svh` is the height with
+ * the chrome fully shown: smaller, but it never changes, which is what an app
+ * shell needs. In a standalone PWA there is no chrome and the two are equal,
+ * so nothing is given up where it counts. */
+:root { --app-h: 100dvh; }
+@supports (height: 100svh) { :root { --app-h: 100svh; } }
+
+/* The app shell is exactly one screen tall and never scrolls as a document.
+ * Screens that need more room scroll inside it, so the chrome, the map canvas
+ * and every floating surface hold still while you read. Desktop drops the lock
+ * and lets the review column sit in a normal page. */
+.app-shell { height: var(--app-h); overflow: hidden; }
+@media (min-width: 768px) { .app-shell { height: auto; overflow: visible; } }
+
 /* ---- interaction hygiene ----------------------------------------------
  * Chrome is not text. A long press on a label, a nav glyph or a button
  * should do what the app says it does, never raise a selection handle or an

@@ -56,7 +56,7 @@ export function TaleCarousel({ cards, plate }: { cards: Lore[]; plate?: string }
           >
             <div className="flex flex-col overflow-hidden border border-rule bg-surface"
               style={{ borderRadius: "var(--r-md)" }}>
-              <Plate ratio="16/9" plate={plate} label={c.kind} className="rounded-none border-0 border-b border-rule" />
+              <Plate ratio="16/9" plate={plate} collapse className="rounded-none border-0 border-b border-rule" />
               <div className="flex flex-col gap-2 p-4">
                 <Label>{c.kind}</Label>
                 <h3 className="t-h2 text-ink">{c.title}</h3>

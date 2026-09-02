@@ -57,6 +57,10 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   const point = (o: Objective): Point | undefined =>
     (points.data ?? []).find((p) => p.id === o.pointId);
 
+  /** The point behind the open waypoint, resolved once rather than looked up
+   *  five times inside the drawer's markup. */
+  const openPoint = openObj ? point(openObj) : undefined;
+
   const doneCount = q?.objectives.filter((o) => o.reached).length ?? 0;
   const totalS = q ? estimateDurationS(q.distanceM, {
     surface: q.surface, ascentM: q.ascentM, dwellS: q.objectives.length * 240,
@@ -81,7 +85,7 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   }
 
   return (
-    <div className="relative h-dvh w-full overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden">
       <MapCanvas markers={markers} trail={trail} initialScale={1.3} />
 
       {/* Opens once, on arrival, so you set off knowing roughly what is out
@@ -139,36 +143,49 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
                  bottom: "calc(var(--gutter) + env(safe-area-inset-bottom))",
                  scrollbarWidth: "none", touchAction: "pan-x" }}
       >
-        {(q?.objectives ?? []).map((o) => {
+        {(q?.objectives ?? []).map((o, i) => {
           const p = point(o);
           return (
             <button
               key={o.id}
               type="button"
-              onClick={() => setOpenObj(o)}
+              /* Only a waypoint you have stood in opens. There is nothing
+                 behind an unreached one but the line already on its face, and
+                 a tap that opens a card saying "not yet" teaches the walker to
+                 stop tapping. It stays on the rail, dimmed, because seeing
+                 what is coming is the point of the rail. */
+              onClick={o.reached ? () => setOpenObj(o) : undefined}
+              disabled={!o.reached}
+              aria-label={o.reached ? o.label : `${o.label}, not reached yet`}
               className={cn(
-                "w-[200px] shrink-0 select-none overflow-hidden border bg-surface text-left active:scale-[0.99]",
-                o.reached ? "border-field" : "border-dashed border-rule",
+                "w-[190px] shrink-0 select-none overflow-hidden border bg-surface p-2.5 text-left",
+                o.reached
+                  ? "border-field active:scale-[0.99]"
+                  : "border-dashed border-rule opacity-45",
               )}
               style={{ borderRadius: "var(--r-md)", transitionDuration: "var(--dur-tap)" }}
             >
-              <Plate ratio="16/9" plate={o.reached ? p?.plate : undefined} sizes="200px"
-                label={o.reached ? p?.category ?? "Waypoint" : "Locked"}
-                className="rounded-none border-0 border-b border-rule" />
-              <div className="p-2.5">
-                <div className="flex items-center gap-1.5">
-                  <Mark name={o.reached ? "badge" : "flag"} size={12} />
-                  <Data className="text-[9px] uppercase text-mute">
-                    {formatDistance(o.atM)} in
+              {/* No plate. We will not have artwork for every point in the
+                  country, and a waypoint card that is mostly a placeholder
+                  reads as broken rather than as unfinished. The index and the
+                  distance carry the structure instead. */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-stone">
+                  <Mark name={o.reached ? "badge" : p?.group ?? "flag"} size={12} />
+                  <Data className="text-[9px] uppercase">
+                    {String(i + 1).padStart(2, "0")}
                   </Data>
                 </div>
-                <p className="mt-1 text-[12px] font-semibold leading-tight text-ink">{o.label}</p>
-                <p className="t-small mt-0.5 line-clamp-2 text-stone">
-                  {o.reached
-                    ? p?.lore[0]?.title ?? "You have been here."
-                    : "Details unlock when you arrive."}
-                </p>
+                <Data className="text-[9px] uppercase text-mute">
+                  {formatDistance(o.atM)} in
+                </Data>
               </div>
+              <p className="mt-1.5 text-[12px] font-semibold leading-tight text-ink">{o.label}</p>
+              <p className="t-small mt-0.5 line-clamp-2 text-stone">
+                {o.reached
+                  ? p?.lore[0]?.title ?? "You have been here."
+                  : p?.blurb ?? "Details unlock when you arrive."}
+              </p>
             </button>
           );
         })}
@@ -177,46 +194,41 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
       <Frame
         open={openObj !== null}
         onDismiss={() => setOpenObj(null)}
-        ratio={openObj?.reached ? "tall" : "square"}
-        label={openObj?.reached ? point(openObj)?.category ?? "Waypoint" : "Not reached yet"}
+        ratio="tall"
+        label={openPoint?.category ?? "Waypoint"}
         title={openObj?.label ?? ""}
-        action={openObj?.reached && point(openObj)?.lore.length
+        action={openPoint?.lore.length
           ? <Button tone="outline" onClick={() => router.push(`/tales/t-1`)}>Read the tale</Button>
           : null}
       >
         {openObj ? (
-          openObj.reached ? (
-            <div className="-mx-4 -mt-3.5 flex flex-col">
-              <Plate ratio="16/9" plate={point(openObj)?.plate} label={point(openObj)?.townland}
-                className="rounded-none border-0 border-b border-rule" />
-              <div className="selectable flex flex-col gap-2 px-4 pt-3.5">
-                {point(openObj)?.nameGa ? (
-                  <p className="t-body italic text-ink">{point(openObj)?.nameGa}</p>
-                ) : null}
-                <p className="t-body text-ink">{point(openObj)?.lore[0]?.body}</p>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {(point(openObj)?.tags ?? []).map((t) => (
-                    <span key={t}
-                      className="border border-rule bg-surface-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.05em] text-stone"
-                      style={{ borderRadius: "var(--r-full)" }}>
-                      {t}
-                    </span>
-                  ))}
-                </div>
+          <div className="-mx-4 -mt-3.5 flex flex-col">
+            {/* Collapses when there is no artwork, so a point we have never
+                illustrated opens as a finished card of type rather than a
+                caption under an empty frame. */}
+            <Plate ratio="16/9" plate={openPoint?.plate} collapse
+              className="rounded-none border-0 border-b border-rule" />
+            <div className="selectable flex flex-col gap-2 px-4 pt-3.5">
+              <Data className="text-[10px] uppercase text-mute">
+                {formatDistance(openObj.atM)} in · {openPoint?.townland}
+              </Data>
+              {openPoint?.nameGa ? (
+                <p className="t-body italic text-ink">{openPoint.nameGa}</p>
+              ) : null}
+              <p className="t-body text-ink">
+                {openPoint?.lore[0]?.body ?? openPoint?.blurb}
+              </p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {(openPoint?.tags ?? []).map((t) => (
+                  <span key={t}
+                    className="border border-rule bg-surface-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.05em] text-stone"
+                    style={{ borderRadius: "var(--r-full)" }}>
+                    {t}
+                  </span>
+                ))}
               </div>
             </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              <Plate ratio="16/9" label="Locked" />
-              <p className="t-body text-ink">
-                {formatDistance(openObj.atM)} in. Walk into this tile and the rest
-                opens: what it is, what the name means, and who put it there.
-              </p>
-              <Data className="text-[11px] uppercase text-mute">
-                {openObj.required ? "Required" : "Optional"}
-              </Data>
-            </div>
-          )
+          </div>
         ) : null}
       </Frame>
 
@@ -256,7 +268,7 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
           className="relative flex h-11 w-11 items-center justify-center border border-rule bg-surface text-stone active:scale-[0.97]"
           style={{ borderRadius: "var(--r-sm)" }}
         >
-          <Mark name="tale" size={17} />
+          <Mark name="note" size={17} />
           {noteCount > 0 ? (
             <span aria-hidden className="absolute right-1 top-1 h-1.5 w-1.5 bg-field" />
           ) : null}

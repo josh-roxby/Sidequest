@@ -171,11 +171,17 @@ export function NavButton() {
             })
           : null}
 
+        {/* Sits above the button, never beside it. Beside it put the hint
+            straight over whatever occupies the opposite bottom corner: the
+            waypoint rail on a walk, the docked action on Home. It also carries
+            its own surface, because unbacked type over the map canvas is not
+            readable against hex fill. */}
         {!taught && !quads ? (
           <p className={cn(
-            "t-data pointer-events-none absolute bottom-1 whitespace-nowrap text-[10px] uppercase leading-[1.5] text-mute",
-            handed === "left" ? "left-full ml-3 text-left" : "right-full mr-3 text-right",
-          )}>
+            "t-data pointer-events-none absolute bottom-full mb-2 whitespace-nowrap border border-rule bg-surface px-2 py-1 text-[10px] uppercase leading-[1.5] text-mute",
+            handed === "left" ? "left-0 text-left" : "right-0 text-right",
+          )}
+          style={{ borderRadius: "var(--r-sm)" }}>
             Tap for all<br />Hold and drag
           </p>
         ) : null}

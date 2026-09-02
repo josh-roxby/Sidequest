@@ -11,7 +11,7 @@ export function Screen({
 }) {
   return (
     <div
-      className="px-4"
+      className="no-bar h-full overflow-y-auto overscroll-contain px-4"
       style={{
         paddingTop: "calc(env(safe-area-inset-top) + var(--s-4))",
         paddingBottom: docked
