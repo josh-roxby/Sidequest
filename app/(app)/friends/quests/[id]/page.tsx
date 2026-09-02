@@ -2,12 +2,12 @@
 import { useRouter } from "next/navigation";
 import { use, useMemo } from "react";
 import { MapCanvas, type MapMarker } from "@/components/map/MapCanvas";
-import { Action } from "@/components/primitives/Action";
 import { Button } from "@/components/primitives/Button";
 import { Mark } from "@/components/primitives/Marks";
 import { ShapeChip } from "@/components/primitives/ShapeChip";
 import { Data, Label } from "@/components/primitives/Text";
 import { EmptyState, Skeleton, StatusStrip } from "@/components/primitives/States";
+import { StartGate } from "@/components/domain/StartGate";
 import { Screen } from "@/components/shell/Screen";
 import { data, TIERS } from "@/lib/data";
 import { estimateDurationS, formatDistance, formatDuration, SHAPE_HINT } from "@/lib/walking";
@@ -99,8 +99,16 @@ export default function FriendQuestScreen({ params }: { params: Promise<{ id: st
             you go with it, and your walk stays yours.
           </p>
 
+          {/* Straight through to the walk, stopping only if the walker is not
+              where it begins. A shared quest carries no route of its own yet,
+              so it hands off to the quest it previews. */}
           <div className="mt-5">
-            <Action onClick={() => router.push("/quests")}>Try this quest</Action>
+            <StartGate
+              questId={shown?.id ?? "q-cloonanaha"}
+              start={shown?.start}
+              startName={shown?.startName ?? q.townland}
+              label="Try this quest"
+            />
           </div>
         </>
       )}

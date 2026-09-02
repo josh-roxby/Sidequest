@@ -1,6 +1,6 @@
 import { distanceM } from "@/lib/geo";
 import { midpointWaypoints } from "@/lib/geo";
-import type { LatLng } from "@/data/types";
+import type { LatLng } from "@/lib/data";
 
 export const OSRM_BASE =
   process.env.OSRM_BASE_URL ?? "https://router.project-osrm.org/route/v1/foot";

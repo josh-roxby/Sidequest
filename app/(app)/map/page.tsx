@@ -70,7 +70,7 @@ export default function MapScreen() {
   );
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="absolute inset-0 overflow-hidden">
       <MapCanvas
         markers={markers}
         trail={trail}

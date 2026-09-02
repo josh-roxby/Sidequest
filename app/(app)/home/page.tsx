@@ -14,7 +14,7 @@ import { useAsync } from "@/hooks/use-async";
 
 const TILES: { href: string; label: string; mark: MarkName; tone: "field" | "rust" | "plain" }[] = [
   { href: "/quests", label: "Quests", mark: "quest", tone: "plain" },
-  { href: "/badges", label: "Badges", mark: "badge", tone: "plain" },
+  { href: "/collection", label: "Collection", mark: "badge", tone: "plain" },
   { href: "/map", label: "View map", mark: "map", tone: "plain" },
   { href: "/outposts", label: "Outposts", mark: "flag", tone: "rust" },
 ];

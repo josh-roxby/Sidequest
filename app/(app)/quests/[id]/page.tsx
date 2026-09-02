@@ -1,8 +1,8 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { use } from "react";
-import { Action } from "@/components/primitives/Action";
 import { Button } from "@/components/primitives/Button";
+import { StartGate } from "@/components/domain/StartGate";
 import { Card } from "@/components/primitives/Card";
 import { Check } from "@/components/primitives/Tabs";
 import { ShapeChip } from "@/components/primitives/ShapeChip";
@@ -101,7 +101,12 @@ export default function QuestDetail({ params }: { params: Promise<{ id: string }
           </Card>
 
           <div className="mt-5 flex items-center gap-2">
-            <Action onClick={() => router.push(`/quests/${q.id}/walk`)}>Set active</Action>
+            {/* Same gate as a shared quest: through the loading takeover to the
+                map, unless the walker is nowhere near where it begins. */}
+            <div className="min-w-0 flex-1">
+              <StartGate questId={q.id} start={q.start} startName={q.startName ?? q.townland}
+                label="Set active" />
+            </div>
             <Button tone="solid" aria-label="Add to a collection"
               className="shrink-0" style={{ background: "var(--rust)", borderColor: "var(--rust)" }}>
               +

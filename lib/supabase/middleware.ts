@@ -4,7 +4,7 @@ import { isAuthDisabled, required } from "@/lib/env";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
-const APP_PATHS = ["/home", "/map", "/quests", "/badges", "/history", "/tales",
+const APP_PATHS = ["/home", "/map", "/quests", "/collection", "/history", "/tales",
                    "/outposts", "/about", "/settings", "/profile", "/friends",
                    "/activity"];
 const AUTH_PATHS = ["/login", "/signup"];

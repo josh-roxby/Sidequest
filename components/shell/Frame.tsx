@@ -86,8 +86,9 @@ export function Frame({
           onDismiss();
         }}
         onPointerCancel={() => { pressedScrim.current = false; }}
-        className="fixed inset-0 z-50 cursor-default"
-        style={{ background: "rgba(22,24,26,0.32)", transition: "opacity var(--dur-frame)" }}
+        className="gesture fixed inset-0 z-50 cursor-default"
+        style={{ background: "rgba(22,24,26,0.32)", transition: "opacity var(--dur-frame)",
+                 overscrollBehavior: "none" }}
       />
       <div
         ref={ref}
@@ -114,7 +115,19 @@ export function Frame({
           {headerRight}
         </header>
 
-        <div className={cn("min-h-0 flex-1 px-4 py-3.5", scroll ? "overflow-y-auto" : "overflow-hidden")}>
+        {/* overscroll-contain, not just overflow. Reaching the end of this
+            list would otherwise chain the scroll outward to the document; on a
+            phone that shifts the visual viewport, which resizes the map canvas
+            underneath and reads as the whole screen sliding around behind the
+            drawer. touch-action keeps the vertical drag in here rather than
+            letting the canvas's own pointer handlers see it. */}
+        <div
+          className={cn(
+            "min-h-0 flex-1 overscroll-contain px-4 py-3.5",
+            scroll ? "overflow-y-auto" : "overflow-hidden",
+          )}
+          style={{ touchAction: scroll ? "pan-y" : "none" }}
+        >
           {children}
         </div>
 

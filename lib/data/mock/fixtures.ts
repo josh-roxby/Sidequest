@@ -75,9 +75,12 @@ export const POINTS: Point[] = [
   },
 ];
 
+/** Quest starts carry approximate townland centres in Co. Clare. They are
+ *  fixture coordinates, good enough to exercise the proximity gate and no more:
+ *  the surveyed positions arrive with the dataset. docs/data-pipeline.md. */
 export const QUESTS: Quest[] = [
   {
-    plate: "quest-cloonanaha", thumb: "quest-thumb-cloonanaha", id: "q-cloonanaha",
+    plate: "quest-cloonanaha", start: { lat: 52.9410, lng: -9.2260 }, startName: "Cloonanaha", id: "q-cloonanaha",
     encounters: [
       { kind: "point", label: "A ringfort", detail: "Banks still standing, on the rise" },
       { kind: "terrain", label: "A stream crossing", detail: "Stepping stones, dry in summer" },
@@ -95,7 +98,7 @@ export const QUESTS: Quest[] = [
     path: [[0.16, 0.72], [0.3, 0.6], [0.44, 0.55], [0.6, 0.42], [0.68, 0.34], [0.62, 0.5], [0.4, 0.66], [0.16, 0.72]],
   },
   {
-    plate: "quest-dysert", thumb: "quest-thumb-dysert", id: "q-dysert",
+    plate: "quest-dysert", start: { lat: 52.8990, lng: -9.0700 }, startName: "Dysert", id: "q-dysert",
     encounters: [
       { kind: "point", label: "A hermitage and a high cross" },
       { kind: "terrain", label: "A stretch of boreen", detail: "No pavement for 300m" },
@@ -111,7 +114,7 @@ export const QUESTS: Quest[] = [
     path: [[0.2, 0.8], [0.24, 0.72], [0.31, 0.62], [0.42, 0.6], [0.38, 0.74], [0.2, 0.8]],
   },
   {
-    plate: "quest-toonagh", thumb: "quest-thumb-toonagh", id: "q-toonagh",
+    plate: "quest-toonagh", start: { lat: 52.8760, lng: -9.0110 }, startName: "Toonagh", id: "q-toonagh",
     encounters: [
       { kind: "point", label: "A ruined corn mill" },
       { kind: "terrain", label: "The mill race", detail: "Straight cut channel, easy to spot" },
@@ -126,7 +129,7 @@ export const QUESTS: Quest[] = [
     path: [[0.64, 0.78], [0.72, 0.72], [0.79, 0.68], [0.7, 0.82], [0.64, 0.78]],
   },
   {
-    plate: "quest-inchiquin", thumb: "quest-thumb-inchiquin", id: "q-inchiquin",
+    plate: "quest-inchiquin", start: { lat: 52.9430, lng: -9.0640 }, startName: "Inchiquin", id: "q-inchiquin",
     encounters: [
       { kind: "point", label: "A lough shore" },
       { kind: "point", label: "A ringfort on the way back" },
@@ -290,13 +293,13 @@ export const HOME_CARDS: HomeCard[] = [
     body: "Breaking one was desperately unlucky, so farmers ploughed around them.",
     href: "/tales/t-1" },
   { plate: "home-county", id: "hc-3", kind: "banner", ratio: "landscape", eyebrow: "Co. Clare",
-    title: "2,318 townlands. You have 14.", href: "/badges" },
+    title: "2,318 townlands. You have 14.", href: "/collection" },
   { plate: "home-community", id: "hc-4", kind: "community", ratio: "portrait", eyebrow: "From the community",
     title: "Castle ruins by rivers", body: "Eight quests, put together by Niamh.",
     href: "/quests?tab=community" },
   { plate: "home-close", id: "hc-5", kind: "update", ratio: "square", eyebrow: "Close",
     title: "Two ringforts from a badge", body: "Rath finder unlocks at five.",
-    href: "/badges" },
+    href: "/collection" },
 ];
 
 

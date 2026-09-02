@@ -12,7 +12,7 @@ export interface Dest {
 export const DESTS: Dest[] = [
   { href: "/map",      label: "Map",      mark: "map",     blurb: "Where you are" },
   { href: "/quests",   label: "Quests",   mark: "quest",   blurb: "What to walk" },
-  { href: "/badges",   label: "Badges",   mark: "badge",   blurb: "What you have earned" },
+  { href: "/collection", label: "Collection", mark: "badge", blurb: "What you came back with" },
   { href: "/history",  label: "History",  mark: "journal", blurb: "Where you went" },
   { href: "/tales",    label: "Tales",    mark: "tale",    blurb: "What you learned" },
   { href: "/outposts", label: "Outposts", mark: "flag",    blurb: "Where you start" },
@@ -28,5 +28,5 @@ export type QuadDir = "tl" | "tr" | "bl";
 export const QUADS: { dir: QuadDir; href: string; label: string; mark: MarkName }[] = [
   { dir: "tl", href: "/map",     label: "Map",    mark: "map" },
   { dir: "tr", href: "/quests",  label: "Quests", mark: "quest" },
-  { dir: "bl", href: "/badges",  label: "Badges", mark: "badge" },
+  { dir: "bl", href: "/collection", label: "Collection", mark: "badge" },
 ];

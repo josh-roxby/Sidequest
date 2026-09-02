@@ -124,8 +124,8 @@ export default function AboutScreen() {
           Badges land as those sets fill. Nothing expires, nothing decays, and
           there is no streak to keep alive. A bad fortnight costs you nothing.
         </p>
-        <Link href="/badges" className="t-small font-semibold text-field underline">
-          See your badges
+        <Link href="/collection" className="t-small font-semibold text-field underline">
+          See your collection
         </Link>
       </div>
 

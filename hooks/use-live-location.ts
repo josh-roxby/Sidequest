@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import type { LatLng } from "@/data/types";
+import type { LatLng } from "@/lib/data";
 
 interface LiveState {
   position: LatLng | null;

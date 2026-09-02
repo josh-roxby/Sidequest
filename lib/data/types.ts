@@ -2,6 +2,13 @@
  *  the tables one-to-one: screens get what they render, joins already done.
  *  The mock and Supabase implementations both return exactly these. */
 
+/** A point on the earth. The one geographic primitive the whole app shares:
+ *  the geo helpers, the location watch and every quest start speak it. */
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
 export type Tier = "trot" | "stroll" | "sidequest" | "adventure";
 
 export interface TierSpec {
@@ -103,6 +110,14 @@ export interface Quest {
   startsAwayM: number;
   townland: string;
   objectives: Objective[];
+  /** Where the walk begins, on the earth rather than on the placeholder
+   *  surface. Used to tell a walker they are not there yet and to hand them a
+   *  route to it. Optional because a generated quest starts wherever you are;
+   *  a shared or saved one has a fixed start you may be nowhere near. */
+  start?: LatLng;
+  /** What to call the start when sending someone to it. A townland reads
+   *  better on a maps pin than a pair of decimals. */
+  startName?: string;
   /** Never suppressed to make a quest look better. If nothing applies this
    *  is ["Made paths throughout"]. docs/ux-loops.md §D-2. */
   honesty: string[];
@@ -116,10 +131,6 @@ export interface Quest {
    *  Absent means the slot shows its placeholder, which is the honest state
    *  for a record whose plate has not been drawn. */
   plate?: string;
-  /** Square crop for a quest list card, which renders at 72px and cannot use a
-   *  landscape hero without losing the subject to the sides. Nothing renders
-   *  QuestCard today, so no artwork is registered for it. */
-  thumb?: string;
 }
 
 export interface Territory {

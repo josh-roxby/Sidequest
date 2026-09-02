@@ -1,4 +1,4 @@
-import type { LatLng } from "@/data/types";
+import type { LatLng } from "@/lib/data";
 
 export const KM_PER_DEG_LAT = 111.32;
 const EARTH_RADIUS_KM = 6371;

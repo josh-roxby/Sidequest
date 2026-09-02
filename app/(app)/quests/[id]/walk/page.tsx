@@ -85,7 +85,7 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="absolute inset-0 overflow-hidden">
       <MapCanvas markers={markers} trail={trail} initialScale={1.3} />
 
       {/* Opens once, on arrival, so you set off knowing roughly what is out
