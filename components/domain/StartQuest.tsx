@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ThumbAction } from "@/components/shell/ThumbAction";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
 import { MapCanvas } from "@/components/map/MapCanvas";
+import { DEFAULT_CENTRE } from "@/lib/map/project";
 import { QuestGenerating } from "./QuestGenerating";
 import { ShapeChip } from "@/components/primitives/ShapeChip";
 import { Data, Label } from "@/components/primitives/Text";
@@ -59,13 +60,13 @@ export function StartQuest() {
           have already cleared is the honest header for that decision. */}
       <div className="relative min-h-0 flex-1 overflow-hidden border border-rule"
         style={{ borderRadius: "var(--r-md)" }}>
-        <MapCanvas interactive={false} initialScale={1.6}
-          markers={[{ id: "you", x: 0, y: 0, kind: "you" }]} />
+        <MapCanvas interactive={false} initialScale={0.35}
+          markers={[{ id: "you", ...DEFAULT_CENTRE, kind: "you" }]} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
           style={{ background: "linear-gradient(to top, var(--paper) 12%, transparent)" }} />
         <div className="absolute inset-x-0 bottom-0 p-4">
           <Label>You are in</Label>
-          <h1 className="t-display mt-1 text-ink">Ennistymon</h1>
+          <h1 className="t-display mt-1 text-ink">Corofin</h1>
           <Data className="mt-1 block text-[11px] uppercase text-stone">
             Co. Clare · 46 points within reach
           </Data>

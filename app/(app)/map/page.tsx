@@ -11,14 +11,12 @@ import { Data, Label } from "@/components/primitives/Text";
 import { Skeleton, StatusStrip } from "@/components/primitives/States";
 import { data, type CommunityPoint, type Note, type Point } from "@/lib/data";
 import { hexAt } from "@/lib/map/hex";
+import { DEFAULT_CENTRE, project } from "@/lib/map/project";
 import { useAsync } from "@/hooks/use-async";
 import { useSettings } from "@/lib/settings";
 
 /** Fixtures carry normalised 0–1 positions. The canvas works in metres, so
  *  one place converts and everything downstream is world space. */
-const SPAN_M = 2000;
-const toWorld = (n: number) => (n - 0.5) * SPAN_M;
-
 export default function MapScreen() {
   const territory = useAsync(() => data.getTerritory(), []);
   const points = useAsync(() => data.getPointsNearby(), []);
@@ -42,19 +40,19 @@ export default function MapScreen() {
 
   const markers = useMemo<MapMarker[]>(() => {
     const pts = (points.data ?? []).map((p) => ({
-      id: p.id, x: toWorld(p.x), y: toWorld(p.y), kind: "point" as const, label: p.name,
+      id: p.id, lat: p.lat, lng: p.lng, kind: "point" as const, label: p.name,
     }));
     const noteMarks = (notes.data ?? []).map((n) => ({
-      id: `note-${n.id}`, x: toWorld(n.x), y: toWorld(n.y), kind: "note" as const,
+      id: `note-${n.id}`, lat: n.lat, lng: n.lng, kind: "note" as const,
     }));
     const cpMarks = (cpoints.data ?? []).map((c) => ({
-      id: `cp-${c.id}`, x: toWorld(c.x), y: toWorld(c.y), kind: "community" as const,
+      id: `cp-${c.id}`, lat: c.lat, lng: c.lng, kind: "community" as const,
     }));
-    return [{ id: "you", x: 0, y: 0, kind: "you" as const }, ...pts, ...noteMarks, ...cpMarks];
+    return [{ id: "you", ...DEFAULT_CENTRE, kind: "you" as const }, ...pts, ...noteMarks, ...cpMarks];
   }, [points.data, notes.data, cpoints.data]);
 
   const trail = useMemo<[number, number][]>(
-    () => (quests.data?.[0]?.path ?? []).map(([x, y]) => [toWorld(x), toWorld(y)]),
+    () => (quests.data?.[0]?.path ?? []),
     [quests.data],
   );
 
@@ -63,7 +61,8 @@ export default function MapScreen() {
   const questTiles = useMemo<[number, number][]>(
     () => (quests.data ?? []).map((q) => {
       const [x, y] = q.path[0];
-      const h = hexAt(toWorld(x), toWorld(y), 90);
+      const { x: mx, y: my } = project({ lat: y, lng: x });
+      const h = hexAt(mx, my, 90);
       return [h.q, h.r] as [number, number];
     }),
     [quests.data],
@@ -72,6 +71,8 @@ export default function MapScreen() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       <MapCanvas
+        home={DEFAULT_CENTRE}
+        initialScale={0.045}
         markers={markers}
         trail={trail}
         questTiles={questTiles}
@@ -209,7 +210,10 @@ export default function MapScreen() {
         mode={addMode}
         setMode={setAddMode}
         quests={quests.data ?? []}
-        at={{ x: 0.5, y: 0.5 }}
+        /* Where the map opens. Becomes the live position in slice 6, which is
+           also when a pin dropped anywhere but under your feet stops being a
+           reasonable thing to allow. */
+        at={DEFAULT_CENTRE}
         onAdded={() => setRefresh((n) => n + 1)}
       />
 

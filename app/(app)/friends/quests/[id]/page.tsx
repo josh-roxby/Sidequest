@@ -13,9 +13,6 @@ import { data, TIERS } from "@/lib/data";
 import { estimateDurationS, formatDistance, formatDuration, SHAPE_HINT } from "@/lib/walking";
 import { useAsync } from "@/hooks/use-async";
 
-const SPAN_M = 2000;
-const toWorld = (n: number) => (n - 0.5) * SPAN_M;
-
 /** A friend's quest, before you commit to it.
  *
  *  A preview rather than the quest screen: enough to decide, and one way in.
@@ -35,11 +32,16 @@ export default function FriendQuestScreen({ params }: { params: Promise<{ id: st
   const shown = quests.data?.[0];
 
   const trail = useMemo<[number, number][]>(
-    () => (shown?.path ?? []).map(([x, y]) => [toWorld(x), toWorld(y)]),
+    () => (shown?.path ?? []),
     [shown],
   );
   const markers = useMemo<MapMarker[]>(
-    () => (shown?.path?.[0] ? [{ id: "start", x: toWorld(shown.path[0][0]), y: toWorld(shown.path[0][1]), kind: "you" as const }] : []),
+    () => (shown?.path?.[0] ? [{ id: "start", lat: shown.path[0][1], lng: shown.path[0][0], kind: "you" as const }] : []),
+    [shown],
+  );
+
+  const fitPoints = useMemo(
+    () => (shown?.path ?? []).map(([lng, lat]) => ({ lat, lng })),
     [shown],
   );
 
@@ -68,11 +70,10 @@ export default function FriendQuestScreen({ params }: { params: Promise<{ id: st
               a promise we cannot keep for someone else's route. */}
           <div className="relative h-[188px] w-full overflow-hidden border border-rule"
             style={{ borderRadius: "var(--r-md)" }}>
-            {/* Zoomed to hold the whole route. The world span is 2km across and the
-                preview is 374px wide, so anything above about 0.17 runs the
-                line off both edges and the shape, which is the thing being
-                previewed, is lost. */}
-            <MapCanvas markers={markers} trail={trail} interactive={false} initialScale={0.16} />
+            {/* Framed to the route. The shape is the thing being previewed, so it
+                has to fit rather than be guessed at. */}
+            <MapCanvas markers={markers} trail={trail} interactive={false}
+              fit={fitPoints} />
           </div>
 
           <div className="mt-3 flex items-center gap-1.5 text-stone">

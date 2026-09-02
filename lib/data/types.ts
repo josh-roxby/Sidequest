@@ -59,9 +59,10 @@ export interface Point {
    *  point shows the blurb and nothing more. */
   visited: boolean;
   lore: Lore[];
-  /** Normalised 0–1 position on the placeholder map surface. */
-  x: number;
-  y: number;
+  /** Where it is. Real coordinates, not a position on a placeholder
+   *  surface: the map projects these itself. */
+  lat: number;
+  lng: number;
   /** Artwork key. Resolves to a file in the media folder, see lib/media.ts.
    *  Absent means the slot shows its placeholder, which is the honest state
    *  for a record whose plate has not been drawn. */
@@ -79,8 +80,8 @@ export interface Objective {
   reached: boolean;
   /** Metres along the route from the start, for ordering and pacing. */
   atM: number;
-  x: number;
-  y: number;
+  lat: number;
+  lng: number;
 }
 
 export type QuestShape = "loop" | "line";
@@ -121,7 +122,9 @@ export interface Quest {
   /** Never suppressed to make a quest look better. If nothing applies this
    *  is ["Made paths throughout"]. docs/ux-loops.md §D-2. */
   honesty: string[];
-  /** Normalised polyline points for the placeholder surface. */
+  /** The route, as [lng, lat] pairs. Longitude first, because that is the
+   *  order GeoJSON uses and this becomes a LineString the moment real routing
+   *  lands. */
   path: [number, number][];
   /** What you might run into, gathered at generation from the points the route
    *  passes. Vague on purpose: it sets expectations without spoiling the walk,
@@ -162,8 +165,8 @@ export interface Note {
    *  submission rather than at typing, so the pin marks where you actually
    *  stopped. */
   atM: number;
-  x: number;
-  y: number;
+  lat: number;
+  lng: number;
   createdAt: string;
 }
 
@@ -174,8 +177,8 @@ export interface CommunityPoint {
   title: string;
   description: string;
   author: string;
-  x: number;
-  y: number;
+  lat: number;
+  lng: number;
   /** Nothing a person adds appears on anyone else's map until it is approved.
    *  A map of real places that anyone can write on is a map that stops being
    *  worth trusting, so review is the default rather than a moderation

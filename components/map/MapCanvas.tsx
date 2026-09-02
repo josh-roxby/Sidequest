@@ -1,29 +1,31 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   hexCentre, hexCorners, hexesInRect, hexKey, hexNoise,
   levelForScale, majorityRevealed, sizeForLevel, tileStrength,
 } from "@/lib/map/hex";
-import { IRELAND, WORLD_HALF_X, WORLD_HALF_Y } from "@/lib/map/ireland";
+import { IRELAND } from "@/lib/map/ireland";
+import { DEFAULT_CENTRE, IRELAND_RECT, project } from "@/lib/map/project";
+import type { LatLng } from "@/lib/data";
 
 export interface MapMarker {
   id: string;
-  /** World coordinates, metres. */
-  x: number;
-  y: number;
+  lat: number;
+  lng: number;
   kind: "point" | "objective" | "objective-done" | "you" | "note" | "community";
   label?: string;
 }
 
 export interface MapCanvasProps {
   markers?: MapMarker[];
-  /** World-space polyline for the active trail. */
+  /** The active trail, as [lng, lat] pairs. GeoJSON order, because that is
+   *  what it becomes when real routing lands. */
   trail?: [number, number][];
   /** Hexes holding an available quest, drawn with a rust outline. */
   questTiles?: [number, number][];
   onMarker?: (id: string) => void;
-  /** Recentre target, in world metres. */
-  home?: { x: number; y: number };
+  /** Recentre target. Defaults to where the app opens. */
+  home?: LatLng;
   /** Marker kinds and overlays currently switched off. They keep rendering at
    *  a falling opacity rather than vanishing, so a layer toggle reads as a
    *  fade rather than the canvas blinking. */
@@ -31,8 +33,14 @@ export interface MapCanvasProps {
   /** Preview mode: no gestures, no compass, no hit testing. Used where the map
    *  is illustration rather than a thing to drive. */
   interactive?: boolean;
-  /** Initial zoom. Previews sit closer in than the full screen map. */
+  /** Initial zoom, in pixels per Mercator metre. Only consulted when there is
+   *  nothing to fit. */
   initialScale?: number;
+  /** Frame the camera so all of these are on screen. Real coordinates mean the
+   *  view can be computed rather than guessed at, which is the whole point of
+   *  working in a real projection: a caller should not have to know that a
+   *  2.8km loop wants a scale of 0.26. */
+  fit?: LatLng[];
 }
 
 interface Camera { x: number; y: number; scale: number; bearing: number }
@@ -48,7 +56,10 @@ const TOKENS = [
 
 const MIN_SCALE = 0.0008;
 const MAX_SCALE = 4;
-const REVEAL_RADIUS = 900;    // world metres of cleared ground around origin
+/** Cleared ground around the opening position, in Mercator metres. About
+ *  900 metres of real ground at Ireland's latitude. Placeholder until the fog
+ *  is written from a live position in slice 7. */
+const REVEAL_RADIUS = 900 / Math.cos((53.4 * Math.PI) / 180);
 
 /** Canvas map with pan, pinch zoom and twist rotation.
  *
@@ -62,11 +73,24 @@ const REVEAL_RADIUS = 900;    // world metres of cleared ground around origin
  *  underneath a drag. */
 export function MapCanvas({
   markers = [], trail = [], questTiles = [], onMarker,
-  interactive = true, initialScale = 1, home = { x: 0, y: 0 }, hidden = [],
+  interactive = true, initialScale = 0.12, home = DEFAULT_CENTRE, hidden = [],
+  fit,
 }: MapCanvasProps) {
+  /** Everything below works in Mercator metres. Projection happens once, here,
+   *  rather than in four screens each rolling their own arithmetic. */
+  const { lat: homeLat, lng: homeLng } = home;
+  const homeXY = useMemo(() => project({ lat: homeLat, lng: homeLng }), [homeLat, homeLng]);
+  const markersXY = useMemo(
+    () => markers.map((m) => ({ ...m, ...project(m) })),
+    [markers],
+  );
+  const trailXY = useMemo(
+    () => trail.map(([lng, lat]) => project({ lat, lng })),
+    [trail],
+  );
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const cam = useRef<Camera>({ x: 0, y: 0, scale: initialScale, bearing: 0 });
+  const cam = useRef<Camera>({ ...project(home), scale: initialScale, bearing: 0 });
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef<{ dist: number; angle: number; cx: number; cy: number } | null>(null);
   const frame = useRef<number | null>(null);
@@ -100,10 +124,12 @@ export function MapCanvas({
     return { x: c.x + dx * cos - dy * sin, y: c.y + dx * sin + dy * cos };
   }, []);
 
+  /** The camera cannot leave the island. Mercator, so the bounds are a real
+   *  rectangle rather than a guess at half-extents. */
   const clamp = useCallback(() => {
     const c = cam.current;
-    c.x = Math.max(-WORLD_HALF_X, Math.min(WORLD_HALF_X, c.x));
-    c.y = Math.max(-WORLD_HALF_Y, Math.min(WORLD_HALF_Y, c.y));
+    c.x = Math.max(IRELAND_RECT.minX, Math.min(IRELAND_RECT.maxX, c.x));
+    c.y = Math.max(IRELAND_RECT.minY, Math.min(IRELAND_RECT.maxY, c.y));
   }, []);
 
   const draw = useCallback(() => {
@@ -184,7 +210,7 @@ export function MapCanvas({
       const n = hexNoise(hx);
       // At a coarse level the hex is only clear when most of the ground inside
       // it is. A single revealed field must not clear a forty kilometre tile.
-      const revealed = majorityRevealed(x, y, hexSize, REVEAL_RADIUS);
+      const revealed = majorityRevealed(x, y, hexSize, REVEAL_RADIUS, homeXY);
 
       ctx.beginPath();
       ctx.moveTo(x + corners[0][0], y + corners[0][1]);
@@ -220,19 +246,19 @@ export function MapCanvas({
       }
     }
 
-    if (trail.length > 1 && (a.trail ?? 1) > 0.01) {
+    if (trailXY.length > 1 && (a.trail ?? 1) > 0.01) {
       ctx.globalAlpha = a.trail ?? 1;
       ctx.strokeStyle = css("--map-trail");
       ctx.lineWidth = 3 / c.scale;
       ctx.lineJoin = "miter";
       ctx.lineCap = "butt";
-      const half = Math.ceil(trail.length / 2);
+      const half = Math.ceil(trailXY.length / 2);
       ctx.beginPath();
-      trail.slice(0, half + 1).forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      trailXY.slice(0, half + 1).forEach(({ x, y }, i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
       ctx.stroke();
       ctx.setLineDash([10 / c.scale, 8 / c.scale]);
       ctx.beginPath();
-      trail.slice(half).forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      trailXY.slice(half).forEach(({ x, y }, i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.globalAlpha = 1;
@@ -242,7 +268,7 @@ export function MapCanvas({
     const ink = css("--ink");
     const field = css("--field");
     const surface = css("--surface");
-    for (const m of markers) {
+    for (const m of markersXY) {
       const layerAlpha = a[m.kind] ?? 1;
       if (layerAlpha <= 0.01) continue;
       ctx.save();
@@ -285,7 +311,7 @@ export function MapCanvas({
     if (settling && frame.current === null) {
       frame.current = requestAnimationFrame(() => drawRef.current());
     }
-  }, [markers, trail, questTiles, hiddenKey]);
+  }, [markersXY, trailXY, questTiles, hiddenKey, homeXY]);
 
   useEffect(() => { drawRef.current = draw; }, [draw]);
 
@@ -309,6 +335,41 @@ export function MapCanvas({
     if (frame.current === null) frame.current = requestAnimationFrame(draw);
   }, [draw]);
 
+  /** Frame whatever was handed in, once, on the first real size. Held in a ref
+   *  rather than state because it must not cause a render: the camera is a ref
+   *  for exactly the same reason. */
+  const fitted = useRef(false);
+  const fitKey = fit ? fit.map((f) => `${f.lat},${f.lng}`).join("|") : "";
+
+  const applyFit = useCallback(() => {
+    if (fitted.current || !fit || fit.length === 0) return;
+    const { w, h } = size.current;
+    if (!w || !h) return;
+    const pts = fit.map(project);
+    const minX = Math.min(...pts.map((p) => p.x));
+    const maxX = Math.max(...pts.map((p) => p.x));
+    const minY = Math.min(...pts.map((p) => p.y));
+    const maxY = Math.max(...pts.map((p) => p.y));
+    cam.current.x = (minX + maxX) / 2;
+    cam.current.y = (minY + maxY) / 2;
+    const spanX = Math.max(maxX - minX, 1);
+    const spanY = Math.max(maxY - minY, 1);
+    /* 0.82 leaves room for the chrome that floats over every edge of the map. */
+    cam.current.scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE,
+      Math.min(w / spanX, h / spanY) * 0.82));
+    fitted.current = true;
+  }, [fit]);
+
+  /** Reframe when what we are framing changes. The observer fires once on
+   *  mount, which on a screen reading from the data layer is before the route
+   *  has arrived, so the first fit has nothing to fit and this is the pass that
+   *  actually does it. */
+  useEffect(() => {
+    fitted.current = false;
+    applyFit();
+    drawRef.current();
+  }, [fitKey, applyFit]);
+
   // Size to the container at device pixel ratio, capped at 2. Beyond 2 the
   // extra pixels cost real frame time on a phone and nobody can see them.
   useEffect(() => {
@@ -330,11 +391,12 @@ export function MapCanvas({
       canvas.height = h;
       canvas.style.width = `${r.width}px`;
       canvas.style.height = `${r.height}px`;
+      applyFit();
       invalidate();
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [invalidate]);
+  }, [invalidate, applyFit]);
 
   useEffect(() => { invalidate(); }, [invalidate]);
 
@@ -421,16 +483,16 @@ export function MapCanvas({
     if (!r) return;
     const w = toWorld(e.clientX - r.left, e.clientY - r.top);
     const hitR = 22 / cam.current.scale;
-    const hit = markers.find((m) => Math.hypot(m.x - w.x, m.y - w.y) < hitR);
+    const hit = markersXY.find((m) => Math.hypot(m.x - w.x, m.y - w.y) < hitR);
     if (hit) onMarker(hit.id);
-  }, [markers, onMarker, toWorld]);
+  }, [markersXY, onMarker, toWorld]);
 
   /** Recentre on the walker, easing position and zoom together. Snaps under
    *  reduced motion, for the same reason the compass does. */
   const recentre = useCallback(() => {
     const c = cam.current;
     const from = { x: c.x, y: c.y, scale: c.scale };
-    const to = { x: home.x, y: home.y, scale: 1.4 };
+    const to = { x: homeXY.x, y: homeXY.y, scale: 1.4 };
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) {
       cam.current = { ...c, ...to }; invalidate(); return;
@@ -446,7 +508,7 @@ export function MapCanvas({
       if (k < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
-  }, [home.x, home.y, invalidate]);
+  }, [homeXY, invalidate]);
 
   /** Ease the bearing back to north. Short, and skipped under reduced motion,
    *  because a slow spin of the whole map is disorienting rather than nice. */

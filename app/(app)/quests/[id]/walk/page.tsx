@@ -11,12 +11,10 @@ import { Data, Label } from "@/components/primitives/Text";
 import { EncounterList } from "@/components/domain/EncounterList";
 import { Frame } from "@/components/shell/Frame";
 import { data, type Objective, type Point } from "@/lib/data";
+import { DEFAULT_CENTRE } from "@/lib/map/project";
 import { estimateDurationS, formatDistance, formatDuration } from "@/lib/walking";
 import { useAsync } from "@/hooks/use-async";
 import { cn } from "@/lib/cn";
-
-const SPAN_M = 2000;
-const toWorld = (n: number) => (n - 0.5) * SPAN_M;
 
 /** The walk itself: the map takes the screen and the quest sits over it.
  *
@@ -38,11 +36,11 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   const q = quest.data;
 
   const markers = useMemo<MapMarker[]>(() => {
-    if (!q) return [{ id: "you", x: 0, y: 0, kind: "you" }];
+    if (!q) return [{ id: "you", ...DEFAULT_CENTRE, kind: "you" }];
     return [
-      { id: "you", x: toWorld(q.path[0][0]), y: toWorld(q.path[0][1]), kind: "you" as const },
+      { id: "you", lat: q.path[0][1], lng: q.path[0][0], kind: "you" as const },
       ...q.objectives.map((o) => ({
-        id: o.id, x: toWorld(o.x), y: toWorld(o.y),
+        id: o.id, lat: o.lat, lng: o.lng,
         kind: (o.reached ? "objective-done" : "objective") as MapMarker["kind"],
         label: o.label,
       })),
@@ -50,7 +48,17 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   }, [q]);
 
   const trail = useMemo<[number, number][]>(
-    () => (q?.path ?? []).map(([x, y]) => [toWorld(x), toWorld(y)]),
+    () => (q?.path ?? []),
+    [q],
+  );
+
+  /** Everything the walker needs on screen at the start: the route and every
+   *  waypoint on it. */
+  const fitPoints = useMemo(
+    () => [
+      ...(q?.path ?? []).map(([lng, lat]) => ({ lat, lng })),
+      ...(q?.objectives ?? []).map((o) => ({ lat: o.lat, lng: o.lng })),
+    ],
     [q],
   );
 
@@ -76,8 +84,9 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
       questTitle: q.title,
       text: noteText.trim(),
       atM: walkedM,
-      x: q.path[0][0],
-      y: q.path[0][1],
+      /* Pinned at the start until the live position lands in slice 6. */
+      lat: q.path[0][1],
+      lng: q.path[0][0],
     });
     setNoteText("");
     setNoting(false);
@@ -86,7 +95,9 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <MapCanvas markers={markers} trail={trail} initialScale={1.3} />
+      <MapCanvas markers={markers} trail={trail}
+        fit={fitPoints}
+        home={q?.path[0] ? { lat: q.path[0][1], lng: q.path[0][0] } : undefined} />
 
       {/* Opens once, on arrival, so you set off knowing roughly what is out
           there without having read the whole walk in advance. */}

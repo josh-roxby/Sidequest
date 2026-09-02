@@ -4,6 +4,7 @@ import { Action } from "@/components/primitives/Action";
 import { Field } from "@/components/primitives/Field";
 import { Data, Label } from "@/components/primitives/Text";
 import { Frame } from "@/components/shell/Frame";
+import type { LatLng } from "@/lib/data";
 import { data, type Quest } from "@/lib/data";
 import { cn } from "@/lib/cn";
 
@@ -32,7 +33,9 @@ export function MapAdd({
   mode: AddMode;
   setMode: (m: AddMode) => void;
   quests: Quest[];
-  at: { x: number; y: number };
+  /** Where the pin lands. The centre of the map for now; the live position
+   *  once slice 6 lands. */
+  at: LatLng;
   onAdded: () => void;
 }) {
   const [text, setText] = useState("");
@@ -55,8 +58,8 @@ export function MapAdd({
       questTitle: q?.title ?? null,
       text: text.trim(),
       atM: 0,
-      x: at.x,
-      y: at.y,
+      lat: at.lat,
+      lng: at.lng,
     });
     setSaving(false);
     reset();
@@ -67,7 +70,7 @@ export function MapAdd({
     if (!title.trim()) return;
     setSaving(true);
     await data.addCommunityPoint({
-      title: title.trim(), description: desc.trim(), author: "Josh", x: at.x, y: at.y,
+      title: title.trim(), description: desc.trim(), author: "Josh", lat: at.lat, lng: at.lng,
     });
     setSaving(false);
     setSent(true);

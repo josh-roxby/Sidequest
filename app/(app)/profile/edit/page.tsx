@@ -25,7 +25,7 @@ export default function ProfileEditScreen() {
   const router = useRouter();
   const [name, setName] = useState("Josh");
   const [handle, setHandle] = useState("josh");
-  const [townland, setTownland] = useState("Ennistymon");
+  const [townland, setTownland] = useState("Corofin");
   const [bio, setBio] = useState("Mostly strolls, occasionally an adventure.");
   const [tint, setTint] = useState(TINTS[0]);
   const [visible, setVisible] = useState(true);

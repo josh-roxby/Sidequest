@@ -16,7 +16,7 @@ interface Outpost {
 }
 
 const SEED: Outpost[] = [
-  { id: "o-base", name: "Base camp", detail: "Ennistymon, Co. Clare", base: true },
+  { id: "o-base", name: "Base camp", detail: "Corofin, Co. Clare", base: true },
   { id: "o-home", name: "Home", detail: "Cloonanaha", base: false },
 ];
 

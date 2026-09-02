@@ -21,7 +21,7 @@ export const POINTS: Point[] = [
   {
     plate: "poi-cahercalla", id: "p-cahercalla", blurb: "An earthen ring on the rise, banks still standing.", visited: true, tags: ["Upstanding remains", "From a boreen", "Free", "Ringfort"], name: "Cahercalla", nameGa: "Cathair Cala",
     category: "Ringfort", group: "fort", townland: "Cahercalla Beg",
-    x: 0.68, y: 0.34,
+    lat: 52.93404, lng: -9.22566,
     lore: [
       { kind: "placename", title: "Cathair Cala",
         body: "The stone fort of the landing place. Cathair marks a fort built of stone rather than earth, and cala is a riverside landing or marshy meadow.",
@@ -34,7 +34,7 @@ export const POINTS: Point[] = [
   {
     plate: "poi-dysert", id: "p-dysert", blurb: "A hermitage, a round tower stump and a carved high cross.", visited: false, tags: ["High cross", "Monastic", "Car park", "12th century"], name: "Dysert O'Dea", nameGa: "Díseart Uí Dheá",
     category: "Monastic site", group: "sacred", townland: "Dysert",
-    x: 0.31, y: 0.62,
+    lat: 52.891196, lng: -9.069451,
     lore: [
       { kind: "placename", title: "Díseart Uí Dheá",
         body: "The hermitage of O'Dea. Díseart, from the Latin desertum, names a place a hermit withdrew to.",
@@ -47,7 +47,7 @@ export const POINTS: Point[] = [
   {
     plate: "poi-inchiquin", id: "p-inchiquin", blurb: "A west facing lough shore that fills and empties through the rock.", visited: true, tags: ["Lough shore", "West facing", "Good at dusk", "Level ground"], name: "Inchiquin Lough", nameGa: "Loch Inse Uí Chuinn",
     category: "Lough shore", group: "water", townland: "Inchiquin",
-    x: 0.52, y: 0.78,
+    lat: 52.937668, lng: -9.052817,
     lore: [
       { kind: "placename", title: "Loch Inse Uí Chuinn",
         body: "The lake of O'Quin's island. Inis is an island or a river meadow, and the Uí Chuinn held this ground into the seventeenth century.",
@@ -57,7 +57,7 @@ export const POINTS: Point[] = [
   {
     plate: "poi-ballykeel", id: "p-ballykeel", blurb: "A flat stone in a field where mass was said in secret.", visited: false, tags: ["Mass rock", "Penal era", "Field path", "Hard to spot"], name: "Ballykeel mass rock", nameGa: "An Baile Caol",
     category: "Mass rock", group: "sacred", townland: "Ballykeel",
-    x: 0.19, y: 0.24,
+    lat: 52.918, lng: -9.14,
     lore: [
       { kind: "placename", title: "An Baile Caol",
         body: "The narrow townland. Caol describes a narrow strip of ground, often between two watercourses.",
@@ -66,7 +66,7 @@ export const POINTS: Point[] = [
   },
   {
     plate: "poi-toonagh", id: "p-toonagh", blurb: "A ruined corn mill with its wheel pit and race intact.", visited: true, tags: ["Mill race", "c. 1840", "Roadside", "Limestone"], name: "Toonagh mill", category: "Mill", group: "built",
-    nameGa: "Tuathanach", townland: "Toonagh", x: 0.79, y: 0.68,
+    nameGa: "Tuathanach", townland: "Toonagh", lat: 52.87973, lng: -9.006513,
     lore: [
       { kind: "architecture", title: "Corn mill, c. 1840",
         body: "Detached three-bay two-storey former corn mill, rubble limestone with dressed quoins. Wheel pit survives to the north elevation.",
@@ -78,6 +78,10 @@ export const POINTS: Point[] = [
 /** Quest starts carry approximate townland centres in Co. Clare. They are
  *  fixture coordinates, good enough to exercise the proximity gate and no more:
  *  the surveyed positions arrive with the dataset. docs/data-pipeline.md. */
+/** Quest starts and routes carry approximate positions in Co. Clare. They are
+ *  fixture geography, generated so that a route's drawn length matches the
+ *  distance printed beside it and every waypoint sits on the route that visits
+ *  it. The surveyed positions arrive with the dataset. docs/data-pipeline.md. */
 export const QUESTS: Quest[] = [
   {
     plate: "quest-cloonanaha", start: { lat: 52.9410, lng: -9.2260 }, startName: "Cloonanaha", id: "q-cloonanaha",
@@ -92,10 +96,20 @@ export const QUESTS: Quest[] = [
     distanceM: 2840, durationMin: 47, startsAwayM: 0, townland: "Cloonanaha",
     honesty: ["Two stiles", "Unpaved for 400m after the second gate"],
     objectives: [
-      { id: "o-1", pointId: "p-cahercalla", label: "Cahercalla ringfort", required: true, reached: true, atM: 1450, x: 0.68, y: 0.34 },
-      { id: "o-2", pointId: null, label: "Cross the stream", required: false, reached: false, atM: 2200, x: 0.44, y: 0.55 },
+      { id: "o-1", pointId: "p-cahercalla", label: "Cahercalla ringfort", required: true, reached: true, atM: 1450, lat: 52.93404, lng: -9.22566 },
+      { id: "o-2", pointId: null, label: "Cross the stream", required: false, reached: false, atM: 2200, lat: 52.937654, lng: -9.232889 },
     ],
-    path: [[0.16, 0.72], [0.3, 0.6], [0.44, 0.55], [0.6, 0.42], [0.68, 0.34], [0.62, 0.5], [0.4, 0.66], [0.16, 0.72]],
+    path: [
+      [-9.226, 52.941], [-9.224061, 52.941591], [-9.22263, 52.940746],
+      [-9.221726, 52.939804], [-9.221019, 52.938962], [-9.220631, 52.938096],
+      [-9.220604, 52.937229], [-9.220457, 52.936334], [-9.220142, 52.935191],
+      [-9.220563, 52.933952], [-9.222251, 52.933315], [-9.224385, 52.933596],
+      [-9.226, 52.934159], [-9.2273, 52.934306], [-9.228888, 52.934215],
+      [-9.230576, 52.934471], [-9.231858, 52.935191], [-9.23272, 52.936144],
+      [-9.233119, 52.937229], [-9.232546, 52.938286], [-9.230981, 52.938962],
+      [-9.229412, 52.939285], [-9.228508, 52.939847], [-9.227624, 52.940882],
+      [-9.226, 52.941],
+    ],
   },
   {
     plate: "quest-dysert", start: { lat: 52.8990, lng: -9.0700 }, startName: "Dysert", id: "q-dysert",
@@ -109,9 +123,19 @@ export const QUESTS: Quest[] = [
     distanceM: 3160, durationMin: 52, startsAwayM: 220, townland: "Dysert",
     honesty: ["Road without a pavement for 300m", "Likely mud after rain"],
     objectives: [
-      { id: "o-3", pointId: "p-dysert", label: "Dysert O'Dea", required: true, reached: false, atM: 1600, x: 0.31, y: 0.62 },
+      { id: "o-3", pointId: "p-dysert", label: "Dysert O'Dea", required: true, reached: false, atM: 1600, lat: 52.891196, lng: -9.069451 },
     ],
-    path: [[0.2, 0.8], [0.24, 0.72], [0.31, 0.62], [0.42, 0.6], [0.38, 0.74], [0.2, 0.8]],
+    path: [
+      [-9.07, 52.899], [-9.067844, 52.899657], [-9.066254, 52.898718],
+      [-9.065249, 52.89767], [-9.064464, 52.896732], [-9.064032, 52.895769],
+      [-9.064002, 52.894804], [-9.063839, 52.893808], [-9.063488, 52.892536],
+      [-9.063956, 52.891158], [-9.065832, 52.89045], [-9.068205, 52.890762],
+      [-9.07, 52.891388], [-9.071445, 52.891551], [-9.07321, 52.89145],
+      [-9.075087, 52.891736], [-9.076512, 52.892536], [-9.07747, 52.893597],
+      [-9.077914, 52.894804], [-9.077276, 52.89598], [-9.075536, 52.896732],
+      [-9.073793, 52.897092], [-9.072788, 52.897717], [-9.071805, 52.898868],
+      [-9.07, 52.899],
+    ],
   },
   {
     plate: "quest-toonagh", start: { lat: 52.8760, lng: -9.0110 }, startName: "Toonagh", id: "q-toonagh",
@@ -124,9 +148,19 @@ export const QUESTS: Quest[] = [
     distanceM: 1080, durationMin: 16, startsAwayM: 0, townland: "Toonagh",
     honesty: ["Made paths throughout"],
     objectives: [
-      { id: "o-4", pointId: "p-toonagh", label: "Toonagh mill", required: true, reached: false, atM: 540, x: 0.79, y: 0.68 },
+      { id: "o-4", pointId: "p-toonagh", label: "Toonagh mill", required: true, reached: false, atM: 540, lat: 52.87973, lng: -9.006513 },
     ],
-    path: [[0.64, 0.78], [0.72, 0.72], [0.79, 0.68], [0.7, 0.82], [0.64, 0.78]],
+    path: [
+      [-9.011, 52.876], [-9.010331, 52.876311], [-9.00977, 52.876622],
+      [-9.00939, 52.876933], [-9.009204, 52.877243], [-9.009161, 52.877554],
+      [-9.009161, 52.877865], [-9.009092, 52.878176], [-9.008864, 52.878487],
+      [-9.00844, 52.878798], [-9.007846, 52.879109], [-9.007166, 52.87942],
+      [-9.006513, 52.87973], [-9.007166, 52.87942], [-9.007846, 52.879109],
+      [-9.00844, 52.878798], [-9.008864, 52.878487], [-9.009092, 52.878176],
+      [-9.009161, 52.877865], [-9.009161, 52.877554], [-9.009204, 52.877243],
+      [-9.00939, 52.876933], [-9.00977, 52.876622], [-9.010331, 52.876311],
+      [-9.011, 52.876],
+    ],
   },
   {
     plate: "quest-inchiquin", start: { lat: 52.9430, lng: -9.0640 }, startName: "Inchiquin", id: "q-inchiquin",
@@ -142,11 +176,21 @@ export const QUESTS: Quest[] = [
     distanceM: 6140, durationMin: 94, startsAwayM: 410, townland: "Inchiquin",
     honesty: ["Steep for 600m on the return", "Finishes after sunset if you start now"],
     objectives: [
-      { id: "o-5", pointId: "p-inchiquin", label: "Inchiquin Lough", required: true, reached: true, atM: 1200, x: 0.52, y: 0.78 },
-      { id: "o-6", pointId: "p-cahercalla", label: "Cahercalla ringfort", required: true, reached: false, atM: 3800, x: 0.68, y: 0.34 },
-      { id: "o-7", pointId: null, label: "The high point", required: false, reached: false, atM: 4900, x: 0.86, y: 0.5 },
+      { id: "o-5", pointId: "p-inchiquin", label: "Inchiquin Lough", required: true, reached: true, atM: 1200, lat: 52.937668, lng: -9.052817 },
+      { id: "o-6", pointId: null, label: "The old field wall", required: true, reached: false, atM: 3800, lat: 52.928739, lng: -9.072927 },
+      { id: "o-7", pointId: null, label: "The high point", required: false, reached: false, atM: 4900, lat: 52.936995, lng: -9.078227 },
     ],
-    path: [[0.3, 0.88], [0.44, 0.82], [0.52, 0.78], [0.68, 0.62], [0.78, 0.44], [0.68, 0.34], [0.5, 0.5], [0.3, 0.88]],
+    path: [
+      [-9.064, 52.943], [-9.059807, 52.944277], [-9.056714, 52.942452],
+      [-9.05476, 52.940415], [-9.053232, 52.938594], [-9.052392, 52.936722],
+      [-9.052334, 52.934847], [-9.052016, 52.932912], [-9.051335, 52.930441],
+      [-9.052245, 52.927763], [-9.055894, 52.926387], [-9.060508, 52.926994],
+      [-9.064, 52.928211], [-9.06681, 52.928528], [-9.070243, 52.928331],
+      [-9.073893, 52.928886], [-9.076665, 52.930441], [-9.078528, 52.932502],
+      [-9.079391, 52.934847], [-9.078152, 52.937133], [-9.074768, 52.938594],
+      [-9.071377, 52.939293], [-9.069423, 52.940508], [-9.067511, 52.942744],
+      [-9.064, 52.943],
+    ],
   },
 ];
 
@@ -307,13 +351,13 @@ export const HOME_CARDS: HomeCard[] = [
 export const NOTES: Note[] = [
   { id: "n-1", walkId: "w-1", questTitle: "Cloonanaha Loop",
     text: "Heron on the stream, stood dead still for a full minute before it went.",
-    atM: 1980, x: 0.44, y: 0.55, createdAt: "2026-08-28" },
+    atM: 1980, lat: 52.935775, lng: -9.232387, createdAt: "2026-08-28" },
   { id: "n-2", walkId: "w-1", questTitle: "Cloonanaha Loop",
     text: "The bank is higher on the west side than the survey makes it sound.",
-    atM: 1450, x: 0.68, y: 0.34, createdAt: "2026-08-28" },
+    atM: 1450, lat: 52.93404, lng: -9.22566, createdAt: "2026-08-28" },
   { id: "n-3", walkId: "w-2", questTitle: "Toonagh Mill",
     text: "Race is completely dry. Whole channel walkable if you fancy it.",
-    atM: 540, x: 0.79, y: 0.68, createdAt: "2026-08-26" },
+    atM: 540, lat: 52.87973, lng: -9.006513, createdAt: "2026-08-26" },
 ];
 
 
@@ -364,11 +408,11 @@ export const CHALLENGES: Challenge[] = [
 export const COMMUNITY_POINTS: CommunityPoint[] = [
   { id: "cp-1", title: "The clapper bridge", author: "Niamh",
     description: "Flat slabs across the stream below the ford. Older than the road beside it.",
-    x: 0.38, y: 0.47, status: "approved", createdAt: "2026-08-19" },
+    lat: 52.9365, lng: -9.221, status: "approved", createdAt: "2026-08-19" },
   { id: "cp-2", title: "Bench with the view", author: "Aoife",
     description: "Someone put a bench at the top of the boreen. Best seat in the parish.",
-    x: 0.72, y: 0.24, status: "approved", createdAt: "2026-08-11" },
+    lat: 52.9095, lng: -9.0755, status: "approved", createdAt: "2026-08-11" },
   { id: "cp-3", title: "Old forge door", author: "Josh",
     description: "Green door, horseshoe still nailed above it.",
-    x: 0.55, y: 0.63, status: "pending", createdAt: "2026-08-30" },
+    lat: 52.882, lng: -9.024, status: "pending", createdAt: "2026-08-30" },
 ];

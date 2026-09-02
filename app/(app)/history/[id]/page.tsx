@@ -15,9 +15,6 @@ import { data, TIERS } from "@/lib/data";
 import { formatDistance, formatDuration } from "@/lib/walking";
 import { useAsync } from "@/hooks/use-async";
 
-const SPAN_M = 2000;
-const toWorld = (n: number) => (n - 0.5) * SPAN_M;
-
 /** A quest you already took, kept as a record rather than a receipt.
  *
  *  The map, then what it earned you, then what you learned, then what you
@@ -29,7 +26,7 @@ export default function TrailScreen({ params }: { params: Promise<{ id: string }
   const detail = useAsync(() => data.getWalkDetail(id), [id]);
   const d = detail.data;
 
-  const trail = (d?.quest?.path ?? []).map(([x, y]) => [toWorld(x), toWorld(y)] as [number, number]);
+  const trail = (d?.quest?.path ?? []);
 
   return (
     <Screen>
@@ -47,10 +44,10 @@ export default function TrailScreen({ params }: { params: Promise<{ id: string }
           <div className="relative -mx-4 h-[220px] overflow-hidden border-y border-rule">
             <MapCanvas
               interactive={false}
-              initialScale={0.9}
+              fit={trail.map(([lng, lat]) => ({ lat, lng }))}
               trail={trail}
               markers={(d.quest?.objectives ?? []).map((o) => ({
-                id: o.id, x: toWorld(o.x), y: toWorld(o.y),
+                id: o.id, lat: o.lat, lng: o.lng,
                 kind: "objective-done" as const,
               }))}
             />

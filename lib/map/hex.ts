@@ -77,7 +77,17 @@ export function hexNoise(h: Axial, seed = 1): number {
 
 
 /** Base resolution, in world metres. Every coarser level is this doubled. */
-export const BASE_HEX = 90;
+/** Mercator metres per ground metre at Ireland's middle latitude.
+ *
+ *  Mercator stretches with latitude, so a grid sized in Mercator metres is
+ *  smaller on the ground the further north it sits. Across Ireland that
+ *  variation is about seven percent, which is invisible in a fog grid, so one
+ *  reference latitude is used rather than varying the grid and breaking
+ *  tessellation. Real H3 handles this properly and replaces the whole file. */
+const MERC_PER_GROUND_M = 1 / Math.cos((53.4 * Math.PI) / 180);
+
+/** Finest hex, about 90 metres of real ground across. */
+export const BASE_HEX = 90 * MERC_PER_GROUND_M;
 
 /** The tiling stops subdividing here.
  *
@@ -118,8 +128,10 @@ export function sizeForLevel(level: number): number {
 
 /** Whether the base-resolution hex containing a world point is revealed.
  *  Deterministic, so the map looks identical between renders and reloads. */
-export function revealedAt(x: number, y: number, revealRadius: number): boolean {
-  if (Math.hypot(x, y) < revealRadius) return true;
+export function revealedAt(
+  x: number, y: number, revealRadius: number, centre: { x: number; y: number },
+): boolean {
+  if (Math.hypot(x - centre.x, y - centre.y) < revealRadius) return true;
   return hexNoise(hexAt(x, y, BASE_HEX)) > 0.62;
 }
 
@@ -131,13 +143,14 @@ export function revealedAt(x: number, y: number, revealRadius: number): boolean 
  *  stays smooth. */
 export function majorityRevealed(
   cx: number, cy: number, size: number, revealRadius: number,
+  centre: { x: number; y: number },
 ): boolean {
-  if (size <= BASE_HEX) return revealedAt(cx, cy, revealRadius);
-  let hits = revealedAt(cx, cy, revealRadius) ? 1 : 0;
+  if (size <= BASE_HEX) return revealedAt(cx, cy, revealRadius, centre);
+  let hits = revealedAt(cx, cy, revealRadius, centre) ? 1 : 0;
   const r = size * 0.58;
   for (let i = 0; i < 6; i++) {
     const a = (Math.PI / 3) * i;
-    if (revealedAt(cx + r * Math.cos(a), cy + r * Math.sin(a), revealRadius)) hits++;
+    if (revealedAt(cx + r * Math.cos(a), cy + r * Math.sin(a), revealRadius, centre)) hits++;
   }
   return hits >= 4;
 }
