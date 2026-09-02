@@ -8,6 +8,7 @@ import { Frame } from "@/components/shell/Frame";
 import { TIERS } from "@/lib/data";
 import { setSetting, useSettings, type Settings } from "@/lib/settings";
 import { cn } from "@/lib/cn";
+import { clearAcknowledgement, useNeedsBrief } from "@/lib/safety";
 
 function Row({ label, hint, children }: {
   label: string; hint?: string; children: React.ReactNode;
@@ -53,6 +54,8 @@ function Toggle({ on, onChange, label }: {
  *  version held them in component state, which is why left-handed appeared to
  *  work and then forgot itself the moment you navigated. */
 export function SettingsPanel() {
+  /** The same store the start gate reads, so this row is never stale. */
+  const needsBrief = useNeedsBrief();
   const s = useSettings();
   const [legal, setLegal] = useState<null | "terms" | "privacy">(null);
   const [exported, setExported] = useState(false);
@@ -120,6 +123,19 @@ export function SettingsPanel() {
         </Row>
         <Row label="Activity ticker" hint="The scrolling line in the navigation drawer">
           <Toggle on={s.activityInDrawer} onChange={(v) => set("activityInDrawer", v)} label="Activity ticker" />
+          <div className="flex items-center justify-between gap-3 border-t border-rule pt-3">
+            <div className="min-w-0">
+              <p className="t-small text-ink">Safety brief</p>
+              <p className="t-small text-stone">
+                {needsBrief
+                  ? "It will show before your next walk."
+                  : "Read and acknowledged. Show it again before the next walk."}
+              </p>
+            </div>
+            <Button tone="outline" disabled={needsBrief} onClick={clearAcknowledgement}>
+              Show again
+            </Button>
+          </div>
         </Row>
       </Card>
 

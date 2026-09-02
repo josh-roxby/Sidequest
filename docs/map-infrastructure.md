@@ -692,3 +692,125 @@ it becomes the assumption:
 None of that rules Mapbox out. It means "our tiles now, Mapbox later" should be
 "our tiles now, a vendor later, and Mapbox is the one that needs a conversation
 first".
+
+
+---
+
+## 14. Why Valhalla, and the answer is probably not Valhalla
+
+Asked 3 September 2026: can the assembly not just run in code on Vercel when a
+quest is generated? Largely yes, and it is the better answer. Recording why the
+plan said Valhalla in the first place, because the reason expired.
+
+### Why it was there
+
+§5 assumed routing happened **offline in a batch on a laptop**. In that world a
+heavyweight engine is free: it runs once, nobody waits on it, and its size does
+not matter. Valhalla was chosen for what it gives you out of the box, not
+because the problem needs it.
+
+Once assembly moves to request time that calculation inverts, and what was free
+becomes an always-on service and a monthly bill.
+
+### What routing a walk actually needs
+
+Much less than a general routing engine provides. Valhalla, OSRM and the rest
+carry vehicle costing, turn restrictions, one-way rules, lane logic, ferry and
+toll handling, time-dependent speeds. **A walker has none of those problems.**
+Walking is very close to plain shortest path over a graph where the only
+interesting part is the cost function, and the cost function is the exact thing
+we want to write ourselves, because it is where the safety rules live per §12.
+
+What is left is:
+
+1. A graph of walkable ways: nodes, edges, length, surface, incline, a safety
+   class.
+2. A* over it.
+3. The geometry of the chosen path, for drawing.
+
+### It fits in a function, because the graph does not have to
+
+The instinct that this is too much data for a serverless function is right and
+also beside the point. **The whole island never needs to be in memory.** An
+adventure has a 4km reach, so the working set is a box around the walker:
+
+| Tier | Reach | Box | Walkable edges, rough |
+|---|---|---|---|
+| Trot | 350m | ~0.5 km² | hundreds |
+| Stroll | 1km | ~4 km² | low thousands |
+| Sidequest | 2km | ~16 km² | thousands |
+| Adventure | 4km | ~64 km² | tens of thousands, in a town |
+
+A* over tens of thousands of edges in JavaScript is single digit milliseconds.
+Vercel functions allow up to 4GB of memory and long durations, and neither is
+close to being the constraint. The graph lives in Postgres, indexed spatially,
+and the function pulls the box it needs.
+
+One design note that matters for payload: **store the topology and the geometry
+separately.** The A* only needs node ids, costs and attributes, which is a few
+bytes an edge. Full linestrings are fetched only for the edges in the chosen
+path, once the route is known. Pulling geometry for the whole box and throwing
+most of it away is the obvious way to make this slow.
+
+### Three ways to do it, in order of preference
+
+1. **Our own A* in a Vercel function, graph in Postgres.** No extra service, no
+   extra bill, scales to zero, and total control of the cost function, which is
+   the safety mechanism. What we take on is the graph build: turning OSM ways
+   into a topologically correct node and edge table, split at intersections,
+   with footpaths connected to roads. That is real work, and it is **offline,
+   on a laptop, once**, which is where the heavy lifting belonged all along.
+2. **pgRouting.** The same thing inside Postgres. It solves the graph build and
+   the search together and would save real effort. **Whether the extension is
+   available on Supabase needs checking before this is relied on**, and it is
+   the first thing to verify.
+3. **Valhalla as a service.** The fallback if the graph build proves nastier
+   than expected, or if we later want map matching to snap a recorded GPS track
+   to the network for walk records. That is the one capability the first two do
+   not give us for free, and it is not needed for v1.
+
+**The recommendation is 1, checking 2 first**, and Valhalla stays in the tree as
+the offline tool for building and validating the graph rather than as a
+production dependency.
+
+### What this closes
+
+§12 said live assembly needs "one always-on routing service, so it is a new
+monthly line item and therefore yours". If assembly runs in a Vercel function
+against a graph in Postgres, **that line item disappears** and the decision in
+§12 gets easier, because the remaining argument for a pre-built corpus is
+purely the review question, which §12 already answers with encoded rules.
+
+---
+
+## 15. The safety brief
+
+Built 3 September 2026, ahead of the routing work, because it gates the walk
+rather than depending on it.
+
+Before a walker's first quest, a frame opens with eight points on staying safe
+on an Irish boreen: being seen, footwear, weather and light, telling someone,
+battery, animals and land, water, and that turning back is finishing. Then one
+question, drawn from a pool of five, multi select, and the whole set has to be
+right.
+
+**Why a question rather than a tick box.** A tick box records that someone saw
+a screen. A question records that they read it. We are sending people onto
+unlit roads with no footpath and across land where there is no right to roam,
+so the difference is worth the friction exactly once.
+
+Three details that took a second pass:
+
+- **The accept enables on answering, not on answering correctly.** A button
+  that only lights up on the right answer never lets a wrong one happen, so it
+  can never send anyone back to reread, which is the point of asking.
+- **A wrong answer scrolls the brief back to the top.** "Have another read"
+  should put the reading in front of them rather than just say the words.
+- **A question you can pass by ticking every box is not a question.** The whole
+  selected set has to match, and every question carries plausible wrong options
+  rather than filler.
+
+The acknowledgement records the version, so a materially changed brief asks
+again. It is local for this phase. `recordSafetyAck` belongs on the data source
+when accounts are switched on, because "they acknowledged it" is a claim we may
+one day have to stand over, and that wants a row rather than a browser.

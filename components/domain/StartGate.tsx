@@ -11,6 +11,8 @@ import type { LatLng } from "@/lib/data";
 import { distanceM } from "@/lib/geo";
 import { directionsUrl } from "@/lib/maps";
 import { formatDistance } from "@/lib/walking";
+import { useNeedsBrief } from "@/lib/safety";
+import { SafetyBrief } from "@/components/domain/SafetyBrief";
 
 /** How close counts as being at the start. Generous on purpose: a fix in a
  *  valley or under trees is routinely out by fifty metres, and sending someone
@@ -18,7 +20,7 @@ import { formatDistance } from "@/lib/walking";
  *  street away from its first step. */
 const AT_START_M = 400;
 
-type Phase = "idle" | "locating" | "away" | "going";
+type Phase = "idle" | "brief" | "locating" | "away" | "going";
 
 /** Takes a walker from a decision to a walk, and stops on the way only if they
  *  are not where the walk starts.
@@ -41,10 +43,18 @@ export function StartGate({
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("idle");
   const [awayM, setAwayM] = useState<number | null>(null);
+  const needsBrief = useNeedsBrief();
 
   const walk = () => setPhase("going");
 
+  /** The brief comes before the location check, because it is about whether to
+   *  go at all rather than about where you are standing. */
   function press() {
+    if (needsBrief) return setPhase("brief");
+    locate();
+  }
+
+  function locate() {
     if (!start) return walk();
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       // No fix available is not a reason to block a walk. Show the way to the
@@ -79,6 +89,12 @@ export function StartGate({
       <Action onClick={press} loading={phase === "locating"}>
         {phase === "locating" ? "Finding you" : label}
       </Action>
+
+      <SafetyBrief
+        open={phase === "brief"}
+        onAccept={locate}
+        onDismiss={() => setPhase("idle")}
+      />
 
       {/* The loading takeover runs to its own end and then puts the walker on
           the map. Landing back on a card to tap would make the wait read as a

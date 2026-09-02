@@ -249,7 +249,15 @@ Full reasoning in [`docs/map-infrastructure.md`](./docs/map-infrastructure.md)
       the routing profile plus a cache meets the product promise literally
       rather than approximately, and deletes the corpus build, its review
       backlog and the re-anchoring code. It needs one always-on routing
-      service, so it is a new monthly line item and therefore yours
+      service, so it is a new monthly line item and therefore yours.
+      **Softened by §14**: if assembly runs in a Vercel function against a
+      graph in Postgres, that line item disappears and this gets easier
+- [ ] **Check whether pgRouting is available on Supabase**
+      (map-infrastructure §14). If it is, the graph build and the search come
+      together and a lot of work disappears. First thing to verify
+- [ ] Persist the safety acknowledgement per user rather than per browser when
+      accounts are switched on (map-infrastructure §15). It is a claim we may
+      have to stand over, so it wants a row
 - [ ] **Ask Mapbox directly** whether their tiles may be served into MapLibre
       (map-infrastructure §13). Contested rather than settled, cheap to ask,
       expensive to assume. MapTiler and Stadia have no such question
