@@ -417,6 +417,72 @@
       "priority": 3,
       "subject": "Toonagh mill",
       "prompt": "A rubble limestone mill with dressed quoins, the wheel pit on the north elevation, ivy taking the far gable."
+    },
+    {
+      "key": "badge-first-light",
+      "path": "public/plates/badge-first-light.png",
+      "slot": "badge b-1",
+      "ratio": "1:1",
+      "width": 1024,
+      "height": 1024,
+      "priority": 2,
+      "subject": "First light",
+      "prompt": "A badge device: a low sun breaking over a hill line."
+    },
+    {
+      "key": "badge-rath-finder",
+      "path": "public/plates/badge-rath-finder.png",
+      "slot": "badge b-2",
+      "ratio": "1:1",
+      "width": 1024,
+      "height": 1024,
+      "priority": 2,
+      "subject": "Rath finder",
+      "prompt": "A badge device: a ringfort seen in plan, concentric banks with one entrance gap."
+    },
+    {
+      "key": "badge-well-read",
+      "path": "public/plates/badge-well-read.png",
+      "slot": "badge b-3",
+      "ratio": "1:1",
+      "width": 1024,
+      "height": 1024,
+      "priority": 2,
+      "subject": "Well read",
+      "prompt": "A badge device: an open book with a well head rising from its pages."
+    },
+    {
+      "key": "badge-parish-bounds",
+      "path": "public/plates/badge-parish-bounds.png",
+      "slot": "badge b-4",
+      "ratio": "1:1",
+      "width": 1024,
+      "height": 1024,
+      "priority": 2,
+      "subject": "Parish bounds",
+      "prompt": "A badge device: a boundary stone with field walls radiating from it."
+    },
+    {
+      "key": "badge-long-way-round",
+      "path": "public/plates/badge-long-way-round.png",
+      "slot": "badge b-5",
+      "ratio": "1:1",
+      "width": 1024,
+      "height": 1024,
+      "priority": 2,
+      "subject": "Long way round",
+      "prompt": "A badge device: a worn boot sole with a looping path drawn round it."
+    },
+    {
+      "key": "badge-turf-cutter",
+      "path": "public/plates/badge-turf-cutter.png",
+      "slot": "badge b-6",
+      "ratio": "1:1",
+      "width": 1024,
+      "height": 1024,
+      "priority": 2,
+      "subject": "Turf cutter",
+      "prompt": "A badge device: a slean, the two sided turf spade, crossed with a stack of cut turf."
     }
   ],
   "folder": "public/plates"

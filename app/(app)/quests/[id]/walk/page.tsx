@@ -152,7 +152,7 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
               )}
               style={{ borderRadius: "var(--r-md)", transitionDuration: "var(--dur-tap)" }}
             >
-              <Plate ratio="16/9" plate={o.reached ? p?.plate : undefined}
+              <Plate ratio="16/9" plate={o.reached ? p?.plate : undefined} sizes="200px"
                 label={o.reached ? p?.category ?? "Waypoint" : "Locked"}
                 className="rounded-none border-0 border-b border-rule" />
               <div className="p-2.5">

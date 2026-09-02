@@ -76,7 +76,7 @@ export function HomeCarousel({ cards, loading }: { cards: HomeCard[]; loading: b
           >
             <div className="shrink-0 overflow-hidden border-b border-rule"
               style={{ height: `${MEDIA_PCT}%` }}>
-              <Plate plate={c.plate} label={c.eyebrow} fill
+              <Plate plate={c.plate} label={c.eyebrow} fill sizes="calc(100vw - 56px)"
                 className="h-full w-full rounded-none border-0" />
             </div>
             <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-hidden p-3">

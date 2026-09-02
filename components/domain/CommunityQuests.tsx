@@ -27,7 +27,7 @@ export function CommunityQuests() {
     <div className="grid grid-cols-2 gap-2">
       {list.map((q) => (
         <Card key={q.id} inset={false} className="overflow-hidden">
-          <Plate ratio="1/1" plate={q.plate} label={q.townland}
+          <Plate ratio="1/1" plate={q.plate} label={q.townland} sizes="50vw"
             className="rounded-none border-0 border-b border-rule" />
           <div className="flex flex-col gap-1.5 p-2.5">
             <p className="text-[11px] font-semibold uppercase leading-tight tracking-[0.04em] text-ink">

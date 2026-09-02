@@ -7,6 +7,7 @@ import { Tabs } from "@/components/primitives/Tabs";
 import { Data, Label } from "@/components/primitives/Text";
 import { EmptyState, Skeleton } from "@/components/primitives/States";
 import { Button } from "@/components/primitives/Button";
+import { cn } from "@/lib/cn";
 import { data } from "@/lib/data";
 import { useAsync } from "@/hooks/use-async";
 
@@ -53,7 +54,8 @@ export function BadgesPanel() {
             <div className="grid grid-cols-2 gap-2">
               {collected.map((i) => (
                 <Card key={i.id} inset={false} className="overflow-hidden">
-                  <Plate ratio="1/1" plate={i.plate} label={i.category} className="border-0 border-b border-rule" />
+                  <Plate ratio="1/1" plate={i.plate} label={i.category} sizes="50vw"
+                    className="border-0 border-b border-rule" />
                   <div className="p-2.5">
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-[11px] font-semibold uppercase leading-tight tracking-[0.04em] text-ink">
@@ -86,19 +88,17 @@ export function BadgesPanel() {
                   const done = Boolean(b.earnedAt);
                   const pct = Math.min(1, b.progress / b.target);
                   return (
-                    <Card key={b.id} className={done ? undefined : "border-dashed"}>
-                      <span
-                        className="flex h-11 w-11 items-center justify-center border"
-                        style={{
-                          borderRadius: "var(--r-full)",
-                          borderColor: done ? "var(--field)" : "var(--rule)",
-                          background: done ? "var(--field)" : "transparent",
-                          color: done ? "var(--field-ink)" : "var(--mute)",
-                        }}
-                      >
-                        <Mark name={b.group} size={18} />
-                      </span>
-                      <p className="mt-2.5 text-[12px] font-semibold uppercase tracking-[0.04em] text-ink">
+                    <Card key={b.id} inset={false}
+                      className={cn("overflow-hidden", done ? undefined : "border-dashed")}>
+                      {/* The device is drawn as a full plate rather than a glyph
+                          in a chip. These are survey illustrations with stipple
+                          all through them and they are unreadable at 18px, which
+                          is the size the group mark was designed for. The mark
+                          still carries the group on the collectible below. */}
+                      <Plate ratio="1/1" plate={b.plate} label={b.group} sizes="50vw"
+                        className="border-0 border-b border-rule" />
+                      <div className="p-2.5">
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.04em] text-ink">
                         {b.label}
                       </p>
                       <p className="t-small mt-0.5 text-stone">{b.description}</p>
@@ -116,6 +116,7 @@ export function BadgesPanel() {
                           </Data>
                         </>
                       )}
+                      </div>
                     </Card>
                   );
                 })}
