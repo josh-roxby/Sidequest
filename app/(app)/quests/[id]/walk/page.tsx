@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { use, useMemo, useState } from "react";
-import { MapCanvas, type MapMarker } from "@/components/map/MapCanvas";
+import { MapView, type MapMarker } from "@/components/map/MapView";
 import { Action } from "@/components/primitives/Action";
 import { Button } from "@/components/primitives/Button";
 import { Mark } from "@/components/primitives/Marks";
@@ -95,7 +95,7 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <MapCanvas markers={markers} trail={trail}
+      <MapView markers={markers} trail={trail}
         fit={fitPoints}
         home={q?.path[0] ? { lat: q.path[0][1], lng: q.path[0][0] } : undefined} />
 

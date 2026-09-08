@@ -154,10 +154,17 @@ Full plan with what each slice replaces and how you know it worked in
       into CI. Notes in [`docs/v1-map-build.md`](./docs/v1-map-build.md)
 - [ ] **Measure the Planetiler build.** Run it full and trimmed. This is the
       number the whole storage plan waits on. Do it alongside slice 0
-- [ ] **Slice 1. The basemap on screen.** MapLibre plus PMTiles. Carries the
-      biggest decision in the plan: the canvas does not survive, and the fog,
-      trail and markers are reimplemented as layers. Its decisions survive as
-      specification
+- [x] **Slice 1. The map engine on screen.** Done 8 September. `MapCanvas` is
+      gone, `components/map/MapView.tsx` is MapLibre, and the fog, trail,
+      markers, compass, recentre and layer toggles are reimplemented on it.
+      The style is built in code from the design tokens
+- [ ] **Slice 1b. The detailed ground.** The half of slice 1 that did not
+      ship. Every tile host is blocked by this machine's egress proxy, so
+      nothing served over the network could be verified rather than assumed.
+      `NEXT_PUBLIC_BASEMAP_URL` is unset by default and the vector source is
+      only added when it is set. A 23kB coastline at a kilometre ships in
+      `public/geo/` in the meantime, drawn as sea under land so an estuary
+      reads as one. Needs a machine that can reach the network
 - [ ] **Slice 2. The survey plate style.** Taste work, timeboxed. Layer table
       in the build doc
 - [ ] **Slice 3. Ground types.** One source, three consumers that must agree:
@@ -182,6 +189,12 @@ measurements live. Ordered so that finishing a block leaves the app better
 rather than half-migrated.
 
 ### Block 1: wrong on a screen you can reach today
+
+- [ ] **The first-run nav hint sits over the waypoint rail.** "Tap for all /
+      Hold and drag" in `NavButton` is placed above the button precisely to
+      avoid the opposite corner, and on the walk screen the second, dimmed
+      waypoint tile still runs underneath it. First run only, it clears once
+      the nav has been used, so it is a polish item rather than a defect
 
 - [ ] **X-01 Touch targets.** 55 controls render under 44px in at least one
       dimension, across 15 of 20 routes. `--hit-min: 44px` is defined,

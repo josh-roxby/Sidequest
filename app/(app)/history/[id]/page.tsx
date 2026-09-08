@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use } from "react";
-import { MapCanvas } from "@/components/map/MapCanvas";
+import { MapView } from "@/components/map/MapView";
 import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
 import { Mark } from "@/components/primitives/Marks";
@@ -42,7 +42,7 @@ export default function TrailScreen({ params }: { params: Promise<{ id: string }
       ) : (
         <>
           <div className="relative -mx-4 h-[220px] overflow-hidden border-y border-rule">
-            <MapCanvas
+            <MapView
               interactive={false}
               fit={trail.map(([lng, lat]) => ({ lat, lng }))}
               trail={trail}

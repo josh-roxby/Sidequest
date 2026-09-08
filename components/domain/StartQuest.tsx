@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ThumbAction } from "@/components/shell/ThumbAction";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
-import { MapCanvas } from "@/components/map/MapCanvas";
+import { MapView } from "@/components/map/MapView";
 import { DEFAULT_CENTRE } from "@/lib/map/project";
 import { QuestGenerating } from "./QuestGenerating";
 import { ShapeChip } from "@/components/primitives/ShapeChip";
@@ -60,7 +60,7 @@ export function StartQuest() {
           have already cleared is the honest header for that decision. */}
       <div className="relative min-h-0 flex-1 overflow-hidden border border-rule"
         style={{ borderRadius: "var(--r-md)" }}>
-        <MapCanvas interactive={false} initialScale={0.35}
+        <MapView interactive={false} initialZoom={15.7}
           markers={[{ id: "you", ...DEFAULT_CENTRE, kind: "you" }]} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
           style={{ background: "linear-gradient(to top, var(--paper) 12%, transparent)" }} />

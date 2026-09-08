@@ -146,6 +146,45 @@ placement with collision, and GPU rendering of thousands of features.
 **Done when.** You can pan from Ennistymon to the Burren and the ground is
 real, the fog still covers what it covered, and the compass still works.
 
+### Done, 8 September 2026, with the ground still missing
+
+Option 1 was taken. `MapCanvas` is gone and `components/map/MapView.tsx`
+replaces it: MapLibre GL JS 6.8 under a style built in code from the design
+tokens, so `--map-paper` still governs the map the way it governs everything
+else. The fog is an H3 fill layer, the trail is two line layers so the walked
+half is solid and the rest dashed, the markers stay DOM elements positioned by
+`map.project` on every camera move, and the compass, recentre and layer
+toggles behave as they did.
+
+**What is not in it: the detailed ground.** The Planetiler build and the
+PMTiles archive were not run, because every tile host reachable from this
+machine is blocked by the egress proxy, so nothing served over the network
+could be verified rather than assumed. `NEXT_PUBLIC_BASEMAP_URL` is therefore
+unset by default and the vector source is only added when it is set. In its
+place the repo ships `public/geo/ireland.geojson`, a 23kB coastline at a
+kilometre, cut by `scripts/build-coastline.mjs` from a public-domain OSM
+derivative. It is drawn as sea underneath and land on top, not the other way
+round: with paper under a translucent land fill the coast was a scribble
+across two identical tones, and an estuary has to read as an estuary. A
+kilometre is true enough to navigate a bay by and not true enough to walk a
+headland by, which is exactly the gap slice 2 closes.
+
+Two things worth knowing before touching this again.
+
+- **The worker cannot be left to the bundler.** It resolved to the page
+  itself, and every GeoJSON source then hung forever with no error and no
+  `load` event, including inline ones. `setWorkerUrl` points at a copy that
+  `scripts/copy-maplibre-worker.mjs` places in `public/vendor/maplibre/` on
+  `predev` and `prebuild`.
+- **MapLibre serves 512px tiles, not 256.** The first resolution ladder was a
+  power of two out because of it. `resForMetresPerPixel` now takes ground
+  metres per pixel and `metresPerPixel(zoom, lat)` derives it, so the
+  conversion lives in one place with a test around it.
+
+**Still open from this slice.** The Planetiler run and the two measurements
+section 8 of the infrastructure doc waits on, both of which need a machine
+that can reach the network.
+
 ---
 
 ## Slice 2: the survey plate style

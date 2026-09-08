@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { use, useMemo } from "react";
-import { MapCanvas, type MapMarker } from "@/components/map/MapCanvas";
+import { MapView, type MapMarker } from "@/components/map/MapView";
 import { Button } from "@/components/primitives/Button";
 import { Mark } from "@/components/primitives/Marks";
 import { ShapeChip } from "@/components/primitives/ShapeChip";
@@ -72,7 +72,7 @@ export default function FriendQuestScreen({ params }: { params: Promise<{ id: st
             style={{ borderRadius: "var(--r-md)" }}>
             {/* Framed to the route. The shape is the thing being previewed, so it
                 has to fit rather than be guessed at. */}
-            <MapCanvas markers={markers} trail={trail} interactive={false}
+            <MapView markers={markers} trail={trail} interactive={false}
               fit={fitPoints} />
           </div>
 

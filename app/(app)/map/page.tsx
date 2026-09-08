@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { MapCanvas, type MapMarker } from "@/components/map/MapCanvas";
+import { MapView, type MapMarker } from "@/components/map/MapView";
 import { Frame } from "@/components/shell/Frame";
 import { Action } from "@/components/primitives/Action";
 import { Mark } from "@/components/primitives/Marks";
@@ -65,9 +65,9 @@ export default function MapScreen() {
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <MapCanvas
+      <MapView
         home={DEFAULT_CENTRE}
-        initialScale={0.045}
+        initialZoom={12.8}
         markers={markers}
         trail={trail}
         questTiles={questTiles}

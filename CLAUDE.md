@@ -66,13 +66,16 @@ PRD section 11. Costs nothing recurring, which is a hard product constraint.
 app/            routes. (app) group is the shell, everything else is public
 components/
   primitives/   Action, Button, Card, Tabs, Field, Chip, Stat, Marks, States
-  map/          MapCanvas, MapDock
+  map/          MapView (MapLibre), MapDock
   shell/        NavButton, NavDrawer, Frame, ThumbAction, RankHeader, Screen
   domain/       per feature composition
 lib/
   data/         the read interface. mock/ and supabase/ implement it
   geo.ts        haversine, uniform point in radius, perpendicular waypoints
-  map/hex.ts    axial hex tiling, the stand-in for H3
+  map/
+    project.ts  the one Web Mercator projection
+    hex.ts      H3 on h3-js, and the resolution to draw at
+    style.ts    the MapLibre style, built from the design tokens
   nav.ts        the destination list, shared by the drawer and the shortcut
   fog/          H3 quantiser and local store, when it lands
 supabase/

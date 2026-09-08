@@ -36,24 +36,34 @@ export const RES_COARSEST = 5;
  *
  *  H3 resolutions step by about 2.65 in edge length rather than doubling, so
  *  this walks the table instead of taking a logarithm. Six comparisons is
- *  nothing and it stays right if the table ever changes. */
+ *  nothing and it stays right if the table ever changes.
+ *
+ *  Takes ground metres per pixel rather than a zoom or a scale, because that
+ *  is the only form of the question with no projection assumption hiding in
+ *  it. `metresPerPixel` below turns a MapLibre zoom into one. */
 const EDGE_M: Record<number, number> = {
   5: 9854, 6: 3725, 7: 1406, 8: 531, 9: 201, 10: 76,
 };
 
-export function resForScale(scale: number, lat: number, targetPx = 64): number {
-  /* scale is pixels per Mercator metre, and Mercator over-reads the ground by
-     the secant of the latitude, so an edge of E ground metres draws
-     E * scale / cos(lat) pixels. */
-  const stretch = 1 / Math.cos((lat * Math.PI) / 180);
+export function resForMetresPerPixel(mPerPx: number, targetPx = 72): number {
   let best = RES_COARSEST;
   let bestErr = Infinity;
   for (let r = RES_COARSEST; r <= RES_FINEST; r++) {
-    const px = EDGE_M[r] * 2 * scale * stretch;
+    /* An edge is half a cell's width, so a cell draws about twice its edge. */
+    const px = (EDGE_M[r] * 2) / mPerPx;
     const err = Math.abs(Math.log(px / targetPx));
     if (err < bestErr) { bestErr = err; best = r; }
   }
   return best;
+}
+
+/** Ground metres per screen pixel at a MapLibre zoom.
+ *
+ *  MapLibre cuts the world into 512px tiles, not the 256 the older slippy-map
+ *  formula assumes, which is a factor of two and the difference between a fog
+ *  cell being a field and being a parish. */
+export function metresPerPixel(zoom: number, lat: number): number {
+  return (78271.51696 * Math.cos((lat * Math.PI) / 180)) / 2 ** zoom;
 }
 
 /** The cell containing a place. */
@@ -83,15 +93,12 @@ export function cellBoundary(cell: string): [number, number][] {
 /** Cells covering a rectangle of Mercator space.
  *
  *  Grown outward from the centre with `gridDisk` rather than asked for with
- *  `polygonToCells`: the rectangle is rotated by the camera, so the honest
+ *  `polygonToCells`: the viewport is rotated by the camera, so the honest
  *  polygon is not axis aligned, and a disk that covers the diagonal is both
- *  simpler and faster than describing the true shape. */
-export function cellsInView(
-  centre: LatLng, res: number, radiusMerc: number,
-): string[] {
-  const stretch = 1 / Math.cos((centre.lat * Math.PI) / 180);
-  const radiusGround = radiusMerc / stretch;
-  const rings = Math.min(60, Math.ceil(radiusGround / (EDGE_M[res] * 1.5)) + 1);
+ *  simpler and faster than describing the true shape. The radius is ground
+ *  metres. */
+export function cellsInView(centre: LatLng, res: number, radiusM: number): string[] {
+  const rings = Math.min(60, Math.ceil(radiusM / (EDGE_M[res] * 1.5)) + 1);
   return gridDisk(cellAt(centre, res), rings);
 }
 

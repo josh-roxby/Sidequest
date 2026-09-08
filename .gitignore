@@ -45,3 +45,6 @@ next-env.d.ts
 # editors
 .vscode/
 .idea/
+
+# Copied from node_modules at build time by scripts/copy-maplibre-worker.mjs
+public/vendor/

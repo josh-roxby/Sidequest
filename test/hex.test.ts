@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { cellToLatLng, getResolution, isValidCell } from "h3-js";
 import {
   cellAt, cellBoundary, cellNoise, cellRevealed, cellsInView,
-  majorityRevealed, RES_COARSEST, RES_FINEST, resForScale,
+  majorityRevealed, metresPerPixel, RES_COARSEST, RES_FINEST, resForMetresPerPixel,
 } from "../lib/map/hex.ts";
 import { DEFAULT_CENTRE, project } from "../lib/map/project.ts";
 import { distanceM } from "../lib/geo.ts";
@@ -21,14 +21,33 @@ test("a place lands in a valid cell that contains it", () => {
 
 test("resolution follows zoom, finest when close and coarsest when far", () => {
   const lat = DEFAULT_CENTRE.lat;
-  assert.equal(resForScale(2, lat), RES_FINEST, "zoomed right in");
-  assert.equal(resForScale(0.0008, lat), RES_COARSEST, "whole island");
+  const at = (z: number) => resForMetresPerPixel(metresPerPixel(z, lat));
+  assert.equal(at(18), RES_FINEST, "zoomed right in");
+  assert.equal(at(7), RES_COARSEST, "whole island");
   // Monotonic: zooming out never picks a finer resolution.
   let prev = RES_FINEST;
-  for (const s of [2, 1, 0.5, 0.2, 0.1, 0.04, 0.01, 0.004, 0.0008]) {
-    const r = resForScale(s, lat);
-    assert.ok(r <= prev, `scale ${s} gave res ${r} after ${prev}`);
+  for (let z = 18; z >= 6; z--) {
+    const r = at(z);
+    assert.ok(r <= prev, `zoom ${z} gave res ${r} after ${prev}`);
     prev = r;
+  }
+});
+
+test("a cell is drawn at roughly the size it was chosen for", () => {
+  const lat = DEFAULT_CENTRE.lat;
+  const EDGE = { 5: 9854, 6: 3725, 7: 1406, 8: 531, 9: 201, 10: 76 } as Record<number, number>;
+  for (let z = 8; z <= 18; z++) {
+    const mpp = metresPerPixel(z, lat);
+    const res = resForMetresPerPixel(mpp);
+    const px = (EDGE[res] * 2) / mpp;
+    // Never a mess of specks: whatever the zoom, a cell keeps a tappable size.
+    assert.ok(px > 24, `zoom ${z} draws cells ${px.toFixed(0)}px across`);
+    // The upper bound only binds while a finer resolution is still on the
+    // ladder. Past that the fog is simply 76m of ground filling more screen,
+    // which is what zooming in means.
+    if (res < RES_FINEST) {
+      assert.ok(px < 260, `zoom ${z} draws cells ${px.toFixed(0)}px across`);
+    }
   }
 });
 
