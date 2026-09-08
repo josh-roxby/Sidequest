@@ -56,9 +56,16 @@ Two more worth knowing before you build a screen.
 Next.js 16 App Router, React 19, TypeScript strict, Tailwind v4 with tokens
 in `app/globals.css`, Supabase for auth and Postgres when it is switched on.
 
-Decided and not yet built: MapLibre GL JS over self built PMTiles, Valhalla
-offline for the quest corpus, our own PostGIS places dataset. Rationale in
-PRD section 11. Costs nothing recurring, which is a hard product constraint.
+The map is MapLibre GL JS over OpenStreetMap vector tiles from OpenFreeMap
+(no key, no account, no meter), styled in `lib/map/style.ts` from the design
+tokens. `NEXT_PUBLIC_BASEMAP_URL` overrides the source; `off` falls back to
+the committed 23kB coastline in `public/geo/`. **The OSM attribution control
+is a licence condition under ODbL. Do not switch it off.**
+
+Decided and not yet built: our own PMTiles archive to replace OpenFreeMap,
+Valhalla offline for the quest corpus, our own PostGIS places dataset.
+Rationale in PRD section 11. Costs nothing recurring, which is a hard product
+constraint.
 
 ## Layout
 
@@ -78,6 +85,7 @@ lib/
     style.ts    the MapLibre style, built from the design tokens
   nav.ts        the destination list, shared by the drawer and the shortcut
   fog/          H3 quantiser and local store, when it lands
+  location.ts   the geolocation prompt, fired from a press and nowhere else
 supabase/
   migrations/   written, not applied
 docs/           PRD, design system, UX loops, reface plan, data pipeline,

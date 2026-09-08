@@ -32,6 +32,7 @@
   --map-fog:    #C9C6BC;
   --map-water:  #CFD8D6;
   --map-green:  #DEE4D7;
+  --map-sand:   #E8E2D2;
   --map-trail:  #2E4034;
 
   /* shape — three steps. See design-system §A-3.
@@ -90,6 +91,7 @@
   --color-map-fog: var(--map-fog);
   --color-map-water: var(--map-water);
   --color-map-green: var(--map-green);
+  --color-map-sand: var(--map-sand);
   --color-map-trail: var(--map-trail);
 
   --font-sans: var(--f-sans);

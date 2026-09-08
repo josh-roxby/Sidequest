@@ -9,7 +9,7 @@ import { MapAdd, type AddMode } from "@/components/map/MapAdd";
 import { Plate } from "@/components/primitives/Plate";
 import { Data, Label } from "@/components/primitives/Text";
 import { Skeleton, StatusStrip } from "@/components/primitives/States";
-import { data, type CommunityPoint, type Note, type Point } from "@/lib/data";
+import { data, type CommunityPoint, type LatLng, type Note, type Point } from "@/lib/data";
 import { DEFAULT_CENTRE } from "@/lib/map/project";
 import { useAsync } from "@/hooks/use-async";
 import { useSettings } from "@/lib/settings";
@@ -21,6 +21,11 @@ export default function MapScreen() {
   const points = useAsync(() => data.getPointsNearby(), []);
   const quests = useAsync(() => data.getQuests("stroll"), []);
   const [refresh, setRefresh] = useState(0);
+  /* Where the walker is. The home region until they press the locate control
+     and grant it, then wherever they actually are: the camera, the cleared
+     ground and the you marker all read from this one value. */
+  const [here, setHere] = useState<LatLng>(DEFAULT_CENTRE);
+  const [locateNote, setLocateNote] = useState<string | null>(null);
   const notes = useAsync(() => data.getNotes(), [refresh]);
   const cpoints = useAsync(() => data.getCommunityPoints(), [refresh]);
   const [openNote, setOpenNote] = useState<Note | null>(null);
@@ -47,8 +52,8 @@ export default function MapScreen() {
     const cpMarks = (cpoints.data ?? []).map((c) => ({
       id: `cp-${c.id}`, lat: c.lat, lng: c.lng, kind: "community" as const,
     }));
-    return [{ id: "you", ...DEFAULT_CENTRE, kind: "you" as const }, ...pts, ...noteMarks, ...cpMarks];
-  }, [points.data, notes.data, cpoints.data]);
+    return [{ id: "you", ...here, kind: "you" as const }, ...pts, ...noteMarks, ...cpMarks];
+  }, [points.data, notes.data, cpoints.data, here]);
 
   const trail = useMemo<[number, number][]>(
     () => (quests.data?.[0]?.path ?? []),
@@ -66,8 +71,10 @@ export default function MapScreen() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       <MapView
-        home={DEFAULT_CENTRE}
+        home={here}
         initialZoom={12.8}
+        onLocate={setHere}
+        onLocateFail={setLocateNote}
         markers={markers}
         trail={trail}
         questTiles={questTiles}
@@ -91,6 +98,20 @@ export default function MapScreen() {
           if (p) setOpen(p);
         }}
       />
+
+      {/* A refusal is not a failure, so it says what the map is doing rather
+          than what went wrong, and it can be dismissed. */}
+      {locateNote ? (
+        <button
+          type="button"
+          onClick={() => setLocateNote(null)}
+          className="t-small absolute z-20 max-w-[70%] border border-rule bg-surface px-2.5 py-1.5 text-left text-stone"
+          style={{ left: "var(--gutter)", top: "calc(env(safe-area-inset-top) + var(--gutter) + 58px)",
+                   borderRadius: "var(--r-sm)" }}
+        >
+          {locateNote}
+        </button>
+      ) : null}
 
       <div
         className="pointer-events-none absolute border border-ink bg-surface px-2.5 py-2"
@@ -208,7 +229,7 @@ export default function MapScreen() {
         /* Where the map opens. Becomes the live position in slice 6, which is
            also when a pin dropped anywhere but under your feet stops being a
            reasonable thing to allow. */
-        at={DEFAULT_CENTRE}
+        at={here}
         onAdded={() => setRefresh((n) => n + 1)}
       />
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { QUESTS, POINTS } from "../lib/data/mock/fixtures.ts";
+import { TIERS } from "../lib/data/types.ts";
 import { distanceM } from "../lib/geo.ts";
 import { IRELAND_BOUNDS } from "../lib/map/project.ts";
 
@@ -89,5 +90,31 @@ test("an objective's point, where it has one, is where the objective is", () => 
       const off = distanceM({ lat: o.lat, lng: o.lng }, { lat: p!.lat, lng: p!.lng });
       assert.ok(off < 50, `${o.id} is ${Math.round(off)}m from ${o.pointId}`);
     }
+  }
+});
+
+test("every quest's distance falls inside the tier it claims", () => {
+  /* The corpus is meant to carry "distances that actually fall inside their
+     tier tolerance", and nothing was checking it: a 6.2km walk shipped tagged
+     as a 45 minute stroll. The tiers are the product's promise about how long
+     you will be out, so a quest that breaks them is not a cosmetic problem. */
+  const byTier = new Map(TIERS.map((t) => [t.id, t]));
+  for (const q of QUESTS) {
+    const t = byTier.get(q.tier);
+    assert.ok(t, `${q.id} claims tier ${q.tier}, which does not exist`);
+    assert.ok(q.distanceM >= t!.minM && q.distanceM <= t!.maxM,
+      `${q.id} is ${q.distanceM}m, outside ${t!.label} (${t!.minM}-${t!.maxM}m)`);
+  }
+});
+
+test("a quest's stated duration is close to the pace its tier implies", () => {
+  const byTier = new Map(TIERS.map((t) => [t.id, t]));
+  for (const q of QUESTS) {
+    const t = byTier.get(q.tier)!;
+    // Within a third of the tier's target. Terrain and ascent move it, but a
+    // quest whose duration is nowhere near its tier is mislabelled.
+    const ratio = q.durationMin / t.targetMinutes;
+    assert.ok(ratio > 0.66 && ratio < 1.5,
+      `${q.id} says ${q.durationMin} min against a ${t.label} target of ${t.targetMinutes}`);
   }
 });

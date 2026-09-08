@@ -185,6 +185,39 @@ Two things worth knowing before touching this again.
 section 8 of the infrastructure doc waits on, both of which need a machine
 that can reach the network.
 
+### Amended, 8 September 2026: the ground arrived after all
+
+The detailed ground is wired, against OpenFreeMap. It is OpenStreetMap data
+served with no API key, no account and no usage meter, which is the only
+reason it could be switched on without asking anyone to sign up for
+anything. `NEXT_PUBLIC_BASEMAP_URL` overrides it and `off` disables it.
+
+The layers are written here rather than taken from the vendor's stylesheet,
+so the ground arrives in the app's palette: water, waterway, landcover, park,
+landuse, building, and transportation split so a footpath is drawn as heavily
+as a minor road and dashed, while a dual carriageway is present and quiet. A
+walking app is not a driving app.
+
+**What is verified and what is not.** The tile URL, the glyph endpoint, the
+`Noto Sans Regular` fontstack and all eight `source-layer` names were checked
+against OpenFreeMap's own production style and the OpenMapTiles schema they
+generate with. The whole style is validated against the MapLibre style
+specification by `test/style.test.ts`, which catches a bad filter or paint
+property as a red test rather than as a blank rectangle. What could not be
+checked is whether the tiles arrive: every tile host is blocked from the
+machine this was written on. That is one look on a real device.
+
+**Two things to raise before this is a launch decision.** OpenFreeMap is
+donation funded and offers no availability guarantee, so it is a way to walk
+the app now, not the thing to ship on; our own PMTiles archive is still the
+plan. And OpenStreetMap is ODbL, so attribution is a licence condition: the
+attribution control is on whenever a basemap is configured and must stay on.
+
+The fallback was also fixed while wiring this. Configuring a basemap is not
+the same as reaching one, and the first cut dropped the committed coastline
+the moment a URL was set, which answers a dead network with an empty blue
+rectangle. The coastline fill now always paints and the tiles draw over it.
+
 ---
 
 ## Slice 2: the survey plate style

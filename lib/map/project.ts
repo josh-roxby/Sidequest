@@ -72,8 +72,9 @@ export const IRELAND_RECT = (() => {
   return { minX: nw.x, minY: nw.y, maxX: se.x, maxY: se.y };
 })();
 
-/** Where the app opens before it knows better. Corofin, Co. Clare, which sits
- *  among the fixture points: Inchiquin on its doorstep, Dysert five kilometres
- *  south, Toonagh and Cahercalla to the south east. Replaced by the walker's
- *  own position the moment they grant it. */
-export const DEFAULT_CENTRE: LatLng = { lat: 52.9445, lng: -9.0650 };
+/** Where the app opens before it knows better. Clontarf Road, Dublin 3, which
+ *  sits among the home region fixtures: the Bull Wall east along the
+ *  promenade, Marino and Fairview west, St Anne's north east, Glasnevin and
+ *  Santry inland. Replaced by the walker's own position the moment they grant
+ *  it, which is a button press and never a page load. */
+export const DEFAULT_CENTRE: LatLng = { lat: 53.3625, lng: -6.2050 };

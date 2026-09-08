@@ -158,13 +158,20 @@ Full plan with what each slice replaces and how you know it worked in
       gone, `components/map/MapView.tsx` is MapLibre, and the fog, trail,
       markers, compass, recentre and layer toggles are reimplemented on it.
       The style is built in code from the design tokens
-- [ ] **Slice 1b. The detailed ground.** The half of slice 1 that did not
-      ship. Every tile host is blocked by this machine's egress proxy, so
-      nothing served over the network could be verified rather than assumed.
-      `NEXT_PUBLIC_BASEMAP_URL` is unset by default and the vector source is
-      only added when it is set. A 23kB coastline at a kilometre ships in
-      `public/geo/` in the meantime, drawn as sea under land so an estuary
-      reads as one. Needs a machine that can reach the network
+- [x] **Slice 1b. The detailed ground.** Done 8 September, against
+      OpenFreeMap: OpenStreetMap tiles with no key, no account and no meter.
+      Layers written in our own palette, so roads, paths, water, woodland and
+      buildings arrive as the survey plate rather than as somebody else's map.
+      Validated against the MapLibre style spec in `test/style.test.ts`
+- [ ] **Look at the map on a real device.** Every tile host is blocked from
+      the machine this was built on, so the schema, the URLs and the style are
+      verified but the rendering is not. One look settles it
+- [ ] **Decide whether OpenFreeMap is the launch basemap.** Free, no account,
+      no meter, and donation funded with no availability guarantee. Fine to
+      walk the app on, a risk to launch on. Our own PMTiles archive is still
+      the plan and swapping is one env var
+- [ ] **Keep the OSM attribution on.** ODbL licence condition, not a
+      courtesy. It is wired to appear whenever a basemap is configured
 - [ ] **Slice 2. The survey plate style.** Taste work, timeboxed. Layer table
       in the build doc
 - [ ] **Slice 3. Ground types.** One source, three consumers that must agree:

@@ -4,7 +4,6 @@ import {
 } from "h3-js";
 import { distanceM } from "../geo.ts";
 import type { LatLng } from "../data/index.ts";
-import { project } from "./project.ts";
 
 /** Territory tiles, on real H3.
  *
@@ -71,22 +70,25 @@ export function cellAt(p: LatLng, res: number): string {
   return latLngToCell(p.lat, p.lng, res);
 }
 
-/** Boundaries are projected once and kept. A pan re-uses almost every cell it
- *  had last frame, and projecting six corners each is a logarithm and an
- *  arctangent apiece: cheap once, wasteful sixty times a second. */
-const boundaryCache = new Map<string, [number, number][]>();
+/** Rings are built once and kept. A pan re-uses almost every cell it had last
+ *  frame, and rebuilding seven corners apiece is wasteful sixty times a
+ *  second.
+ *
+ *  In lng/lat and closed, which is GeoJSON order and what MapLibre wants. It
+ *  used to be handed back in Mercator and converted straight back to lng/lat
+ *  by the only caller, which was a logarithm and an arctangent per corner to
+ *  arrive where it started. The map projects; this does not need to. */
+const ringCache = new Map<string, [number, number][]>();
 
-export function cellBoundary(cell: string): [number, number][] {
-  const hit = boundaryCache.get(cell);
+export function cellRing(cell: string): [number, number][] {
+  const hit = ringCache.get(cell);
   if (hit) return hit;
-  const ring = cellToBoundary(cell).map(([lat, lng]) => {
-    const { x, y } = project({ lat, lng });
-    return [x, y] as [number, number];
-  });
+  const ring = cellToBoundary(cell).map(([lat, lng]) => [lng, lat] as [number, number]);
+  ring.push(ring[0]);
   /* Unbounded growth would be a leak on a long walk. Ten thousand cells is far
      more than any view holds and a trivial amount of memory. */
-  if (boundaryCache.size > 10_000) boundaryCache.clear();
-  boundaryCache.set(cell, ring);
+  if (ringCache.size > 10_000) ringCache.clear();
+  ringCache.set(cell, ring);
   return ring;
 }
 
@@ -119,11 +121,27 @@ export function cellNoise(cell: string, seed = 1): number {
  *
  *  Ground metres, not Mercator metres: the radius means a real distance a
  *  person walked, and H3 lets us ask that question directly. Placeholder until
- *  the fog is written from a live position in slice 7. */
+ *  the fog is written from a live position in slice 7.
+ *
+ *  Walked ground and nothing else. This used to clear any cell whose noise
+ *  came up over 0.62, which meant a bit under two fifths of the country was
+ *  permanently cleared for texture, scattered at random. On a canvas of flat
+ *  hexes that read as grain; over a real basemap it reads as static, and it
+ *  made the frontier of the fog a rash of holes rather than a line you have
+ *  pushed back. The noise is still there and still per cell, but it varies
+ *  the shade of the fog rather than punching holes in it: see `cellShade`. */
 export function cellRevealed(cell: string, centre: LatLng, radiusM: number): boolean {
   const [lat, lng] = cellToLatLng(cell);
-  if (distanceM({ lat, lng }, centre) < radiusM) return true;
-  return cellNoise(cell) > 0.62;
+  return distanceM({ lat, lng }, centre) < radiusM;
+}
+
+/** How dark this cell's fog sits, 0 to 1, stable for the cell.
+ *
+ *  Cloud is not one flat tone, and a fog of one flat tone over a hex grid
+ *  shows every seam. A narrow band is enough: wide enough to break the grid
+ *  up, narrow enough that no cell reads as a different thing. */
+export function cellShade(cell: string): number {
+  return 0.74 + cellNoise(cell, 7) * 0.2;
 }
 
 /** A coarse cell is only clear when most of the ground inside it is. A single

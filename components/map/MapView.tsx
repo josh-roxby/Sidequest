@@ -2,10 +2,11 @@
 import { LngLatBounds, Map as MLMap, setWorkerUrl, type GeoJSONSource } from "maplibre-gl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  cellAt, cellBoundary, cellsInView, majorityRevealed, metresPerPixel,
-  RES_FINEST, resForMetresPerPixel,
+  cellAt, cellRing, cellShade, cellsInView, majorityRevealed, metresPerPixel,
+  resForMetresPerPixel,
 } from "@/lib/map/hex";
-import { DEFAULT_CENTRE, IRELAND_BOUNDS, unproject } from "@/lib/map/project";
+import { DEFAULT_CENTRE, IRELAND_BOUNDS } from "@/lib/map/project";
+import { getPosition, LocationError, locationMessage } from "@/lib/location";
 import { BASEMAP_URL, surveyStyle } from "@/lib/map/style";
 import type { LatLng } from "@/lib/data";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
@@ -36,11 +37,27 @@ export interface MapViewProps {
   fit?: LatLng[];
   /** Fallback zoom when there is nothing to fit. MapLibre zoom levels. */
   initialZoom?: number;
+  /** A real fix, once the walker has asked for one. The page owns where it
+   *  goes: the map only reports it. */
+  onLocate?: (p: LatLng) => void;
+  /** Why a fix did not arrive, in words fit to show someone. */
+  onLocateFail?: (message: string) => void;
 }
 
 /** Cleared ground around the opening position, in real metres. Placeholder
  *  until the fog is written from a live position in slice 6. */
 const REVEAL_RADIUS_M = 900;
+
+/** One cell as a GeoJSON polygon. The ring is cached and already closed, so
+ *  this is a wrapper rather than work.
+ *
+ *  `shade` rides along so the fog layer can vary its opacity per cell without
+ *  the style needing to know anything about H3. */
+const cellFeature = (cell: string) => ({
+  type: "Feature" as const,
+  properties: { shade: cellShade(cell) },
+  geometry: { type: "Polygon" as const, coordinates: [cellRing(cell)] },
+});
 
 const GLYPH: Record<MapMarker["kind"], MarkName | null> = {
   you: null, point: "point", objective: "flag", "objective-done": "badge",
@@ -58,6 +75,7 @@ const GLYPH: Record<MapMarker["kind"], MarkName | null> = {
 export function MapView({
   markers = [], trail = [], questTiles = [], onMarker,
   home = DEFAULT_CENTRE, hidden = [], interactive = true, fit, initialZoom = 13,
+  onLocate, onLocateFail,
 }: MapViewProps) {
   const wrap = useRef<HTMLDivElement>(null);
   const map = useRef<MLMap | null>(null);
@@ -82,7 +100,9 @@ export function MapView({
       style: surveyStyle(),
       center: [homeLng, homeLat],
       zoom: initialZoom,
-      attributionControl: false,
+      /* OpenStreetMap is ODbL and attribution is a condition of using it. The
+         control is compact so it stays out of the way of the thumb corner. */
+      attributionControl: BASEMAP_URL ? { compact: true } : false,
       interactive,
       // The island and nothing else, matching the camera clamp the canvas had.
       maxBounds: [
@@ -99,17 +119,11 @@ export function MapView({
     m.on("error", (e) => {
       console.error("[map]", e.error?.message ?? e);
     });
-    m.on("load", () => {
-      /* The detailed ground, if it has been switched on. Added after load so a
-         source that fails to reach the network cannot stop the map appearing:
-         the coastline and everything the app draws are already there. */
-      if (BASEMAP_URL) {
-        try {
-          m.addSource("basemap", { type: "vector", url: BASEMAP_URL });
-        } catch { /* the map is still usable without it */ }
-      }
-      setReady(true);
-    });
+    /* The basemap is declared in the style rather than added here, so its
+       layers sit in the draw order the style defines instead of on top of
+       everything the app draws. A source that cannot be reached leaves its
+       layers empty; the fog, the trail and the markers are unaffected. */
+    m.on("load", () => setReady(true));
     return () => { m.remove(); map.current = null; };
     // Created once. Everything below reacts to prop changes on the live map.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -131,24 +145,25 @@ export function MapView({
     const features = [];
     for (const cell of cellsInView(here, res, reachM)) {
       if (majorityRevealed(cell, homeLL, REVEAL_RADIUS_M)) continue;
-      const ring = cellBoundary(cell).map(([x, y]) => {
-        const p = unproject({ x, y });
-        return [p.lng, p.lat];
-      });
-      features.push({ type: "Feature" as const, properties: {},
-        geometry: { type: "Polygon" as const, coordinates: [[...ring, ring[0]]] } });
+      features.push(cellFeature(cell));
     }
     (m.getSource("fog") as GeoJSONSource | undefined)
       ?.setData({ type: "FeatureCollection", features });
 
-    const tiles = questTiles.map((q) => {
-      const ring = cellBoundary(cellAt(q, RES_FINEST)).map(([x, y]) => {
-        const p = unproject({ x, y });
-        return [p.lng, p.lat];
-      });
-      return { type: "Feature" as const, properties: {},
-        geometry: { type: "Polygon" as const, coordinates: [[...ring, ring[0]]] } };
-    });
+    /* At the same resolution as the fog, deliberately. Drawn at a fixed one it
+       was a second hex grid of a different size laid over the first, which is
+       what made the tiling look irregular: two grids, not one. A quest start
+       marks the cell it is standing in, whatever size that cell currently is,
+       so it reads as ground rather than as a floating shape. Two starts in one
+       cell collapse into one tile, which is correct. */
+    const seen = new Set<string>();
+    const tiles = [];
+    for (const q of questTiles) {
+      const cell = cellAt(q, res);
+      if (seen.has(cell)) continue;
+      seen.add(cell);
+      tiles.push(cellFeature(cell));
+    }
     (m.getSource("quest-tiles") as GeoJSONSource | undefined)
       ?.setData({ type: "FeatureCollection", features: tiles });
   }, [homeLL, questTiles]);
@@ -205,9 +220,24 @@ export function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitKey, ready]);
 
-  const recentre = useCallback(() => {
-    map.current?.easeTo({ center: [homeLng, homeLat], zoom: 15, duration: 520 });
-  }, [homeLat, homeLng]);
+  /* The one place the browser's location prompt is allowed to fire: a press,
+     never a page load. A refusal is not an error state, it is the map staying
+     where it was, so the button reports it and moves on. */
+  const [locating, setLocating] = useState(false);
+  const recentre = useCallback(async () => {
+    if (locating) return;
+    setLocating(true);
+    try {
+      const fix = await getPosition();
+      map.current?.easeTo({ center: [fix.lng, fix.lat], zoom: 15.5, duration: 620 });
+      onLocate?.({ lat: fix.lat, lng: fix.lng });
+    } catch (err) {
+      map.current?.easeTo({ center: [homeLng, homeLat], zoom: 15, duration: 520 });
+      if (err instanceof LocationError) onLocateFail?.(locationMessage(err.reason));
+    } finally {
+      setLocating(false);
+    }
+  }, [homeLat, homeLng, locating, onLocate, onLocateFail]);
 
   const north = useCallback(() => {
     map.current?.easeTo({ bearing: 0, duration: 400 });
@@ -277,7 +307,9 @@ export function MapView({
             <Mark name="compass" size={17} />
           </button>
           <button type="button" onClick={recentre} aria-label="Centre on my location"
-            className="flex h-11 w-11 items-center justify-center border border-rule bg-surface text-stone"
+            aria-busy={locating} data-locating={locating}
+            className="flex h-11 w-11 items-center justify-center border border-rule bg-surface text-stone disabled:opacity-60"
+            disabled={locating}
             style={{ borderRadius: "var(--r-full)" }}>
             <Mark name="center" size={15} />
           </button>

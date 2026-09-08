@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { cellToLatLng, getResolution, isValidCell } from "h3-js";
+import { cellToChildren, cellToLatLng, getResolution, isValidCell } from "h3-js";
 import {
-  cellAt, cellBoundary, cellNoise, cellRevealed, cellsInView,
+  cellAt, cellNoise, cellRevealed, cellRing, cellsInView,
   majorityRevealed, metresPerPixel, RES_COARSEST, RES_FINEST, resForMetresPerPixel,
 } from "../lib/map/hex.ts";
-import { DEFAULT_CENTRE, project } from "../lib/map/project.ts";
+import { DEFAULT_CENTRE } from "../lib/map/project.ts";
 import { distanceM } from "../lib/geo.ts";
 
 test("a place lands in a valid cell that contains it", () => {
@@ -51,21 +51,27 @@ test("a cell is drawn at roughly the size it was chosen for", () => {
   }
 });
 
-test("a cell boundary is a closed ring of six corners round its centre", () => {
+test("a cell ring is closed, in GeoJSON order, and sits round its centre", () => {
   const cell = cellAt(DEFAULT_CENTRE, 9);
-  const ring = cellBoundary(cell);
-  assert.equal(ring.length, 6);
+  const ring = cellRing(cell);
+  // Six corners plus the repeat that closes the polygon.
+  assert.equal(ring.length, 7);
+  assert.deepEqual(ring[0], ring[6]);
   const [lat, lng] = cellToLatLng(cell);
-  const c = project({ lat, lng });
-  for (const [x, y] of ring) {
-    const d = Math.hypot(x - c.x, y - c.y);
-    assert.ok(d > 100 && d < 1000, `corner ${d.toFixed(0)} Mercator m from centre`);
+  for (const [lng2, lat2] of ring) {
+    // lng/lat, not lat/lng: getting this pair the wrong way round is the
+    // classic way to put Ireland in the Indian Ocean.
+    assert.ok(Math.abs(lng2 - lng) < 0.02, `lng ${lng2} nowhere near ${lng}`);
+    assert.ok(Math.abs(lat2 - lat) < 0.02, `lat ${lat2} nowhere near ${lat}`);
+    // A res 9 cell has an edge of about 200m, so every corner is that far out.
+    const d = distanceM({ lat: lat2, lng: lng2 }, { lat, lng });
+    assert.ok(d > 100 && d < 400, `corner ${d.toFixed(0)}m from centre`);
   }
 });
 
-test("the boundary cache returns the same ring, not a new one", () => {
+test("the ring cache returns the same ring, not a new one", () => {
   const cell = cellAt(DEFAULT_CENTRE, 8);
-  assert.equal(cellBoundary(cell), cellBoundary(cell));
+  assert.equal(cellRing(cell), cellRing(cell));
 });
 
 test("ground under your feet is revealed and distant ground mostly is not", () => {
@@ -90,10 +96,29 @@ test("noise is stable for a cell and differs between cells", () => {
 
 test("a coarse cell needs most of its ground cleared, not one field", () => {
   const coarse = cellAt(DEFAULT_CENTRE, 6);
-  // A radius that clears one fine cell must not clear the parish above it.
-  assert.equal(majorityRevealed(coarse, DEFAULT_CENTRE, 30), false);
-  // A radius that swallows the whole coarse cell must.
+  // A radius that swallows the whole coarse cell clears it.
   assert.equal(majorityRevealed(coarse, DEFAULT_CENTRE, 50_000), true);
+
+  /* Walking further never un-clears ground. This is the invariant the majority
+     rule actually owes us, and unlike "30m must not clear a parish" it holds
+     wherever you stand: reveal is radius OR noise, so a bigger radius can only
+     add. That earlier assertion passed on the noise of one particular cell
+     over Corofin and failed the moment the default centre moved to Dublin,
+     which made it a test of where we happened to be standing. */
+  for (const r of [0, 30, 200, 1_000, 5_000]) {
+    if (majorityRevealed(coarse, DEFAULT_CENTRE, r)) {
+      assert.equal(majorityRevealed(coarse, DEFAULT_CENTRE, r * 2 + 1), true,
+        `a ${r}m radius cleared it and ${r * 2 + 1}m did not`);
+    }
+  }
+
+  /* And the rule is a majority, not a single child: a radius small enough to
+     touch one child only cannot be what carries a cell of seven. */
+  const kids = cellToChildren(coarse, 7);
+  const byNoiseAlone = kids.filter((k) => cellRevealed(k, DEFAULT_CENTRE, 0)).length;
+  const withTinyRadius = kids.filter((k) => cellRevealed(k, DEFAULT_CENTRE, 30)).length;
+  assert.ok(withTinyRadius - byNoiseAlone <= 1,
+    "a 30m radius reached more than the one child it is standing in");
 });
 
 test("a view returns cells and they surround the centre", () => {
