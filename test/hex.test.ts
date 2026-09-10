@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { cellToChildren, cellToLatLng, getResolution, isValidCell } from "h3-js";
 import {
-  cellAt, cellNoise, cellRevealed, cellRing, cellsInView,
-  majorityRevealed, metresPerPixel, RES_COARSEST, RES_FINEST, resForMetresPerPixel,
+  cellAt, cellNoise, cellRevealed, cellRing, cellsInView, EDGE_M,
+  majorityRevealed, metresPerPixel, RES_COARSEST, RES_FINEST, RES_ORIENT,
+  resForMetresPerPixel, standingGround,
 } from "../lib/map/hex.ts";
 import { DEFAULT_CENTRE } from "../lib/map/project.ts";
 import { distanceM } from "../lib/geo.ts";
@@ -35,11 +36,10 @@ test("resolution follows zoom, finest when close and coarsest when far", () => {
 
 test("a cell is drawn at roughly the size it was chosen for", () => {
   const lat = DEFAULT_CENTRE.lat;
-  const EDGE = { 5: 9854, 6: 3725, 7: 1406, 8: 531, 9: 201, 10: 76 } as Record<number, number>;
   for (let z = 8; z <= 18; z++) {
     const mpp = metresPerPixel(z, lat);
     const res = resForMetresPerPixel(mpp);
-    const px = (EDGE[res] * 2) / mpp;
+    const px = (EDGE_M[res] * 2) / mpp;
     // Never a mess of specks: whatever the zoom, a cell keeps a tappable size.
     assert.ok(px > 24, `zoom ${z} draws cells ${px.toFixed(0)}px across`);
     // The upper bound only binds while a finer resolution is still on the
@@ -126,4 +126,45 @@ test("a view returns cells and they surround the centre", () => {
   assert.ok(cells.length > 6, `only ${cells.length} cells`);
   assert.ok(cells.includes(cellAt(DEFAULT_CENTRE, 9)), "the centre cell is missing");
   assert.ok(cells.every(isValidCell));
+});
+
+test("standing ground is the cell you are in plus the six touching it", () => {
+  const { here, near } = standingGround(DEFAULT_CENTRE, 10);
+  assert.equal(here, cellAt(DEFAULT_CENTRE, 10), "you are not in your own cell");
+  assert.equal(near.size, 6, `expected six neighbours, got ${near.size}`);
+  assert.ok(!near.has(here!), "your own cell is in its own halo");
+
+  /* Every neighbour touches yours: about one cell across, never two. A res 10
+     cell has a 76m edge, so centres sit roughly 130m apart. */
+  const [lat, lng] = cellToLatLng(here!);
+  for (const n of near) {
+    const [nlat, nlng] = cellToLatLng(n);
+    const d = distanceM({ lat: nlat, lng: nlng }, { lat, lng });
+    assert.ok(d > 80 && d < 220, `neighbour ${Math.round(d)}m away is not adjacent`);
+  }
+});
+
+test("standing ground goes dark once a cell is too big to stand in", () => {
+  /* Zoomed out, "the cell you are in" is kilometres wide. Lighting it would
+     clear half a county for pinching out, so past RES_ORIENT there is no
+     standing ground at all and the fog is uniform. */
+  for (let r = RES_COARSEST; r < RES_ORIENT; r++) {
+    const { here, near } = standingGround(DEFAULT_CENTRE, r);
+    assert.equal(here, null, `res ${r} lit a cell ${EDGE_M[r]}m across`);
+    assert.equal(near.size, 0);
+  }
+  for (let r = RES_ORIENT; r <= RES_FINEST; r++) {
+    assert.ok(standingGround(DEFAULT_CENTRE, r).here, `res ${r} lit nothing`);
+  }
+});
+
+test("the halo is drawn on the same grid as the fog around it", () => {
+  /* The halo cells have to be cells of the drawing resolution, or they sit as
+     a second grid over the first, which is the bug that made the tiling look
+     irregular the first time round. */
+  for (const res of [9, 10]) {
+    const { here, near } = standingGround(DEFAULT_CENTRE, res);
+    assert.equal(getResolution(here!), res);
+    for (const n of near) assert.equal(getResolution(n), res);
+  }
 });

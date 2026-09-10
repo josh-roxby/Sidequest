@@ -184,7 +184,12 @@ Full plan with what each slice replaces and how you know it worked in
 - [ ] **Slice 6. Collecting a point.** The loop. `useLiveLocation` into the
       walk, arrival by H3 cell rather than radius, rows written. Watch the
       battery: it decides whether anyone finishes an adventure
-- [ ] **Slice 7. Fog for real.** Cells written from the live position
+- [ ] **Slice 7. Fog for real.** Cells written from the live position. The
+      standing ground floor (your cell clear, the six touching it half lit) is
+      already in and stays: walked ground subtracts on top of it
+- [ ] **Tune the half lit tone against the real basemap.** It was set against
+      the coastline fallback because the tiles are unreachable from the build
+      machine. Over paper it is subtle, over roads it should be obvious
 
 ---
 

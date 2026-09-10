@@ -218,6 +218,31 @@ the same as reaching one, and the first cut dropped the committed coastline
 the moment a URL was set, which answers a dead network with an empty blue
 rectangle. The coastline fill now always paints and the tiles draw over it.
 
+### Standing ground, 10 September 2026
+
+The fog has three states rather than two. The cell you are standing in is
+clear, the six touching it are half lit, and everything else is closed. A fog
+that starts fully shut tells you nothing about whether a walk is worth taking,
+and a walking app that will not show you your own street is no use for judging
+one.
+
+This replaced a 900m "revealed" radius that was drawing a circle of ground
+nobody had walked. That was placeholder data pretending to be exploration,
+which is the thing `CLAUDE.md` rules out, and it was also large enough to
+swallow the halo entirely.
+
+Two decisions inside it worth knowing. The halo is cells of the drawing
+resolution rather than a fixed one, so it lines up with the fog around it
+instead of laying a second grid over the first. And it switches off below
+`RES_ORIENT` (res 9, cells about 400m across), because coarser than that "the
+cell you are standing in" is kilometres wide, so lighting it would clear half
+a county as a reward for pinching out.
+
+**Open.** The half lit tone was tuned against the coastline fallback rather
+than against real ground, because the tiles cannot be reached from here. Over
+paper it is subtle; over roads and buildings it should be obvious. Worth a
+look on a device before deciding it is right.
+
 ---
 
 ## Slice 2: the survey plate style

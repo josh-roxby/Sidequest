@@ -40,7 +40,7 @@ export const RES_COARSEST = 5;
  *  Takes ground metres per pixel rather than a zoom or a scale, because that
  *  is the only form of the question with no projection assumption hiding in
  *  it. `metresPerPixel` below turns a MapLibre zoom into one. */
-const EDGE_M: Record<number, number> = {
+export const EDGE_M: Record<number, number> = {
   5: 9854, 6: 3725, 7: 1406, 8: 531, 9: 201, 10: 76,
 };
 
@@ -156,6 +156,37 @@ export function majorityRevealed(cell: string, centre: LatLng, radiusM: number):
   let hits = 0;
   for (const k of kids) if (cellRevealed(k, centre, radiusM)) hits++;
   return hits * 2 > kids.length;
+}
+
+/** The coarsest resolution at which standing ground is lit.
+ *
+ *  Res 9 cells are about 400m across. Coarser than that and "the cell you are
+ *  standing in" is a few kilometres wide, so lighting it would clear half a
+ *  county for zooming out, which is both an exploit and a lie about what you
+ *  have seen. Zoomed out past this you are reading a region rather than
+ *  placing yourself, and the fog is uniform. */
+export const RES_ORIENT = 9;
+
+/** What you can see from where you are standing, before you have walked
+ *  anywhere.
+ *
+ *  A fog that starts fully closed tells you nothing about whether a walk is
+ *  worth taking, and a walking app that will not show you your own street is
+ *  no use for judging one. So the cell you are in is always clear, and the six
+ *  touching it are always half lit: enough to read the streets around you and
+ *  place yourself, not enough to hand over the map.
+ *
+ *  This is a floor, not the fog. Ground you have actually walked clears
+ *  permanently on top of it when the fog store lands in slice 6. */
+export function standingGround(centre: LatLng, res: number): {
+  here: string | null;
+  near: Set<string>;
+} {
+  if (res < RES_ORIENT) return { here: null, near: new Set() };
+  const here = cellAt(centre, res);
+  const near = new Set(gridDisk(here, 1));
+  near.delete(here);
+  return { here, near };
 }
 
 /** How strongly the tile layer draws at this zoom. It fades out rather than

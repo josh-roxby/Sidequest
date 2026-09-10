@@ -2,8 +2,8 @@
 import { LngLatBounds, Map as MLMap, setWorkerUrl, type GeoJSONSource } from "maplibre-gl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  cellAt, cellRing, cellShade, cellsInView, majorityRevealed, metresPerPixel,
-  resForMetresPerPixel,
+  cellAt, cellRing, cellShade, cellsInView, metresPerPixel,
+  resForMetresPerPixel, standingGround,
 } from "@/lib/map/hex";
 import { DEFAULT_CENTRE, IRELAND_BOUNDS } from "@/lib/map/project";
 import { getPosition, LocationError, locationMessage } from "@/lib/location";
@@ -44,18 +44,20 @@ export interface MapViewProps {
   onLocateFail?: (message: string) => void;
 }
 
-/** Cleared ground around the opening position, in real metres. Placeholder
- *  until the fog is written from a live position in slice 6. */
-const REVEAL_RADIUS_M = 900;
+/** How much of the fog is left on the ring around where you are standing.
+ *  Half, so the roads and paths under it can be read well enough to judge a
+ *  walk without the map being given away. */
+const HALF_LIT = 0.5;
 
 /** One cell as a GeoJSON polygon. The ring is cached and already closed, so
  *  this is a wrapper rather than work.
  *
  *  `shade` rides along so the fog layer can vary its opacity per cell without
- *  the style needing to know anything about H3. */
-const cellFeature = (cell: string) => ({
+ *  the style needing to know anything about H3, and `lit` scales it for the
+ *  cells next to you. */
+const cellFeature = (cell: string, lit = 1) => ({
   type: "Feature" as const,
-  properties: { shade: cellShade(cell) },
+  properties: { shade: cellShade(cell) * lit },
   geometry: { type: "Polygon" as const, coordinates: [cellRing(cell)] },
 });
 
@@ -142,10 +144,18 @@ export function MapView({
     const box = m.getContainer().getBoundingClientRect();
     const reachM = (Math.hypot(box.width, box.height) / 2) * mPerPx;
 
+    /* Three states, not two. The cell you are standing in is clear, the six
+       touching it are half lit so the streets under them can be read, and
+       everything else is closed. Walked ground subtracts from this on top when
+       the fog store lands in slice 6; until then this floor is all there is,
+       and it is honest about that rather than drawing a circle of ground
+       nobody has walked. */
+    const { here: standing, near } = standingGround(homeLL, res);
+
     const features = [];
     for (const cell of cellsInView(here, res, reachM)) {
-      if (majorityRevealed(cell, homeLL, REVEAL_RADIUS_M)) continue;
-      features.push(cellFeature(cell));
+      if (cell === standing) continue;
+      features.push(cellFeature(cell, near.has(cell) ? HALF_LIT : 1));
     }
     (m.getSource("fog") as GeoJSONSource | undefined)
       ?.setData({ type: "FeatureCollection", features });
