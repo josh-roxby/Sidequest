@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { use, useMemo, useState } from "react";
-import { MapView, type MapMarker } from "@/components/map/MapView";
+import { use, useMemo, useRef, useState } from "react";
+import { MapView, type MapMarker, type MapViewHandle } from "@/components/map/MapView";
 import { Action } from "@/components/primitives/Action";
 import { Button } from "@/components/primitives/Button";
 import { Mark } from "@/components/primitives/Marks";
@@ -14,6 +14,7 @@ import { data, type Objective, type Point, type LatLng } from "@/lib/data";
 import { DEFAULT_CENTRE } from "@/lib/map/project";
 import { estimateDurationS, formatDistance, formatDuration } from "@/lib/walking";
 import { useAsync } from "@/hooks/use-async";
+import { useRoutedQuest } from "@/hooks/use-routed-quest";
 import { cn } from "@/lib/cn";
 
 /** The walk itself: the map takes the screen and the quest sits over it.
@@ -36,7 +37,11 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
      then the start of the route is the honest stand-in. */
   const [here, setHere] = useState<LatLng | null>(null);
 
-  const q = quest.data;
+  const map = useRef<MapViewHandle>(null);
+  /* The walk as written is an arc across the ground. Once the basemap has the
+     ways under it, the same router that draws a generated walk redraws this
+     one, so the line on the screen is one a walker can actually follow. */
+  const { quest: q, onMapReady } = useRoutedQuest(quest.data, map);
 
   const markers = useMemo<MapMarker[]>(() => {
     const you = here ?? (q ? { lat: q.path[0][1], lng: q.path[0][0] } : DEFAULT_CENTRE);
@@ -99,7 +104,8 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <MapView markers={markers} trail={trail}
+      <MapView ref={map} markers={markers} trail={trail}
+        onReady={onMapReady}
         fit={fitPoints}
         home={q?.path[0] ? { lat: q.path[0][1], lng: q.path[0][0] } : undefined}
         /* Without this the camera flew to the walker and the dot stayed at the

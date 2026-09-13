@@ -327,6 +327,32 @@ machine. It fails safe in every direction: no basemap, no tiles, or no streets
 near the walker all produce an empty list, and an empty list is the geometric
 route the app drew before any of this existed.
 
+Since then the adapter has been tested end to end after all, against real
+vector tiles: `@maplibre/geojson-vt` builds a synthetic street grid into pbf
+tiles and Playwright serves them in place of the tile host. That is what found
+the thing no unit test could, which is that **a vector tile is a picture of a
+street network rather than the network**. Ways are stored separately and
+simplification drops every vertex on a straight run, so a long straight road
+arrives as its two endpoints and the streets crossing it in between leave no
+trace. Nothing shared a vertex, so nothing was a junction, and the graph never
+connected. `planarise` in `lib/quest/graph.ts` puts the crossings back.
+
+**Written walks are re-cut on the phone.** The corpus in
+`lib/data/mock/dublin.ts` was drawn before there was a router and every route
+in it is an arc across the ground. Re-cutting the file is not available: the
+machine that builds it cannot reach a tile host or an OSM endpoint. So
+`lib/quest/recut.ts` redraws a written walk against the basemap in front of the
+walker, through the same router a generated walk uses, and `useRoutedQuest`
+hangs that off the map's `onReady`. One kind of line on the map, whoever wrote
+the walk.
+
+It refuses rather than guesses. A walk is re-cut only if the new line keeps the
+places the walk is named for, comes back at a believable length, and is routed
+at all; otherwise the written line stands and says, in the honesty list, that
+it is drawn rather than routed. The distance shown is corrected to what the
+streets actually cost, because the one number people plan an afternoon around
+should not be the length of an arc nobody can walk.
+
 ---
 
 ## Slice 2: the survey plate style

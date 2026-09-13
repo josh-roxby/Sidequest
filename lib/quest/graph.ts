@@ -298,17 +298,77 @@ const edgeKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
 export function outAndBack(
   g: Graph, from: LatLng, to: LatLng, shape: "loop" | "line",
 ): { path: Path; metres: number } | null {
-  const a = nearestNode(g, from);
-  const b = nearestNode(g, to);
-  if (!a || !b || a === b) return null;
+  return routeVia(g, from, [to], shape);
+}
 
-  const out = shortestPath(g, a, b);
-  if (!out || out.length < 2) return null;
+/** A walk that calls at each of these places in turn and then comes home.
+ *
+ *  `outAndBack` is this with a single stop. The general form exists because a
+ *  written walk is a sequence of places and most of its length lives in the
+ *  wandering between them: routing only to the furthest keeps the destination
+ *  and throws the walk away. The shore walk is eleven kilometres and names a
+ *  wall three away.
+ *
+ *  Stops are taken in the order given. No attempt is made to reorder them into
+ *  a shorter tour, because the order a walk visits its places in is part of
+ *  what somebody wrote down, not a problem to be optimised. */
+export function routeVia(
+  g: Graph, from: LatLng, stops: LatLng[], shape: "loop" | "line",
+  targetM?: number,
+): { path: Path; metres: number } | null {
+  const first = nearestNode(g, from);
+  if (!first) return null;
+
+  /* Consecutive stops that land on the same node are one stop. A written walk
+     often names the park it starts in, and a leg from a place to itself has no
+     route. */
+  const seq = [first];
+  for (const s of stops) {
+    const n = nearestNode(g, s);
+    if (!n) return null;
+    if (n !== seq[seq.length - 1]) seq.push(n);
+  }
+  if (seq.length < 2) return null;
+
+  const out: string[] = [];
+  for (let i = 1; i < seq.length; i++) {
+    const leg = shortestPath(g, seq[i - 1], seq[i]);
+    if (!leg || leg.length < 2) return null;
+    out.push(...(out.length === 0 ? leg : leg.slice(1)));
+  }
+
+  const retrace = (legs: string[] = out) => {
+    const ids = [...legs, ...[...legs].reverse().slice(1)];
+    return { path: pathOf(g, ids), metres: lengthOf(g, ids) };
+  };
+  const last = seq[seq.length - 1];
 
   if (shape === "line") {
-    const back = [...out].reverse();
-    const ids = [...out, ...back.slice(1)];
-    return { path: pathOf(g, ids), metres: lengthOf(g, ids) };
+    /* A there and back is twice the way out, so its length is settled by where
+       it goes rather than by how it comes home: there is no return leg to
+       stretch. What a short one can do is carry on past its last stop before
+       turning, which is what "out the promenade and back" describes anyway. */
+    const outM = lengthOf(g, out);
+    const owed = targetM === undefined ? 0 : targetM / 2 - outM;
+    if (owed <= outM * 0.1) return retrace();
+
+    const beyondLast = distanceField(g, last);
+    const fromStart = distanceField(g, first);
+    let beyond: string | null = null;
+    let bestErr = Infinity;
+    for (const [id, a] of beyondLast) {
+      const b = fromStart.get(id);
+      /* Further out than the stop it carries on past, rather than back towards
+         home: a node the right distance from the turn is just as likely to be
+         behind it, and turning early is not walking further. */
+      if (b === undefined || b < outM) continue;
+      const err = Math.abs(a - owed);
+      if (err < bestErr) { bestErr = err; beyond = id; }
+    }
+    if (!beyond || bestErr > owed * 0.4) return retrace();
+    const tail = shortestPath(g, last, beyond);
+    if (!tail || tail.length < 2) return retrace();
+    return retrace([...out, ...tail.slice(1)]);
   }
 
   const used = new Set<string>();
@@ -316,13 +376,56 @@ export function outAndBack(
   /* Four times the cost. High enough to send the return down a parallel street
      rather than back up the same one, low enough that a walk out a dead end
      still gets home rather than failing. */
-  const back = shortestPath(g, b, a, (x, y) => (used.has(edgeKey(x, y)) ? 4 : 1));
-  if (!back || back.length < 2) {
-    const ids = [...out, ...[...out].reverse().slice(1)];
+  const avoid = (skip: Set<string>) => (x: string, y: string) =>
+    (skip.has(edgeKey(x, y)) ? 4 : 1);
+
+  const direct = shortestPath(g, last, first, avoid(used));
+  if (!direct || direct.length < 2) return retrace();
+
+  const finish = (legs: string[][]) => {
+    const ids = legs.reduce((acc, leg) => acc.concat(acc.length ? leg.slice(1) : leg), []);
     return { path: pathOf(g, ids), metres: lengthOf(g, ids) };
+  };
+
+  /* The way home, stretched to the length the walk promises.
+   *
+   *  Shortest paths between the places a walk names are shorter than the walk,
+   *  and for a written one they are much shorter: its length lives in a meander
+   *  somebody chose, and routing every leg the short way deletes it. A stroll
+   *  round Santry came back at 1.6km against the 2.9km on its card, which is not
+   *  the same walk and not the tier it is filed under.
+   *
+   *  So the return leg is allowed to wander: a node is picked where the distance
+   *  from the last stop plus the distance home makes up whatever length is still
+   *  owed, and the walk goes home through it. Two distance fields and a scan,
+   *  which is the standard way to ask for a circuit of a given length. */
+  const owed = targetM === undefined ? 0 : targetM - lengthOf(g, out);
+  if (targetM === undefined || owed <= lengthOf(g, direct) * 1.15) {
+    return finish([out, direct]);
   }
-  const ids = [...out, ...back.slice(1)];
-  return { path: pathOf(g, ids), metres: lengthOf(g, ids) };
+
+  const fromLast = distanceField(g, last);
+  const fromStart = distanceField(g, first);
+  let via: string | null = null;
+  let bestErr = Infinity;
+  for (const [id, a] of fromLast) {
+    const b = fromStart.get(id);
+    if (b === undefined) continue;
+    const err = Math.abs(a + b - owed);
+    if (err < bestErr) { bestErr = err; via = id; }
+  }
+  if (!via || bestErr > owed * 0.4) return finish([out, direct]);
+
+  const legA = shortestPath(g, last, via, avoid(used));
+  if (!legA || legA.length < 2) return finish([out, direct]);
+  /* The second half avoids the first half as well, so the detour is a loop out
+     and round rather than a spur walked twice. */
+  const alsoUsed = new Set(used);
+  for (let i = 1; i < legA.length; i++) alsoUsed.add(edgeKey(legA[i - 1], legA[i]));
+  const legB = shortestPath(g, via, first, avoid(alsoUsed));
+  if (!legB || legB.length < 2) return finish([out, direct]);
+
+  return finish([out, legA, legB]);
 }
 
 /** The share of a route's steps that cover ground it has already covered.

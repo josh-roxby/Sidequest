@@ -89,6 +89,11 @@ lib/
     project.ts  the one Web Mercator projection
     hex.ts      H3 on h3-js, and the resolution to draw at
     style.ts    the MapLibre style, built from the design tokens
+  quest/        assembling a walk and drawing it on real streets.
+                graph.ts is the router: it planarises tile geometry so
+                crossings exist at all, then routes. recut.ts redraws a
+                written walk on the ways the phone has loaded, because the
+                corpus is built where no tile host is reachable
   nav.ts        the destination list, shared by the drawer and the shortcut
   fog/          H3 quantiser and local store, when it lands
                 (the store survived the fog itself: it is the visited set)

@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use } from "react";
-import { MapView } from "@/components/map/MapView";
+import { use, useRef } from "react";
+import { MapView, type MapViewHandle } from "@/components/map/MapView";
 import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
 import { Mark } from "@/components/primitives/Marks";
@@ -14,6 +14,7 @@ import { Screen } from "@/components/shell/Screen";
 import { data, TIERS } from "@/lib/data";
 import { formatDistance, formatDuration } from "@/lib/walking";
 import { useAsync } from "@/hooks/use-async";
+import { useRoutedQuest } from "@/hooks/use-routed-quest";
 
 /** A quest you already took, kept as a record rather than a receipt.
  *
@@ -25,8 +26,14 @@ export default function TrailScreen({ params }: { params: Promise<{ id: string }
   const router = useRouter();
   const detail = useAsync(() => data.getWalkDetail(id), [id]);
   const d = detail.data;
+  const map = useRef<MapViewHandle>(null);
+  /* The walk that was taken is shown as the quest's own route, which was drawn
+     as an arc before there was a router. Re-cutting it here means a finished
+     walk is remembered along the streets it was walked on. Replace this with
+     the recorded track once walks are stored, in slice 6. */
+  const { quest, onMapReady } = useRoutedQuest(d?.quest ?? null, map);
 
-  const trail = (d?.quest?.path ?? []);
+  const trail = (quest?.path ?? []);
 
   return (
     <Screen>
@@ -43,6 +50,8 @@ export default function TrailScreen({ params }: { params: Promise<{ id: string }
         <>
           <div className="relative -mx-4 h-[220px] overflow-hidden border-y border-rule">
             <MapView
+              ref={map}
+              onReady={onMapReady}
               interactive={false}
               fit={trail.map(([lng, lat]) => ({ lat, lng }))}
               trail={trail}

@@ -220,10 +220,13 @@ rather than half-migrated.
       the router is tested against a synthetic street grid and the adapter that
       feeds it real tiles is not tested at all. It fails safe: no tiles means a
       geometric line, which is what the app did before. One look settles it
-- [ ] **The committed corpus still has drawn lines, not routed ones.** The
-      twenty seven baked walks in `lib/data/mock/dublin.ts` predate the router
-      and still cut across blocks. They could be re-cut through the same graph
-      once there is a machine that can load tiles
+- [ ] **The corpus is re-cut on the phone, not in the file.** The twenty seven
+      walks in `lib/data/mock/dublin.ts` still hold the arcs they were drawn
+      with, because the machine that builds them cannot reach a tile host or an
+      OSM endpoint. `lib/quest/recut.ts` redraws them against the basemap the
+      walker has, which costs about 750ms on a dense graph every time a walk is
+      opened. Bake the routed lines instead the day the corpus can be built
+      somewhere with network, and keep the re-cut as the fallback
 - [ ] **Seed the Dublin corpus into Supabase.** Asked for, not done: the
       schema in `supabase/migrations/` is unapplied, and a seed would have to
       invent `pois`, `countries` and `zones` rows against tables that exist

@@ -39,6 +39,13 @@ export interface MapViewHandle {
   /** The walkable ways the basemap has loaded, for the router. Empty whenever
    *  there is no basemap, no tiles, or no ground covered yet. */
   streets: () => Street[];
+  /** The same, but waits for the tiles carrying them to arrive.
+   *
+   *  Moves nothing. A screen already framed on the ground it cares about has
+   *  the right tiles coming and only needs to wait; sweeping the camera there
+   *  would judder the view in front of the walker to collect ground that is
+   *  already on its way. `loadAround` is for the other case. */
+  streetsWhenLoaded: (timeoutMs?: number) => Promise<Street[]>;
 }
 
 export interface MapViewProps {
@@ -72,6 +79,9 @@ export interface MapViewProps {
   /** Lets the page start following once the walker has agreed to the gate it
    *  showed them, without making them press the control a second time. */
   ref?: React.Ref<MapViewHandle>;
+  /** Fired once the basemap has loaded, so a page can ask for the ways under
+   *  it. Nothing else tells a page when `loadAround` is worth calling. */
+  onReady?: () => void;
   /** A page's own map controls, rendered into the same column as the compass
    *  and the recentre. Pages used to float their own stack at the same gutter
    *  and the two landed on top of each other, which is where the squares
@@ -148,7 +158,7 @@ export function MapView({
   markers = [], trail = [], visited = [], onMarker, onUnlock, onAskLocation, ref,
   controls, addOptions = [], onAdd,
   home = DEFAULT_CENTRE, hidden = [], interactive = true, fit, initialZoom = 13,
-  onLocate, onLocateFail,
+  onLocate, onLocateFail, onReady,
 }: MapViewProps) {
   const wrap = useRef<HTMLDivElement>(null);
   const map = useRef<MLMap | null>(null);
@@ -213,6 +223,15 @@ export function MapView({
     // Created once. Everything below reacts to prop changes on the live map.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /* Told once, when there is a basemap to read. A page that wants the ways
+     under the map has no other way to know when asking is worth anything.
+     Deliberately keyed on `ready` alone: a page that rebuilds its callback
+     must not be told the map loaded a second time. */
+  useEffect(() => {
+    if (ready) onReady?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
 
   /* ---- walked ground, repainted when the camera settles ---------------- */
   const visitedKey = visited.join(",");
@@ -556,6 +575,26 @@ export function MapView({
       return [...found.values()];
     },
     streets: () => (map.current ? walkableLines(map.current) : []),
+    streetsWhenLoaded: (timeoutMs = DEADLINE_MS) => new Promise<Street[]>((resolve) => {
+      const m = map.current;
+      if (!m) { resolve([]); return; }
+      /* Polled rather than waited on. `idle` fires when nothing is in flight,
+         which on a cold start happens before the first tile has been asked
+         for, so it answers "nothing loading" when the truth is "nothing loaded
+         yet". The deadline is the point at which a walker would rather have
+         the written line than keep waiting for a better one. */
+      const started = performance.now();
+      let timer = 0;
+      const check = () => {
+        const lines = walkableLines(m);
+        if (lines.length > 0 || performance.now() - started > timeoutMs) {
+          window.clearInterval(timer);
+          resolve(lines);
+        }
+      };
+      timer = window.setInterval(check, 250);
+      check();
+    }),
   }), [locate]);
 
 
@@ -575,6 +614,10 @@ export function MapView({
          rectangle and a loaded map look identical in a screenshot. */
       data-map={ready ? "ready" : "loading"}
       data-markers={markers.length}
+      /* How many points the drawn route has. A written walk and the same walk
+         re-cut on real streets look alike in a screenshot and are not, and
+         this is the difference said out loud. */
+      data-trail={trail.length}
       /* Walked cells currently lit, so a test can tell an empty set from a
          broken one without reaching into MapLibre. */
       data-visited={visited.length}>

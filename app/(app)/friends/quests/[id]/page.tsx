@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { use, useMemo } from "react";
-import { MapView, type MapMarker } from "@/components/map/MapView";
+import { use, useMemo, useRef } from "react";
+import { MapView, type MapMarker, type MapViewHandle } from "@/components/map/MapView";
 import { Button } from "@/components/primitives/Button";
 import { Mark } from "@/components/primitives/Marks";
 import { ShapeChip } from "@/components/primitives/ShapeChip";
@@ -12,6 +12,7 @@ import { Screen } from "@/components/shell/Screen";
 import { data, TIERS } from "@/lib/data";
 import { estimateDurationS, formatDistance, formatDuration, SHAPE_HINT } from "@/lib/walking";
 import { useAsync } from "@/hooks/use-async";
+import { useRoutedQuest } from "@/hooks/use-routed-quest";
 
 /** A friend's quest, before you commit to it.
  *
@@ -29,7 +30,10 @@ export default function FriendQuestScreen({ params }: { params: Promise<{ id: st
   const quests = useAsync(() => data.getQuests("stroll"), []);
 
   const q = fq.data;
-  const shown = quests.data?.[0];
+  const map = useRef<MapViewHandle>(null);
+  /* Re-cut on the streets under the preview, so the shape being previewed is a
+     shape somebody could walk rather than an arc across the ground. */
+  const { quest: shown, onMapReady } = useRoutedQuest(quests.data?.[0] ?? null, map);
 
   const trail = useMemo<[number, number][]>(
     () => (shown?.path ?? []),
@@ -72,8 +76,8 @@ export default function FriendQuestScreen({ params }: { params: Promise<{ id: st
             style={{ borderRadius: "var(--r-md)" }}>
             {/* Framed to the route. The shape is the thing being previewed, so it
                 has to fit rather than be guessed at. */}
-            <MapView markers={markers} trail={trail} interactive={false}
-              fit={fitPoints} />
+            <MapView ref={map} markers={markers} trail={trail} interactive={false}
+              onReady={onMapReady} fit={fitPoints} />
           </div>
 
           <div className="mt-3 flex items-center gap-1.5 text-stone">

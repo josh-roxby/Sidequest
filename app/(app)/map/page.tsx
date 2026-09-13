@@ -75,10 +75,14 @@ export default function MapScreen() {
       ...pts, ...noteMarks, ...cpMarks, ...questMarks];
   }, [points.data, notes.data, cpoints.data, quests.data, here]);
 
-  const trail = useMemo<[number, number][]>(
-    () => (quests.data?.[0]?.path ?? []),
-    [quests.data],
-  );
+  /** The ground you have walked, which is nothing until you have walked some.
+   *
+   *  This used to draw the first quest in the list, which put a stranger's
+   *  route across the city and called it your trail. It was also the last
+   *  straight drawn line left on a screen: quest routes are cut on real
+   *  streets now, and an arc across Dublin sat among them looking like one of
+   *  them. Empty until the walk store lands in slice 6. */
+  const trail = useMemo<[number, number][]>(() => [], []);
 
   /** Ground walked in this session. Nothing is persisted yet: the store lands
    *  in slice 6, and until it does an empty set is the honest starting state
