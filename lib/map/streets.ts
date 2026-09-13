@@ -14,15 +14,26 @@ import type { Path } from "../quest/route.ts";
 
 /** Classes a walker can use.
  *
- *  Paths and tracks first because they are the point. Motorway and trunk are
- *  absent on purpose: they are not walkable and routing someone onto one is
- *  worse than routing them nowhere. Ferries and railways are gone for the same
- *  reason. These are OpenMapTiles `transportation` classes, checked against
- *  the schema. */
+ *  These are OpenMapTiles `transportation` classes and nothing else. An earlier
+ *  version of this list also held "footway", "pedestrian", "steps", "cycleway",
+ *  "residential" and "living_street", which are `subclass` values and can never
+ *  appear here: they were dead entries that quietly matched nothing.
+ *
+ *  `primary` is in, which matters more than it looks. Clontarf Road, Fairview
+ *  and the Malahide Road are all primary, and leaving them out cut the graph
+ *  into pieces in exactly the streets this app is being walked on. They are
+ *  roads with pavements and people walk them. Motorway and trunk stay out,
+ *  because nobody walks those and routing someone onto one is worse than
+ *  routing them nowhere. */
 const WALKABLE = new Set([
-  "path", "track", "footway", "pedestrian", "steps", "cycleway",
-  "minor", "service", "residential", "living_street",
-  "tertiary", "secondary",
+  "path", "track", "service", "minor", "tertiary", "secondary", "primary",
+]);
+
+/** Under class `path`, these are the subclasses worth preferring. Kept for the
+ *  cost model rather than the filter: every one of them is already walkable by
+ *  virtue of its class. */
+export const FOOT_SUBCLASS = new Set([
+  "footway", "pedestrian", "steps", "path", "cycleway",
 ]);
 
 /** Ways the walker cannot get onto even if the class is walkable. */
@@ -35,7 +46,14 @@ const BLOCKED_ACCESS = new Set(["no", "private"]);
  *  edge of the screen and route walks along it. `querySourceFeatures` reaches
  *  everything in the tiles that are loaded, which is a good deal more ground
  *  than is on screen. */
-export function walkableLines(map: MLMap): Path[] {
+export interface Street {
+  coords: Path;
+  /** Which deck this way is on. Ways only cross where their levels match, so a
+   *  bridge does not join the road beneath it. */
+  level: number;
+}
+
+export function walkableLines(map: MLMap): Street[] {
   let features;
   try {
     features = map.querySourceFeatures("basemap", { sourceLayer: "transportation" });
@@ -45,7 +63,7 @@ export function walkableLines(map: MLMap): Path[] {
     return [];
   }
 
-  const lines: Path[] = [];
+  const lines: Street[] = [];
   for (const f of features) {
     const props = (f.properties ?? {}) as Record<string, unknown>;
     if (!WALKABLE.has(String(props.class))) continue;
@@ -55,11 +73,19 @@ export function walkableLines(map: MLMap): Path[] {
        the surface network is used. */
     if (props.brunnel === "tunnel") continue;
 
+    /* `layer` is the schema's own answer to what crosses what. A bridge with no
+       layer is still above the ground, so it is nudged up; everything else sits
+       at zero and crosses everything else at zero. */
+    const layer = Number(props.layer);
+    const level = Number.isFinite(layer) && layer !== 0
+      ? layer
+      : props.brunnel === "bridge" ? 1 : 0;
+
     const geom = f.geometry;
     if (geom.type === "LineString") {
-      lines.push(geom.coordinates as Path);
+      lines.push({ coords: geom.coordinates as Path, level });
     } else if (geom.type === "MultiLineString") {
-      for (const part of geom.coordinates) lines.push(part as Path);
+      for (const part of geom.coordinates) lines.push({ coords: part as Path, level });
     }
   }
   return lines;

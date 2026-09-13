@@ -42,8 +42,107 @@ export interface Graph {
 
 export const graphSize = (g: Graph) => g.nodes.size;
 
-/** Build a walkable graph from polylines in lng/lat order. */
-export function buildGraph(lines: Path[]): Graph {
+/** Where two streets cross, in a vector tile, is nowhere at all.
+ *
+ *  This is the thing that makes routing on tiles hard, and it is not obvious
+ *  until you look at the data: a tile stores each way as its own line, and
+ *  simplification drops every vertex that sits on a straight run. A mile of
+ *  straight road arrives as two points, its far end and its near end, and the
+ *  six streets joining it in between leave no trace. The tile is a picture of a
+ *  network, not the network.
+ *
+ *  So the crossings have to be put back. Every pair of segments is tested, and
+ *  where two cross, both are split at the crossing point so they share a
+ *  vertex, which is what makes them a junction once `buildGraph` welds
+ *  coincident points together.
+ *
+ *  `levels` keeps a bridge from joining the road beneath it. Two lines only
+ *  cross if they are on the same level, which is what `brunnel` and `layer`
+ *  are for in the schema. Without it the router walks off a flyover.
+ *
+ *  Bucketed by a coarse cell, because the honest version of "every pair" on a
+ *  few thousand segments is a freeze. */
+function planarise(lines: Path[], levels: number[]): Path[] {
+  const CELL = 0.0008;                       // about 90m, wider than any segment
+  type Seg = { line: number; i: number; ax: number; ay: number; bx: number; by: number };
+  const buckets = new Map<string, Seg[]>();
+  const cuts: Map<number, Map<number, number[]>> = new Map();
+
+  const segs: Seg[] = [];
+  lines.forEach((line, li) => {
+    for (let i = 1; i < line.length; i++) {
+      segs.push({ line: li, i: i - 1, ax: line[i - 1][0], ay: line[i - 1][1], bx: line[i][0], by: line[i][1] });
+    }
+  });
+
+  for (const s of segs) {
+    const x0 = Math.floor(Math.min(s.ax, s.bx) / CELL), x1 = Math.floor(Math.max(s.ax, s.bx) / CELL);
+    const y0 = Math.floor(Math.min(s.ay, s.by) / CELL), y1 = Math.floor(Math.max(s.ay, s.by) / CELL);
+    for (let x = x0; x <= x1; x++) {
+      for (let y = y0; y <= y1; y++) {
+        const k = `${x},${y}`;
+        (buckets.get(k) ?? buckets.set(k, []).get(k)!).push(s);
+      }
+    }
+  }
+
+  const note = (line: number, i: number, t: number) => {
+    if (t <= 1e-9 || t >= 1 - 1e-9) return;   // already an endpoint
+    const byLine = cuts.get(line) ?? cuts.set(line, new Map()).get(line)!;
+    const list = byLine.get(i) ?? byLine.set(i, []).get(i)!;
+    list.push(t);
+  };
+
+  for (const group of buckets.values()) {
+    for (let a = 0; a < group.length; a++) {
+      for (let b = a + 1; b < group.length; b++) {
+        const p = group[a], q = group[b];
+        if (p.line === q.line) continue;
+        if (levels[p.line] !== levels[q.line]) continue;
+        const rx = p.bx - p.ax, ry = p.by - p.ay;
+        const sx = q.bx - q.ax, sy = q.by - q.ay;
+        const denom = rx * sy - ry * sx;
+        if (Math.abs(denom) < 1e-15) continue;            // parallel
+        const t = ((q.ax - p.ax) * sy - (q.ay - p.ay) * sx) / denom;
+        const u = ((q.ax - p.ax) * ry - (q.ay - p.ay) * rx) / denom;
+        if (t < 0 || t > 1 || u < 0 || u > 1) continue;   // they do not actually meet
+        note(p.line, p.i, t);
+        note(q.line, q.i, u);
+      }
+    }
+  }
+
+  if (cuts.size === 0) return lines;
+
+  return lines.map((line, li) => {
+    const byLine = cuts.get(li);
+    if (!byLine) return line;
+    const out: Path = [line[0]];
+    for (let i = 1; i < line.length; i++) {
+      const ts = byLine.get(i - 1);
+      if (ts) {
+        for (const t of [...new Set(ts)].sort((x, y) => x - y)) {
+          out.push([
+            +(line[i - 1][0] + (line[i][0] - line[i - 1][0]) * t).toFixed(6),
+            +(line[i - 1][1] + (line[i][1] - line[i - 1][1]) * t).toFixed(6),
+          ]);
+        }
+      }
+      out.push(line[i]);
+    }
+    return out;
+  });
+}
+
+/** Build a walkable graph from polylines in lng/lat order.
+ *
+ *  `levels` is one number per line: lines only cross where their levels match,
+ *  which keeps a bridge from joining the road under it. Omitted means
+ *  everything is at ground level, which is the right default for a set of lines
+ *  that carries no such information. */
+export function buildGraph(lines: Path[], levels?: number[]): Graph {
+  lines = planarise(lines, levels ?? lines.map(() => 0));
+
   const nodes = new Map<string, LatLng>();
   const edges = new Map<string, { to: string; m: number }[]>();
 

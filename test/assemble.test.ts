@@ -123,16 +123,16 @@ test("duration keeps pace with distance", () => {
 /** A grid of streets round Clontarf, standing in for what the basemap tiles
  *  hand over. About 110m blocks, which is a city block. */
 function streetGrid(origin = CLONTARF, n = 22, block = 0.001) {
-  const lines: [number, number][][] = [];
+  const lines: { coords: [number, number][]; level: number }[] = [];
   const lat0 = origin.lat - (n / 2) * block;
   const lng0 = origin.lng - (n / 2) * block;
   for (let r = 0; r <= n; r++) {
-    lines.push(Array.from({ length: n + 1 }, (_, c) =>
-      [lng0 + c * block, lat0 + r * block] as [number, number]));
+    lines.push({ level: 0, coords: Array.from({ length: n + 1 }, (_, c) =>
+      [lng0 + c * block, lat0 + r * block] as [number, number]) });
   }
   for (let c = 0; c <= n; c++) {
-    lines.push(Array.from({ length: n + 1 }, (_, r) =>
-      [lng0 + c * block, lat0 + r * block] as [number, number]));
+    lines.push({ level: 0, coords: Array.from({ length: n + 1 }, (_, r) =>
+      [lng0 + c * block, lat0 + r * block] as [number, number]) });
   }
   return lines;
 }
@@ -146,7 +146,7 @@ test("given streets, the walk stays on them", () => {
 
   /* Every vertex of the route is a point on one of the lines it was given. A
      line that cut across a block would not be. */
-  const onStreet = new Set(streets.flat().map(([lng, lat]) =>
+  const onStreet = new Set(streets.flatMap((s) => s.coords).map(([lng, lat]) =>
     `${lng.toFixed(5)},${lat.toFixed(5)}`));
   for (const [lng, lat] of quest.path) {
     assert.ok(onStreet.has(`${lng.toFixed(5)},${lat.toFixed(5)}`),

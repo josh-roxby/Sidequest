@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ThumbAction } from "@/components/shell/ThumbAction";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
 import { MapView, type MapViewHandle } from "@/components/map/MapView";
@@ -16,7 +16,7 @@ import { useAsync } from "@/hooks/use-async";
 import { assembleQuest } from "@/lib/quest/assemble";
 import { putGenerated } from "@/lib/quest/session";
 import { getPosition } from "@/lib/location";
-import type { Path } from "@/lib/quest/route";
+import type { Street } from "@/lib/map/streets";
 
 const TIER_MARK: Record<Tier, MarkName> = {
   trot: "trot", stroll: "stroll", sidequest: "sidequest", adventure: "adventure",
@@ -45,6 +45,15 @@ export function StartQuest() {
    *  gave up. So the two ways this can come back empty are states, not
    *  silence. */
   const [failed, setFailed] = useState<"none" | "empty" | "error">("none");
+  /** Whether the takeover has played out. It is a floor on how long the wait
+   *  lasts, not a timer the work has to beat: reading the streets off the map
+   *  can take longer than the animation, and finishing the animation first used
+   *  to mean the walker was dropped back where they started with nothing. */
+  const [shown, setShown] = useState(false);
+  /** The takeover is up while the work is in flight, and stays up through a
+   *  failure until the animation has played out, so a walker never sees it
+   *  vanish mid-sentence. */
+  const takeover = working && !(shown && failed !== "none");
 
   const mapRef = useRef<MapViewHandle>(null);
   const spec = TIERS.find((t) => t.id === tier)!;
@@ -74,6 +83,7 @@ export function StartQuest() {
    *  routing is live it simply stays up until the work is actually done. */
   async function generate() {
     setWorking(true);
+    setShown(false);
     setResult(null);
     setFailed("none");
     setPending(null);
@@ -96,13 +106,15 @@ export function StartQuest() {
          waiting for it to settle loads the basemap tiles for that ground, and
          those tiles carry the roads and paths the router needs. No tiles, no
          streets, and the walk falls back to geometry rather than failing. */
-      let streets: Path[] = [];
+      let streets: Street[] = [];
       if (located) {
         try {
-          await mapRef.current?.settleOn(at, 15);
-          streets = mapRef.current?.streets() ?? [];
+          /* The ground the walk will actually cover, not a comfortable zoom.
+             Half the walk out in any direction, plus a margin, is the box the
+             router needs a graph for. */
+          streets = await mapRef.current?.loadAround(at, spec.maxM * 0.6) ?? [];
         } catch {
-          // A map that will not settle is a walk drawn geometrically, not an error.
+          // A map that will not load is a walk drawn geometrically, not an error.
         }
       }
 
@@ -126,19 +138,20 @@ export function StartQuest() {
     }
   }
 
+  /* Derived rather than switched off, because the two things that end the wait
+     arrive in either order: the animation finishing and the work producing an
+     answer. Deriving it means neither has to know about the other, and nothing
+     sets state from inside an effect to keep them in step. */
+  useEffect(() => {
+    if (takeover && shown && pending) router.push(`/quests/${pending.id}/walk`);
+  }, [takeover, shown, pending, router]);
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Planning ends by putting you on the map for the walk it planned.
           Landing back on a picker with a card to tap would make the wait feel
           like a step rather than the start of something. */}
-      {working ? (
-        <QuestGenerating onDone={() => {
-          if (pending) { router.push(`/quests/${pending.id}/walk`); return; }
-          setWorking(false);
-          setResult(null);
-          setFailed((f) => (f === "error" ? f : "empty"));
-        }} />
-      ) : null}
+      {takeover ? <QuestGenerating onDone={() => setShown(true)} /> : null}
 
       {/* The map itself, not a picture of one: you are choosing a walk from
           where you are standing, so seeing your own ground and the tiles you
@@ -245,7 +258,7 @@ export function StartQuest() {
         {/* Only once the takeover is out of the way. The fetch can fail while
             the animation is still running, and a card sitting behind it is
             just clutter waiting to be uncovered. */}
-        {failed !== "none" && !working ? (
+        {failed !== "none" && !takeover ? (
           <div
             role="status"
             className="mt-3 w-full border border-rule bg-surface p-3"
@@ -264,7 +277,7 @@ export function StartQuest() {
           </div>
         ) : null}
 
-        <ThumbAction loading={working} onClick={generate}>
+        <ThumbAction loading={takeover} onClick={generate}>
           Start {article(spec.label)} {spec.label.toLowerCase()}
         </ThumbAction>
       </div>

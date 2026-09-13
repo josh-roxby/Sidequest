@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  buildGraph, graphSize, lengthOf, nearestNode, outAndBack, overlap, pathOf, shortestPath,
+  buildGraph, graphSize, lengthOf, nearestNode, outAndBack, overlap, pathOf,
+  routeOfLength, shortestPath,
 } from "../lib/quest/graph.ts";
 import type { Path } from "../lib/quest/route.ts";
 import { distanceM } from "../lib/geo.ts";
@@ -170,4 +171,109 @@ test("pathOf gives back lng,lat in GeoJSON order", () => {
   const [[lng, lat]] = pathOf(g, [id]);
   assert.ok(Math.abs(lat - at(2, 3).lat) < 1e-5, "latitude is not in the second slot");
   assert.ok(Math.abs(lng - at(2, 3).lng) < 1e-5, "longitude is not in the first slot");
+});
+
+/* ---- what vector tiles actually hand over -------------------------------- */
+
+/** The grid above shares a vertex at every junction, which is how a hand made
+ *  fixture looks and is not how a vector tile looks. A tile stores each way
+ *  separately and simplification drops every vertex on a straight run, so a
+ *  straight street arrives as its two endpoints and the streets crossing it in
+ *  between leave no trace at all. These are the tests for that. */
+function crossingGrid(): Path[] {
+  const lines: Path[] = [];
+  for (let r = 0; r < N; r++) {
+    // Two points only, exactly as a tile simplifies a straight road.
+    lines.push([[ORIGIN.lng, ORIGIN.lat + r * BLOCK],
+      [ORIGIN.lng + (N - 1) * BLOCK, ORIGIN.lat + r * BLOCK]]);
+  }
+  for (let c = 0; c < N; c++) {
+    lines.push([[ORIGIN.lng + c * BLOCK, ORIGIN.lat],
+      [ORIGIN.lng + c * BLOCK, ORIGIN.lat + (N - 1) * BLOCK]]);
+  }
+  return lines;
+}
+
+test("streets that cross without sharing a vertex still make a junction", () => {
+  const g = buildGraph(crossingGrid());
+  const a = nearestNode(g, at(0, 0))!;
+  const b = nearestNode(g, at(4, 5))!;
+  assert.ok(a && b, "the corners are not on the network");
+  const ids = shortestPath(g, a, b);
+  assert.ok(ids, "a grid of crossing streets did not connect, so nothing can route on tiles");
+
+  // And it went the short way, which means it turned at a crossing.
+  const straight = distanceM(at(0, 0), at(4, 0)) + distanceM(at(4, 0), at(4, 5));
+  assert.ok(Math.abs(lengthOf(g, ids!) - straight) < 20,
+    `walked ${Math.round(lengthOf(g, ids!))}m where ${Math.round(straight)}m was available`);
+});
+
+test("a bridge does not join the road beneath it", () => {
+  /* Two lines that cross on the map and not on the ground. Joining them routes
+     a walker off a flyover, so the level has to be respected. */
+  const road: Path = [[ORIGIN.lng, ORIGIN.lat], [ORIGIN.lng + 4 * BLOCK, ORIGIN.lat]];
+  const bridge: Path = [
+    [ORIGIN.lng + 2 * BLOCK, ORIGIN.lat - 2 * BLOCK],
+    [ORIGIN.lng + 2 * BLOCK, ORIGIN.lat + 2 * BLOCK],
+  ];
+  const joined = buildGraph([road, bridge], [0, 0]);
+  const apart = buildGraph([road, bridge], [0, 1]);
+
+  const aj = nearestNode(joined, at(0, 0))!;
+  const bj = nearestNode(joined, { lat: ORIGIN.lat + 2 * BLOCK, lng: ORIGIN.lng + 2 * BLOCK })!;
+  assert.ok(shortestPath(joined, aj, bj), "two ground level streets that cross did not join");
+
+  const aa = nearestNode(apart, at(0, 0))!;
+  const ba = nearestNode(apart, { lat: ORIGIN.lat + 2 * BLOCK, lng: ORIGIN.lng + 2 * BLOCK })!;
+  assert.equal(shortestPath(apart, aa, ba), null, "the router walked off a bridge");
+});
+
+test("lines that pass near without crossing are not joined", () => {
+  /* A cut must be a real intersection, not a near miss: splitting on those
+     would invent crossings all over a dense street network. */
+  const east: Path = [[ORIGIN.lng, ORIGIN.lat], [ORIGIN.lng + 2 * BLOCK, ORIGIN.lat]];
+  const stub: Path = [
+    [ORIGIN.lng + BLOCK, ORIGIN.lat + 0.0003],
+    [ORIGIN.lng + BLOCK, ORIGIN.lat + 2 * BLOCK],
+  ];
+  const g = buildGraph([east, stub]);
+  const a = nearestNode(g, at(0, 0))!;
+  const b = nearestNode(g, { lat: ORIGIN.lat + 2 * BLOCK, lng: ORIGIN.lng + BLOCK })!;
+  assert.equal(shortestPath(g, a, b), null, "a crossing was invented where the lines do not meet");
+});
+
+test("a full walk routes on tile shaped streets, and does not go as the crow flies", () => {
+  /* The one that matters. Everything above tests a piece; this is the whole
+     question the walker asked: given what a tile actually hands over, does a
+     walk of the length they chose come back drawn on the streets. It used to
+     come back null, and a null here is the straight line on the map. */
+  const g = buildGraph(crossingGrid());
+  const from = at(1, 1);
+
+  for (const shape of ["loop", "line"] as const) {
+    const r = routeOfLength(g, from, 1600, shape);
+    assert.ok(r, `${shape}: no route on a grid of tile shaped streets`);
+    assert.ok(Math.abs(r!.metres - 1600) < 1600 * 0.35,
+      `${shape} came out ${Math.round(r!.metres)}m against 1600m asked for`);
+
+    /* Drawn on the streets, which is the complaint being answered: every
+       vertex sits on a line the graph was built from, so the route turns
+       corners rather than cutting across the blocks between them. */
+    for (const [lng, lat] of r!.path) {
+      const onRow = Math.abs((lat - ORIGIN.lat) / BLOCK - Math.round((lat - ORIGIN.lat) / BLOCK));
+      const onCol = Math.abs((lng - ORIGIN.lng) / BLOCK - Math.round((lng - ORIGIN.lng) / BLOCK));
+      assert.ok(onRow < 0.02 || onCol < 0.02,
+        `${shape} left the street network at ${lng},${lat}`);
+    }
+  }
+});
+
+test("a routed walk turns corners rather than running straight", () => {
+  /* A route with two vertices is a straight line whatever it claims, so the
+     shape of the answer is checked as well as its length. */
+  const g = buildGraph(crossingGrid());
+  const r = routeOfLength(g, at(1, 1), 1600, "loop");
+  assert.ok(r && r.path.length > 6,
+    `the loop came back as ${r?.path.length ?? 0} points, which is not a walk round streets`);
+  assert.ok(overlap(r!.path) < 0.5, "the loop retraces itself rather than coming home another way");
 });

@@ -12,8 +12,7 @@ import {
   type Fix,
 } from "@/lib/location";
 import { BASEMAP_URL, surveyStyle } from "@/lib/map/style";
-import { walkableLines } from "@/lib/map/streets";
-import type { Path } from "@/lib/quest/route";
+import { walkableLines, type Street } from "@/lib/map/streets";
 import type { LatLng } from "@/lib/data";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
 import { AddWheel, type WheelOption } from "@/components/map/AddWheel";
@@ -33,12 +32,13 @@ export interface MapMarker {
 export interface MapViewHandle {
   /** Start following the walker, skipping the gate. */
   locate: () => void;
-  /** Put the camera somewhere and settle, so the tiles for that ground load.
-   *  Resolves when the map is idle, or after a moment if it never settles. */
-  settleOn: (at: LatLng, zoom?: number) => Promise<void>;
+  /** Load the basemap tiles covering `radiusM` around a place, and resolve once
+   *  there are walkable ways to route on, or once waiting any longer would be
+   *  worse than routing without them. */
+  loadAround: (at: LatLng, radiusM: number) => Promise<Street[]>;
   /** The walkable ways the basemap has loaded, for the router. Empty whenever
    *  there is no basemap, no tiles, or no ground covered yet. */
-  streets: () => Path[];
+  streets: () => Street[];
 }
 
 export interface MapViewProps {
@@ -88,6 +88,36 @@ export interface MapViewProps {
 /** How long a tile takes to pop when you step into it. Long enough to read as
  *  a reward, short enough that a brisk walk through a row of cells does not
  *  queue up a backlog of flourishes. */
+/** How long a walker will wait for a better line before they would rather have
+ *  a worse one. Spent across the whole sweep, not per stop. */
+const DEADLINE_MS = 6000;
+
+/** Camera stops per axis when collecting ways. Three is the point where the
+ *  sweep is still quick and the zoom it implies still holds minor roads for
+ *  every tier but the longest. */
+const STOPS_PER_AXIS = 3;
+
+/** Resolves once the map has every tile it asked for, or the budget runs out.
+ *
+ *  `idle` is the only honest signal that tiles have landed, but it never fires
+ *  if the camera did not actually move, so it is always raced against a timer
+ *  rather than waited on alone. */
+function settled(m: MLMap, budgetMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    if (budgetMs <= 0) { resolve(); return; }
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      m.off("idle", finish);
+      window.clearTimeout(timer);
+      resolve();
+    };
+    const timer = window.setTimeout(finish, Math.min(budgetMs, 2500));
+    m.once("idle", finish);
+  });
+}
+
 const POP_MS = 620;
 
 /** One cell as a GeoJSON polygon. The ring is cached and already closed, so
@@ -448,19 +478,83 @@ export function MapView({
 
   useImperativeHandle(ref, () => ({
     locate: () => void locate(),
-    settleOn: (at: LatLng, zoom = 15) => new Promise<void>((resolve) => {
+    loadAround: async (at: LatLng, radiusM: number): Promise<Street[]> => {
       const m = map.current;
-      if (!m) { resolve(); return; }
-      /* Resolve on idle, which is when the tiles for this ground have arrived
-         and been parsed. The timeout is the floor: on a dead network idle never
-         comes, and a picker that waits forever for a basemap it will not get is
-         worse than one that routes geometrically. */
-      let done = false;
-      const finish = () => { if (done) return; done = true; m.off("idle", finish); resolve(); };
-      m.on("idle", finish);
-      window.setTimeout(finish, 2500);
-      m.jumpTo({ center: [at.lng, at.lat], zoom });
-    }),
+      if (!m) return [];
+
+      /* The router is only as good as the ground it can see, and what the map
+         has loaded is decided by zoom twice over.
+
+         Framing the whole walk in one screen was the obvious move and it was
+         the bug: a stroll needs two kilometres of ground, which on a phone
+         means about z13, and OpenMapTiles stops carrying minor roads below
+         z14. The graph came back holding nothing but dual carriageways, the
+         router could not join them into a walk, and every route fell back to
+         a straight line. Zooming out to see more is how you end up seeing
+         less.
+
+         So the zoom is chosen to keep the street network intact and the ground
+         is covered by moving instead: the camera visits a few stops and the
+         ways from each are kept. Tiles already in the cache answer instantly,
+         so in practice this is one or two stops and no wait at all. */
+      const rad = (at.lat * Math.PI) / 180;
+      const dLat = radiusM / 111_320;
+      const dLng = radiusM / (111_320 * Math.cos(rad));
+
+      const canvas = m.getCanvas();
+      const wPx = canvas.clientWidth || 390;
+      const hPx = canvas.clientHeight || 640;
+
+      /* The highest zoom at which STOPS_PER_AXIS screens still cover the
+         ground, so the sweep stays short. Small walks land above z14 and get
+         footpaths with it; only the longest tiers are forced under, where the
+         walk is on main roads anyway. */
+      const zoomFor = (px: number) =>
+        Math.log2((156_543.034 * Math.cos(rad) * STOPS_PER_AXIS * px) / (2 * radiusM));
+      const zoom = Math.min(18, zoomFor(wPx), zoomFor(hPx));
+
+      const mPerPx = (156_543.034 * Math.cos(rad)) / 2 ** zoom;
+      const stopsX = Math.min(STOPS_PER_AXIS,
+        Math.max(1, Math.ceil((2 * radiusM) / (wPx * mPerPx))));
+      const stopsY = Math.min(STOPS_PER_AXIS,
+        Math.max(1, Math.ceil((2 * radiusM) / (hPx * mPerPx))));
+
+      /* Stop centres, spread across the ground and always including the middle
+         when the count is odd, so the walker's own position is covered first. */
+      const spread = (n: number, half: number) => n === 1 ? [0]
+        : Array.from({ length: n }, (_, i) => -half + (2 * half * i) / (n - 1));
+      const stops: LatLng[] = [];
+      for (const oy of spread(stopsY, dLat)) {
+        for (const ox of spread(stopsX, dLng)) {
+          stops.push({ lat: at.lat + oy, lng: at.lng + ox });
+        }
+      }
+      /* Nearest first: if the deadline bites, the ground under the walker is
+         the ground already in hand. */
+      stops.sort((a, b) =>
+        (Math.abs(a.lat - at.lat) + Math.abs(a.lng - at.lng))
+        - (Math.abs(b.lat - at.lat) + Math.abs(b.lng - at.lng)));
+
+      const home = { center: m.getCenter(), zoom: m.getZoom() };
+      const started = performance.now();
+      const found = new Map<string, Street>();
+
+      for (const stop of stops) {
+        if (performance.now() - started > DEADLINE_MS) break;
+        m.jumpTo({ center: [stop.lng, stop.lat], zoom });
+        await settled(m, DEADLINE_MS - (performance.now() - started));
+        for (const line of walkableLines(m)) {
+          /* Tiles clip a street at their edge, so the same road arrives in
+             pieces and every piece is wanted. Only an identical piece, from a
+             tile read twice across two stops, is dropped. */
+          const a = line.coords[0], b = line.coords[line.coords.length - 1];
+          found.set(`${line.level}:${line.coords.length}:${a}:${b}`, line);
+        }
+      }
+
+      m.jumpTo({ center: home.center, zoom: home.zoom });
+      return [...found.values()];
+    },
     streets: () => (map.current ? walkableLines(map.current) : []),
   }), [locate]);
 

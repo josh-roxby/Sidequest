@@ -85,9 +85,9 @@ export function assembleQuest({
   points: Point[];
   seed?: string;
   /** Walkable ways from the basemap tiles, when the map has any loaded. Given
-   *  these the route follows pavements and park paths; without them it is drawn
+   *  these the route follows real streets and paths; without them it is drawn
    *  geometrically and says so. */
-  streets?: Path[];
+  streets?: { coords: Path; level: number }[];
 }): Assembled {
   const spec = TIERS.find((t) => t.id === tier)!;
   /* Midway through the tier's band. Picking the floor makes every walk feel
@@ -97,7 +97,9 @@ export function assembleQuest({
   const key = `${seed}|${tier}|${wanted}|${from.lat.toFixed(4)},${from.lng.toFixed(4)}`;
 
   const near = candidates(from, points, spec.reachM);
-  const graph: Graph | null = streets && streets.length > 0 ? buildGraph(streets) : null;
+  const graph: Graph | null = streets && streets.length > 0
+    ? buildGraph(streets.map((s) => s.coords), streets.map((s) => s.level))
+    : null;
 
   /* With a street graph the walk is routed on real ways, and the distance comes
      out of the route rather than being imposed on it. So the point to aim at is
@@ -115,6 +117,7 @@ export function assembleQuest({
        happens to be. */
     const r = routeOfLength(graph, from, targetM, wanted,
       near.map(({ p }) => ({ lat: p.lat, lng: p.lng })));
+
 
     if (r && r.metres >= spec.minM && r.metres <= spec.maxM) {
       /* A point counts as on the walk if the route passes close enough to
@@ -154,7 +157,11 @@ export function assembleQuest({
               : [{ kind: "terrain" as const, label: "Unrecorded ground", detail: "We have nothing logged along this one" }]),
             { kind: "terrain", label: "Streets and paths as the map has them" },
           ],
-          honesty: ["Built from where you are standing", shapeLine],
+          honesty: [
+            "Built from where you are standing",
+            "Routed on real streets and paths",
+            shapeLine,
+          ],
           stops: onRoute ? 1 : 0,
         }),
       };
@@ -240,7 +247,10 @@ function buildQuest(a: {
     startName: "Where you are",
     honesty: a.honesty ?? [
       "Built from where you are standing",
-      "The line is not a surveyed route: follow the places, not the path",
+      /* Said plainly, because the difference decides whether the line on the
+         map can be followed or only read. A walker who does not know which
+         kind of line they have will trust the wrong one. */
+      "Drawn straight, not routed: the map had no streets loaded here, so follow the places rather than the line",
     ],
     encounters: a.encounters,
     objectives: a.objectives,
