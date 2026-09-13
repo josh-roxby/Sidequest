@@ -118,3 +118,25 @@ test("a quest's stated duration is close to the pace its tier implies", () => {
       `${q.id} says ${q.durationMin} min against a ${t.label} target of ${t.targetMinutes}`);
   }
 });
+
+test("every tier has at least one quest in it", () => {
+  /* An empty tier is not a gap in the corpus, it is a dead end in the product:
+     the picker offers the length, the loading takeover runs to a hundred per
+     cent, and then nothing happens because there was never anything to open.
+     Adventure was empty and shipped that way. The screen no longer dead ends
+     on it, and this keeps the corpus honest as well. */
+  for (const t of TIERS) {
+    const inTier = QUESTS.filter((q) => q.tier === t.id);
+    assert.ok(inTier.length > 0, `${t.label} has no quests, so choosing it goes nowhere`);
+  }
+});
+
+test("both quest shapes are reachable in every tier that offers them", () => {
+  /* The picker offers Loop and There and back independently of length. A tier
+     with only one shape falls back to whatever it has, which is fine, but a
+     tier with nothing at all is what breaks. */
+  for (const t of TIERS) {
+    const shapes = new Set(QUESTS.filter((q) => q.tier === t.id).map((q) => q.shape));
+    assert.ok(shapes.size > 0, `${t.label} offers no shape at all`);
+  }
+});

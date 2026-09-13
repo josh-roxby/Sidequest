@@ -318,6 +318,48 @@ const QUESTS = [
     ],
   },
   {
+    /* The tier had nothing in it at all, which turned "Start an adventure"
+       into a loading screen that ran to a hundred per cent and then put you
+       back where you started. The code no longer dead ends on an empty tier,
+       and the tier is no longer empty. */
+    id: "q-bay-shore", plate: "quest-bay-shore", startName: "Clontarf Road",
+    start: { lat: 53.3625, lng: -6.2050 },
+    title: "The Whole North Shore",
+    flavour: "The full length of the seafront, out to the island and back by the strand and the wall.",
+    tier: "adventure", shape: "line", surface: "made", ascentM: 25,
+    distanceM: 11400, durationMin: 170, townland: "Clontarf",
+    honesty: ["Exposed the whole way", "Little shelter if it turns", "Tide covers part of the strand"],
+    encounters: [
+      ["point", "The Bull Wall", "The wall that made the island"],
+      ["view", "Howth across the water"],
+      ["terrain", "Soft sand on the strand", "Firmer near the water"],
+      ["food", "Kiosks along the promenade", "Hours unverified"],
+    ],
+    objectives: [
+      ["The Bull Wall", "p-bull-wall", true, 4200],
+      ["St Anne's Park", "p-st-annes", true, 7600],
+    ],
+  },
+  {
+    id: "q-three-demesnes", plate: "quest-three-demesnes", startName: "Glasnevin",
+    start: { lat: 53.3725, lng: -6.2717 },
+    title: "Three Demesnes",
+    flavour: "Botanic gardens, the Tolka, and up through Santry to the walled garden.",
+    tier: "adventure", shape: "loop", surface: "unpaved", ascentM: 60,
+    distanceM: 10600, durationMin: 165, townland: "Glasnevin",
+    honesty: ["Muddy in the river sections", "Gardens and demesne both close before dusk"],
+    encounters: [
+      ["point", "The curvilinear range", "Built by Richard Turner"],
+      ["point", "Santry Demesne", "A demesne without its house"],
+      ["terrain", "River path, can flood"],
+      ["view", "The walled garden"],
+    ],
+    objectives: [
+      ["National Botanic Gardens", "p-botanic", true, 900],
+      ["Santry Demesne", "p-santry-demesne", true, 5400],
+    ],
+  },
+  {
     id: "q-santry", plate: "quest-santry", startName: "Santry",
     start: { lat: 53.3950, lng: -6.2400 },
     title: "Santry Demesne",

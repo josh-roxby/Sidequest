@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ThumbAction } from "@/components/shell/ThumbAction";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
 import { MapView } from "@/components/map/MapView";
@@ -11,12 +11,19 @@ import { Data, Label } from "@/components/primitives/Text";
 import { data, TIERS, type Quest, type QuestShape, type Tier } from "@/lib/data";
 import { estimateDurationS, formatDistance, formatDuration } from "@/lib/walking";
 import { cn } from "@/lib/cn";
+import { distanceM } from "@/lib/geo";
+import { useAsync } from "@/hooks/use-async";
 
 const TIER_MARK: Record<Tier, MarkName> = {
   trot: "trot", stroll: "stroll", sidequest: "sidequest", adventure: "adventure",
 };
 
 type ShapePref = QuestShape | "either";
+
+/** "Start an adventure", not "Start a adventure". Only the tier labels pass
+ *  through here and none of them begin with a silent h or a long u, so the
+ *  vowel test is enough. */
+const article = (word: string) => ("aeiou".includes(word[0].toLowerCase()) ? "an" : "a");
 
 /** The default face of Quests: choose a length, choose a shape, get a walk
  *  from where you are standing. Everything else on this screen is secondary to
@@ -28,8 +35,33 @@ export function StartQuest() {
   const [working, setWorking] = useState(false);
   const [pending, setPending] = useState<Quest | null>(null);
   const [result, setResult] = useState<Quest | null>(null);
+  /** Why the last attempt produced no walk. A takeover that runs to a hundred
+   *  per cent and then puts you back where you started, saying nothing, reads
+   *  as a broken app: the walker did everything right and the screen simply
+   *  gave up. So the two ways this can come back empty are states, not
+   *  silence. */
+  const [failed, setFailed] = useState<"none" | "empty" | "error">("none");
 
   const spec = TIERS.find((t) => t.id === tier)!;
+  const territory = useAsync(() => data.getTerritory(), []);
+  const points = useAsync(() => data.getPointsNearby(), []);
+
+  /* "Nearby" has to be measured, not assumed. The read hands back the whole
+     corpus, so taking the first row put a Clare townland under a Dublin county
+     heading. The nearest point names where you are, and the count is the ones
+     inside this tier's reach, which is the radius the walk is actually built
+     from. */
+  const around = useMemo(() => {
+    const all = points.data ?? [];
+    if (all.length === 0) return { townland: null, within: 0 };
+    const byDistance = all
+      .map((p) => ({ p, d: distanceM(DEFAULT_CENTRE, { lat: p.lat, lng: p.lng }) }))
+      .sort((a, b) => a.d - b.d);
+    return {
+      townland: byDistance[0].p.townland,
+      within: byDistance.filter((x) => x.d <= spec.reachM).length,
+    };
+  }, [points.data, spec.reachM]);
 
   /** The fetch and the animation run together, and the result is held back
    *  until the animation finishes. Planning a real route will take longer than
@@ -38,9 +70,18 @@ export function StartQuest() {
   async function generate() {
     setWorking(true);
     setResult(null);
-    const all = await data.getQuests(tier);
-    const match = all.filter((q) => shape === "either" || q.shape === shape);
-    setPending((match.length ? match : all)[0] ?? null);
+    setFailed("none");
+    setPending(null);
+    try {
+      const all = await data.getQuests(tier);
+      const match = all.filter((q) => shape === "either" || q.shape === shape);
+      setPending((match.length ? match : all)[0] ?? null);
+    } catch {
+      /* Without this the takeover stays up forever on a read that throws,
+         which is a worse failure than the one it is covering. */
+      setPending(null);
+      setFailed("error");
+    }
   }
 
   return (
@@ -50,8 +91,10 @@ export function StartQuest() {
           like a step rather than the start of something. */}
       {working ? (
         <QuestGenerating onDone={() => {
-          if (pending) router.push(`/quests/${pending.id}/walk`);
-          else { setWorking(false); setResult(null); }
+          if (pending) { router.push(`/quests/${pending.id}/walk`); return; }
+          setWorking(false);
+          setResult(null);
+          setFailed((f) => (f === "error" ? f : "empty"));
         }} />
       ) : null}
 
@@ -64,11 +107,21 @@ export function StartQuest() {
           markers={[{ id: "you", ...DEFAULT_CENTRE, kind: "you" }]} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
           style={{ background: "linear-gradient(to top, var(--paper) 12%, transparent)" }} />
+        {/* Read, not written into the markup. This said "Corofin, Co. Clare ·
+            46 points within reach" as three hardcoded strings, which was a
+            screen claiming to know something it had not looked up, and became
+            plainly wrong the day the corpus moved to Dublin. */}
         <div className="absolute inset-x-0 bottom-0 p-4">
           <Label>You are in</Label>
-          <h1 className="t-display mt-1 text-ink">Corofin</h1>
+          <h1 className="t-display mt-1 text-ink">
+            {around.townland ?? territory.data?.county ?? "\u2014"}
+          </h1>
           <Data className="mt-1 block text-[11px] uppercase text-stone">
-            Co. Clare · 46 points within reach
+            {territory.loading || points.loading
+              ? "Reading the ground"
+              : territory.data
+                ? `${territory.data.county} · ${around.within} ${around.within === 1 ? "point" : "points"} within reach`
+                : "Territory unavailable"}
           </Data>
         </div>
       </div>
@@ -147,8 +200,30 @@ export function StartQuest() {
           </button>
         ) : null}
 
+        {/* Only once the takeover is out of the way. The fetch can fail while
+            the animation is still running, and a card sitting behind it is
+            just clutter waiting to be uncovered. */}
+        {failed !== "none" && !working ? (
+          <div
+            role="status"
+            className="mt-3 w-full border border-rule bg-surface p-3"
+            style={{ borderRadius: "var(--r-md)" }}
+          >
+            <p className="t-h2 text-ink">
+              {failed === "error"
+                ? "That did not come back"
+                : `No ${spec.label.toLowerCase()} near you yet`}
+            </p>
+            <p className="t-small mt-1 text-stone">
+              {failed === "error"
+                ? "Something went wrong reading the walks. Try again in a moment."
+                : "There is nothing this long within reach. Pick another length above and we will look again."}
+            </p>
+          </div>
+        ) : null}
+
         <ThumbAction loading={working} onClick={generate}>
-          Start a {spec.label.toLowerCase()}
+          Start {article(spec.label)} {spec.label.toLowerCase()}
         </ThumbAction>
       </div>
     </div>

@@ -206,6 +206,11 @@ rather than half-migrated.
 
 ### Block 1: wrong on a screen you can reach today
 
+- [ ] **The Dublin point corpus is thin enough to read as broken.** Six points
+      across D03 and D09 means a Trot or a Stroll honestly reports "0 points
+      within reach" from Clontarf Road. The number is true and the screen is
+      right to say so; the fix is more points, not a friendlier number
+
 - [ ] **The first-run nav hint sits over the waypoint rail.** "Tap for all /
       Hold and drag" in `NavButton` is placed above the button precisely to
       avoid the opposite corner, and on the walk screen the second, dimmed
