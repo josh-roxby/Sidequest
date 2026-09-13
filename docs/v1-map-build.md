@@ -243,6 +243,46 @@ than against real ground, because the tiles cannot be reached from here. Over
 paper it is subtle; over roads and buildings it should be obvious. Worth a
 look on a device before deciding it is right.
 
+### The fog came off, 13 September 2026
+
+**This changes a mechanic the PRD states in its first line.** Territory is no
+longer revealed by pushing back cloud. Everything is visible, and ground you
+have walked is lit instead. The trigger was two rounds of the same note: a fog
+that hides the country stops you judging whether a walk is worth taking, which
+is the one thing a walking app has to let you do.
+
+What that costs is worth being honest about. "Reveal territory permanently" was
+the hook, and an inverted version reads more like a record of where you have
+been than like uncovering a map. What it buys is an app you can actually plan a
+walk in. The mechanic is a paint decision over the same data either way, so it
+is reversible: the visited set, the H3 resolutions and the store are all
+unchanged, and the fog is one layer definition in `lib/map/style.ts`.
+
+Three things went with it.
+
+- **Flat, not textured.** Per cell noise varied the fog's shade so a blanket did
+  not show its seams. There is no blanket, so the noise went, and lit ground is
+  one tone. It is also neutral rather than warm: the greys that suit paper read
+  as dirt when they sit over a map.
+- **The rust quest cells are gone.** Nobody could tell what they were, twice
+  asked. Quest starts are markers now, which is what they always were, and they
+  are tappable, which as tinted cells they never were.
+- **`standingGround` went with the fog.** Nothing is hidden, so there is nothing
+  to light a halo against.
+
+The tiles also unlock live now, from a watched position rather than a one shot
+fix, and each one pops as you step into it. Following the walker hands the
+camera back the moment they drag it: someone who has panned off to look at a
+headland does not want the map pulled out from under their thumb.
+
+The H3 skew was measured rather than argued about. At Dublin a cell is 1.03 to
+1.07 wide-to-tall against 1.155 for a regular hexagon, with the longest edge 7%
+over the shortest and no variation in area between neighbours. So the grid is
+mildly and uniformly squashed, which is H3's own geometry and not a bug in the
+projection. Flat colour makes it read cleanly. Drawing regular hexagons at cell
+centres instead would tile with gaps, so it is not a free fix if it ever
+matters enough to want one.
+
 ---
 
 ## Slice 2: the survey plate style

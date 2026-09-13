@@ -34,6 +34,11 @@
   --map-green:  #DEE4D7;
   --map-sand:   #E8E2D2;
   --map-trail:  #2E4034;
+  /* Ground you have walked. Neutral on purpose: the warm greys that suit
+     paper read as dirt when they sit over a map, and walked ground wants to
+     look lit rather than soiled. */
+  --map-visited:      #FFFFFF;
+  --map-visited-line: #A9ADAA;
 
   /* shape — three steps. See design-system §A-3.
      Revised from the two-radius rule after the visual direction of
@@ -92,6 +97,7 @@
   --color-map-water: var(--map-water);
   --color-map-green: var(--map-green);
   --color-map-sand: var(--map-sand);
+  --color-map-visited: var(--map-visited);
   --color-map-trail: var(--map-trail);
 
   --font-sans: var(--f-sans);

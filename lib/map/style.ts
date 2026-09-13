@@ -15,7 +15,7 @@ import type { LayerSpecification, StyleSpecification } from "maplibre-gl";
  *
  *  `coast` is a 23kB coastline at a kilometre, committed to the repo. It is
  *  the floor: if the basemap is switched off or cannot be reached, there is
- *  still an island under the fog and the app still works on a dead network.
+ *  still ground under your feet and the app still works on a dead network.
  *
  *  The rest are the overlays the app writes into as the walk moves.
  *  docs/v1-map-build.md slice 1. */
@@ -27,7 +27,7 @@ const token = (name: string, fallback: string) => {
 };
 
 /** The sources the app writes into as the camera and the walk move. */
-export const DATA_SOURCES = ["fog", "quest-tiles", "trail-done", "trail-todo"] as const;
+export const DATA_SOURCES = ["visited", "tile-pop", "trail-done", "trail-todo"] as const;
 
 const EMPTY = {
   type: "geojson" as const,
@@ -140,7 +140,8 @@ export function surveyStyle(): StyleSpecification {
   const paper = token("--map-paper", "#EDEBE3");
   const water = token("--map-water", "#CFD8D6");
   const green = token("--map-green", "#DEE4D7");
-  const fog = token("--map-fog", "#C9C6BC");
+  const visited = token("--map-visited", "#FFFFFF");
+  const visitedLine = token("--map-visited-line", "#A9ADAA");
   const rule = token("--rule", "#D6D2C6");
   const stone = token("--stone", "#6E6F69");
   const ink = token("--ink", "#22231F");
@@ -248,48 +249,46 @@ export function surveyStyle(): StyleSpecification {
       ...coastLayers,
       ...groundLayers,
 
-      /* The fog sits above the ground and below everything the walk draws, so
-         you can see that there is something under the cloud without being able
-         to read it. One fill and one edge: the fill is the mass, the edge is
-         the frontier, and only the frontier is drawn hard. */
+      /* Ground you have walked, lit rather than the rest of the country
+         hidden. Flat: one tone, no per cell variation, because the variation
+         was there to stop a fog blanket showing its seams and there is no
+         blanket any more. White over the real ground reads as lit; a warm grey
+         over it reads as dirty, which is what it was doing before. */
       {
-        /* Not paper. Fog painted in the ground's own colour is invisible over
-           ground, which is fine over a detailed basemap and leaves the map
-           looking entirely cleared the moment the tiles are not there. This
-           tone is a shade off the paper in every case, so unwalked ground
-           reads as unwalked whether or not there is anything under it.
-
-           Opaque enough to hide what is written on the ground, sheer enough
-           that you can see there is something there to go and find. */
-        id: "fog",
+        id: "visited",
         type: "fill",
-        source: "fog",
-        paint: { "fill-color": fog, "fill-opacity": ["coalesce", ["get", "shade"], 0.82] },
+        source: "visited",
+        paint: { "fill-color": visited, "fill-opacity": 0.42 },
       },
       {
-        /* Drawn in the fill's own colour so neighbouring cells merge into one
-           mass and only the frontier shows an edge. A contrasting stroke here
-           turned the fog into a honeycomb of separate tiles. */
-        id: "fog-edge",
+        id: "visited-edge",
         type: "line",
-        source: "fog",
+        source: "visited",
         layout: { "line-join": "round" },
-        paint: { "line-color": fog, "line-width": 1.5, "line-opacity": ["coalesce", ["get", "shade"], 0.82] },
+        paint: { "line-color": visitedLine, "line-width": 1, "line-opacity": 0.5 },
       },
       {
-        /* The cell a quest starts in, at the resolution the fog is drawn at so
-           the two grids are the same grid. */
-        id: "quest-tiles",
+        /* The cell you have just stepped into, on its own layer for the length
+           of the flourish. Separate from `visited` so animating one cell does
+           not mean rewriting the whole set sixty times a second. */
+        id: "tile-pop",
         type: "fill",
-        source: "quest-tiles",
-        paint: { "fill-color": rust, "fill-opacity": 0.14 },
+        source: "tile-pop",
+        paint: {
+          "fill-color": visited,
+          "fill-opacity": ["coalesce", ["get", "fill"], 0],
+        },
       },
       {
-        id: "quest-tiles-edge",
+        id: "tile-pop-edge",
         type: "line",
-        source: "quest-tiles",
+        source: "tile-pop",
         layout: { "line-join": "round" },
-        paint: { "line-color": rust, "line-width": 1.2, "line-opacity": 0.55 },
+        paint: {
+          "line-color": visitedLine,
+          "line-width": ["coalesce", ["get", "width"], 1],
+          "line-opacity": ["coalesce", ["get", "line"], 0],
+        },
       },
       { id: "trail-done", type: "line", source: "trail-done",
         layout: { "line-cap": "round", "line-join": "round" },
@@ -300,8 +299,8 @@ export function surveyStyle(): StyleSpecification {
 
       ...(hasBasemap ? [
         {
-          /* Placenames last, above the fog, because knowing where you are
-             looking is orientation rather than detail. */
+          /* Placenames last, above everything the app draws, because knowing
+             where you are looking is orientation rather than detail. */
           id: "place-label",
           type: "symbol" as const,
           source: "basemap",

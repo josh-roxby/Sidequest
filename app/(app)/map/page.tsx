@@ -1,6 +1,8 @@
 "use client";
-import { useMemo, useState } from "react";
-import { MapView, type MapMarker } from "@/components/map/MapView";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { MapView, type MapMarker, type MapViewHandle } from "@/components/map/MapView";
+import { LocationGate } from "@/components/domain/LocationGate";
 import { Frame } from "@/components/shell/Frame";
 import { Action } from "@/components/primitives/Action";
 import { Mark } from "@/components/primitives/Marks";
@@ -20,12 +22,19 @@ export default function MapScreen() {
   const territory = useAsync(() => data.getTerritory(), []);
   const points = useAsync(() => data.getPointsNearby(), []);
   const quests = useAsync(() => data.getQuests("stroll"), []);
+  const router = useRouter();
   const [refresh, setRefresh] = useState(0);
   /* Where the walker is. The home region until they press the locate control
      and grant it, then wherever they actually are: the camera, the cleared
      ground and the you marker all read from this one value. */
   const [here, setHere] = useState<LatLng>(DEFAULT_CENTRE);
   const [locateNote, setLocateNote] = useState<string | null>(null);
+  /* The explainer is shown once. After that the locate control goes straight
+     to the browser, which is the behaviour someone who has already said yes
+     expects. */
+  const [askLocation, setAskLocation] = useState(false);
+  const [agreedLocation, setAgreedLocation] = useState(false);
+  const mapRef = useRef<MapViewHandle>(null);
   const notes = useAsync(() => data.getNotes(), [refresh]);
   const cpoints = useAsync(() => data.getCommunityPoints(), [refresh]);
   const [openNote, setOpenNote] = useState<Note | null>(null);
@@ -35,7 +44,7 @@ export default function MapScreen() {
   const [open, setOpen] = useState<Point | null>(null);
   const [tale, setTale] = useState(false);
   const [layers, setLayers] = useState<Record<string, boolean>>({
-    fog: true, trail: true, points: true, quests: true, notes: true, community: true,
+    trail: true, points: true, quests: true, notes: true, community: true,
   });
   // The setting is the ceiling, the toggle is the switch underneath it. Turning
   // community points off in settings hides them everywhere without needing the
@@ -52,32 +61,47 @@ export default function MapScreen() {
     const cpMarks = (cpoints.data ?? []).map((c) => ({
       id: `cp-${c.id}`, lat: c.lat, lng: c.lng, kind: "community" as const,
     }));
-    return [{ id: "you", ...here, kind: "you" as const }, ...pts, ...noteMarks, ...cpMarks];
-  }, [points.data, notes.data, cpoints.data, here]);
+    /* Quest starts as markers rather than as tinted cells. As cells they read
+       as a second hex grid nobody could account for; as markers they are a
+       place you can tap, which is what they always were. */
+    const questMarks = (quests.data ?? []).map((q) => ({
+      id: `quest-${q.id}`, lat: q.path[0][1], lng: q.path[0][0],
+      kind: "quest" as const, label: q.title,
+    }));
+    return [{ id: "you", ...here, kind: "you" as const },
+      ...pts, ...noteMarks, ...cpMarks, ...questMarks];
+  }, [points.data, notes.data, cpoints.data, quests.data, here]);
 
   const trail = useMemo<[number, number][]>(
     () => (quests.data?.[0]?.path ?? []),
     [quests.data],
   );
 
-  /** Where the available quests start, so they read as territory rather than
-   *  as pins floating above it. The map turns these into cells at whatever
-   *  resolution it is drawing. */
-  const questTiles = useMemo(
-    () => (quests.data ?? []).map((q) => ({ lat: q.path[0][1], lng: q.path[0][0] })),
-    [quests.data],
-  );
+  /** Ground walked in this session. Nothing is persisted yet: the store lands
+   *  in slice 6, and until it does an empty set is the honest starting state
+   *  rather than a map pretending you have been somewhere. */
+  const [visited, setVisited] = useState<string[]>([]);
+  const unlock = useCallback((cell: string) => {
+    setVisited((prev) => (prev.includes(cell) ? prev : [...prev, cell]));
+  }, []);
 
   return (
     <div className="absolute inset-0 overflow-hidden">
       <MapView
         home={here}
         initialZoom={12.8}
+        ref={mapRef}
+        onAskLocation={() => {
+          if (agreedLocation) return true;
+          setAskLocation(true);
+          return false;
+        }}
         onLocate={setHere}
         onLocateFail={setLocateNote}
         markers={markers}
         trail={trail}
-        questTiles={questTiles}
+        visited={visited}
+        onUnlock={unlock}
         hidden={[
           layers.points ? null : "point",
           layers.notes ? null : "note",
@@ -86,6 +110,13 @@ export default function MapScreen() {
           layers.quests ? null : "quests",
         ].filter(Boolean) as string[]}
         onMarker={(id) => {
+          /* A quest start opens the quest. As a tinted cell it was not
+             tappable at all, which is part of why nobody could tell what it
+             was for. */
+          if (id.startsWith("quest-")) {
+            router.push(`/quests/${id.slice("quest-".length)}`);
+            return;
+          }
           if (id.startsWith("note-")) {
             setOpenNote((notes.data ?? []).find((n) => `note-${n.id}` === id) ?? null);
             return;
@@ -96,6 +127,16 @@ export default function MapScreen() {
           }
           const p = (points.data ?? []).find((x) => x.id === id);
           if (p) setOpen(p);
+        }}
+      />
+
+      <LocationGate
+        open={askLocation}
+        onDismiss={() => setAskLocation(false)}
+        onAllow={() => {
+          setAskLocation(false);
+          setAgreedLocation(true);
+          mapRef.current?.locate();
         }}
       />
 

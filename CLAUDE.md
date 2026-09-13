@@ -1,7 +1,13 @@
 # Side Quest
 
 A walking app for Ireland. Pick how long you have, get a loop anchored to
-real places worth knowing about, walk it, reveal territory permanently.
+real places worth knowing about, walk it, keep the ground you covered.
+
+**The fog of war came off on 13 September 2026.** The map is fully visible and
+ground you have walked is lit, rather than unwalked country being hidden. The
+PRD still describes the fog in places; `docs/v1-map-build.md` records why it
+changed and what it costs. Anything reading `docs/fog-of-war.md` should be
+read as the quantiser and the store, which are unchanged, not as the look.
 
 Read [`docs/PRD.md`](./docs/PRD.md) before making product decisions. Read
 [`docs/design-system.md`](./docs/design-system.md) before touching any
@@ -85,6 +91,7 @@ lib/
     style.ts    the MapLibre style, built from the design tokens
   nav.ts        the destination list, shared by the drawer and the shortcut
   fog/          H3 quantiser and local store, when it lands
+                (the store survived the fog itself: it is the visited set)
   location.ts   the geolocation prompt, fired from a press and nowhere else
 supabase/
   migrations/   written, not applied

@@ -1,8 +1,6 @@
 import {
-  cellToBoundary, cellToChildren, cellToLatLng, getResolution,
-  gridDisk, latLngToCell,
+  cellToBoundary, cellToParent, getResolution, gridDisk, latLngToCell,
 } from "h3-js";
-import { distanceM } from "../geo.ts";
 import type { LatLng } from "../data/index.ts";
 
 /** Territory tiles, on real H3.
@@ -104,95 +102,25 @@ export function cellsInView(centre: LatLng, res: number, radiusM: number): strin
   return gridDisk(cellAt(centre, res), rings);
 }
 
-/** Stable pseudo-random in 0..1 from a cell id. Used for the scattered
- *  clearings that make unwalked country read as unknown rather than as empty,
- *  and for the occasional green tile. Deterministic, so the same ground looks
- *  the same on every device. */
-export function cellNoise(cell: string, seed = 1): number {
-  let h = 2166136261 ^ seed;
-  for (let i = 0; i < cell.length; i++) {
-    h ^= cell.charCodeAt(i);
-    h = Math.imul(h, 16777619);
+/** Where you have walked, at the resolution the map is drawing.
+ *
+ *  Visited ground is stored once, at `RES_FINEST`, because that is the truth:
+ *  a cell you walked through is about 76m of ground and stays that size
+ *  whatever the camera is doing. Drawing it is a different question. Zoomed
+ *  out, a thousand 76m hexes is a thousand specks, so each is rolled up to its
+ *  ancestor at the drawing resolution and de-duplicated. A coarse cell counts
+ *  as walked if any of the ground inside it was, which is the honest reading
+ *  of a footprint: you were there.
+ *
+ *  This replaced a fog of war. The fog hid unwalked country, and hiding the
+ *  country is the wrong trade for a walking app, because you cannot judge
+ *  whether a walk is worth taking through cloud. Nothing is hidden now and the
+ *  ground you have covered is lit instead. docs/v1-map-build.md. */
+export function visitedAtRes(visited: Iterable<string>, res: number): string[] {
+  const out = new Set<string>();
+  for (const cell of visited) {
+    const r = getResolution(cell);
+    out.add(r <= res ? cell : cellToParent(cell, res));
   }
-  return ((h >>> 0) % 1000) / 1000;
-}
-
-/** Has this ground been cleared?
- *
- *  Ground metres, not Mercator metres: the radius means a real distance a
- *  person walked, and H3 lets us ask that question directly. Placeholder until
- *  the fog is written from a live position in slice 7.
- *
- *  Walked ground and nothing else. This used to clear any cell whose noise
- *  came up over 0.62, which meant a bit under two fifths of the country was
- *  permanently cleared for texture, scattered at random. On a canvas of flat
- *  hexes that read as grain; over a real basemap it reads as static, and it
- *  made the frontier of the fog a rash of holes rather than a line you have
- *  pushed back. The noise is still there and still per cell, but it varies
- *  the shade of the fog rather than punching holes in it: see `cellShade`. */
-export function cellRevealed(cell: string, centre: LatLng, radiusM: number): boolean {
-  const [lat, lng] = cellToLatLng(cell);
-  return distanceM({ lat, lng }, centre) < radiusM;
-}
-
-/** How dark this cell's fog sits, 0 to 1, stable for the cell.
- *
- *  Cloud is not one flat tone, and a fog of one flat tone over a hex grid
- *  shows every seam. A narrow band is enough: wide enough to break the grid
- *  up, narrow enough that no cell reads as a different thing. */
-export function cellShade(cell: string): number {
-  return 0.74 + cellNoise(cell, 7) * 0.2;
-}
-
-/** A coarse cell is only clear when most of the ground inside it is. A single
- *  cleared field must not clear a forty kilometre tile.
- *
- *  The children are H3's own, so the majority is over the real subdivision
- *  rather than over seven points sampled around a centre. */
-export function majorityRevealed(cell: string, centre: LatLng, radiusM: number): boolean {
-  const res = getResolution(cell);
-  if (res >= RES_FINEST) return cellRevealed(cell, centre, radiusM);
-  const kids = cellToChildren(cell, res + 1);
-  let hits = 0;
-  for (const k of kids) if (cellRevealed(k, centre, radiusM)) hits++;
-  return hits * 2 > kids.length;
-}
-
-/** The coarsest resolution at which standing ground is lit.
- *
- *  Res 9 cells are about 400m across. Coarser than that and "the cell you are
- *  standing in" is a few kilometres wide, so lighting it would clear half a
- *  county for zooming out, which is both an exploit and a lie about what you
- *  have seen. Zoomed out past this you are reading a region rather than
- *  placing yourself, and the fog is uniform. */
-export const RES_ORIENT = 9;
-
-/** What you can see from where you are standing, before you have walked
- *  anywhere.
- *
- *  A fog that starts fully closed tells you nothing about whether a walk is
- *  worth taking, and a walking app that will not show you your own street is
- *  no use for judging one. So the cell you are in is always clear, and the six
- *  touching it are always half lit: enough to read the streets around you and
- *  place yourself, not enough to hand over the map.
- *
- *  This is a floor, not the fog. Ground you have actually walked clears
- *  permanently on top of it when the fog store lands in slice 6. */
-export function standingGround(centre: LatLng, res: number): {
-  here: string | null;
-  near: Set<string>;
-} {
-  if (res < RES_ORIENT) return { here: null, near: new Set() };
-  const here = cellAt(centre, res);
-  const near = new Set(gridDisk(here, 1));
-  near.delete(here);
-  return { here, near };
-}
-
-/** How strongly the tile layer draws at this zoom. It fades out rather than
- *  vanishing, so a zoomed out map shows the island rather than a lattice. */
-export function tileStrength(scale: number): { stroke: number; fill: number } {
-  const fade = (a: number, b: number) =>
-    Math.max(0, Math.min(1, (scale - a) / (b - a)));
-  return { stroke: fade(0.004, 0.02), fill: fade(0.008, 0.03) };
+  return [...out];
 }

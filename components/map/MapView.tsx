@@ -1,12 +1,16 @@
 "use client";
 import { LngLatBounds, Map as MLMap, setWorkerUrl, type GeoJSONSource } from "maplibre-gl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  cellAt, cellRing, cellShade, cellsInView, metresPerPixel,
-  resForMetresPerPixel, standingGround,
+  useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState,
+} from "react";
+import {
+  cellAt, cellRing, metresPerPixel, RES_FINEST, resForMetresPerPixel, visitedAtRes,
 } from "@/lib/map/hex";
 import { DEFAULT_CENTRE, IRELAND_BOUNDS } from "@/lib/map/project";
-import { getPosition, LocationError, locationMessage } from "@/lib/location";
+import {
+  getPosition, LocationError, locationMessage, watchHeading, watchPosition,
+  type Fix,
+} from "@/lib/location";
 import { BASEMAP_URL, surveyStyle } from "@/lib/map/style";
 import type { LatLng } from "@/lib/data";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
@@ -17,16 +21,21 @@ export interface MapMarker {
   id: string;
   lat: number;
   lng: number;
-  kind: "point" | "objective" | "objective-done" | "you" | "note" | "community";
+  kind: "point" | "objective" | "objective-done" | "you" | "note" | "community" | "quest";
   label?: string;
+}
+
+/** What a page can ask the map to do. Only the one thing: everything else
+ *  flows down as props. */
+export interface MapViewHandle {
+  /** Start following the walker, skipping the gate. */
+  locate: () => void;
 }
 
 export interface MapViewProps {
   markers?: MapMarker[];
   /** The active trail, as [lng, lat] pairs. GeoJSON order. */
   trail?: [number, number][];
-  /** Where the available quests start. */
-  questTiles?: LatLng[];
   onMarker?: (id: string) => void;
   home?: LatLng;
   /** Marker kinds and overlays currently switched off. */
@@ -40,30 +49,41 @@ export interface MapViewProps {
   /** A real fix, once the walker has asked for one. The page owns where it
    *  goes: the map only reports it. */
   onLocate?: (p: LatLng) => void;
+  /** Ground already walked, as H3 cells at `RES_FINEST`. The map lights these
+   *  and does not decide what belongs in the set. */
+  visited?: string[];
+  /** A cell unlocking, so the page can record it. Fires once per cell. */
+  onUnlock?: (cell: string) => void;
   /** Why a fix did not arrive, in words fit to show someone. */
   onLocateFail?: (message: string) => void;
+  /** Asked before the browser prompt, the first time only. When supplied, the
+   *  locate control calls this instead of prompting, and the page calls
+   *  `locate` back once the walker has agreed. */
+  onAskLocation?: () => boolean;
+  /** Lets the page start following once the walker has agreed to the gate it
+   *  showed them, without making them press the control a second time. */
+  ref?: React.Ref<MapViewHandle>;
 }
 
-/** How much of the fog is left on the ring around where you are standing.
- *  Half, so the roads and paths under it can be read well enough to judge a
- *  walk without the map being given away. */
-const HALF_LIT = 0.5;
+/** How long a tile takes to pop when you step into it. Long enough to read as
+ *  a reward, short enough that a brisk walk through a row of cells does not
+ *  queue up a backlog of flourishes. */
+const POP_MS = 620;
 
 /** One cell as a GeoJSON polygon. The ring is cached and already closed, so
- *  this is a wrapper rather than work.
- *
- *  `shade` rides along so the fog layer can vary its opacity per cell without
- *  the style needing to know anything about H3, and `lit` scales it for the
- *  cells next to you. */
-const cellFeature = (cell: string, lit = 1) => ({
+ *  this is a wrapper rather than work. */
+const cellFeature = (cell: string, properties: Record<string, number> = {}) => ({
   type: "Feature" as const,
-  properties: { shade: cellShade(cell) * lit },
+  properties,
   geometry: { type: "Polygon" as const, coordinates: [cellRing(cell)] },
 });
 
+const collection = (features: ReturnType<typeof cellFeature>[]) =>
+  ({ type: "FeatureCollection" as const, features });
+
 const GLYPH: Record<MapMarker["kind"], MarkName | null> = {
   you: null, point: "point", objective: "flag", "objective-done": "badge",
-  note: "note", community: "friends",
+  note: "note", community: "friends", quest: "quest",
 };
 
 /** The map.
@@ -75,19 +95,30 @@ const GLYPH: Record<MapMarker["kind"], MarkName | null> = {
  *  for no product. What survived from it is every decision it made, which is
  *  the part that mattered. docs/v1-map-build.md slice 1. */
 export function MapView({
-  markers = [], trail = [], questTiles = [], onMarker,
+  markers = [], trail = [], visited = [], onMarker, onUnlock, onAskLocation, ref,
   home = DEFAULT_CENTRE, hidden = [], interactive = true, fit, initialZoom = 13,
   onLocate, onLocateFail,
 }: MapViewProps) {
   const wrap = useRef<HTMLDivElement>(null);
   const map = useRef<MLMap | null>(null);
+  /* Whether the camera is still the walker's. A drag hands it back to them:
+     someone who has panned off to look at a headland does not want the map
+     yanked back under their thumb on the next fix. The locate control takes
+     it again. */
+  const following = useRef(false);
+
   const [ready, setReady] = useState(false);
   const [bearing, setBearing] = useState(0);
   /** Screen positions for the DOM markers, refreshed as the camera moves. */
   const [screen, setScreen] = useState<Record<string, { x: number; y: number }>>({});
+  /** Radius of the accuracy ring in screen pixels, kept in step with zoom. */
+  const [accuracyPx, setAccuracyPx] = useState(0);
+  /** The browser's own estimate of how wrong the fix might be, in metres.
+   *  Held apart from the fix itself so the camera painter depends on one
+   *  number rather than on every new reading. */
+  const [accuracyM, setAccuracyM] = useState(0);
 
   const { lat: homeLat, lng: homeLng } = home;
-  const homeLL = useMemo(() => ({ lat: homeLat, lng: homeLng }), [homeLat, homeLng]);
   const hiddenKey = hidden.join(",");
 
   /* ---- create once ---------------------------------------------------- */
@@ -118,6 +149,7 @@ export function MapView({
     /* MapLibre reports a missing source, a bad style or a tile that will not
        load through this rather than by throwing, so without it a broken map is
        a silent blank rectangle. */
+    m.on("dragstart", () => { following.current = false; });
     m.on("error", (e) => {
       console.error("[map]", e.error?.message ?? e);
     });
@@ -131,52 +163,60 @@ export function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ---- fog, recomputed when the camera settles ------------------------- */
-  const paintFog = useCallback(() => {
+  /* ---- walked ground, repainted when the camera settles ---------------- */
+  const visitedKey = visited.join(",");
+  const paintVisited = useCallback(() => {
     const m = map.current;
     if (!m) return;
-    const c = m.getCenter();
-    const here = { lat: c.lat, lng: c.lng };
-    const mPerPx = metresPerPixel(m.getZoom(), here.lat);
-    const res = resForMetresPerPixel(mPerPx);
-    /* Half the viewport diagonal, in ground metres, so a rotated camera never
-       shows an unfogged corner. */
-    const box = m.getContainer().getBoundingClientRect();
-    const reachM = (Math.hypot(box.width, box.height) / 2) * mPerPx;
+    /* At the resolution the camera is drawing, so the lit ground is one grid
+       with the cell that pops on top of it rather than a second grid of a
+       different size, which is what made the tiling look irregular before. */
+    const res = resForMetresPerPixel(metresPerPixel(m.getZoom(), m.getCenter().lat));
+    (m.getSource("visited") as GeoJSONSource | undefined)
+      ?.setData(collection(visitedAtRes(visited, res).map((c) => cellFeature(c))));
+    // visitedKey is the honest dependency: the same cells in a new array are
+    // not a reason to rebuild every polygon.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visitedKey]);
 
-    /* Three states, not two. The cell you are standing in is clear, the six
-       touching it are half lit so the streets under them can be read, and
-       everything else is closed. Walked ground subtracts from this on top when
-       the fog store lands in slice 6; until then this floor is all there is,
-       and it is honest about that rather than drawing a circle of ground
-       nobody has walked. */
-    const { here: standing, near } = standingGround(homeLL, res);
+  /* ---- a tile popping when you step into it ---------------------------- */
+  const popping = useRef<number | null>(null);
+  const pop = useCallback((cell: string) => {
+    const m = map.current;
+    if (!m) return;
+    const src = () => m.getSource("tile-pop") as GeoJSONSource | undefined;
+    if (popping.current) cancelAnimationFrame(popping.current);
 
-    const features = [];
-    for (const cell of cellsInView(here, res, reachM)) {
-      if (cell === standing) continue;
-      features.push(cellFeature(cell, near.has(cell) ? HALF_LIT : 1));
-    }
-    (m.getSource("fog") as GeoJSONSource | undefined)
-      ?.setData({ type: "FeatureCollection", features });
+    /* Drawn on its own source for the length of the flourish rather than
+       animated inside the visited set, so one cell changing does not mean
+       rewriting every polygon on screen sixty times a second.
 
-    /* At the same resolution as the fog, deliberately. Drawn at a fixed one it
-       was a second hex grid of a different size laid over the first, which is
-       what made the tiling look irregular: two grids, not one. A quest start
-       marks the cell it is standing in, whatever size that cell currently is,
-       so it reads as ground rather than as a floating shape. Two starts in one
-       cell collapse into one tile, which is correct. */
-    const seen = new Set<string>();
-    const tiles = [];
-    for (const q of questTiles) {
-      const cell = cellAt(q, res);
-      if (seen.has(cell)) continue;
-      seen.add(cell);
-      tiles.push(cellFeature(cell));
-    }
-    (m.getSource("quest-tiles") as GeoJSONSource | undefined)
-      ?.setData({ type: "FeatureCollection", features: tiles });
-  }, [homeLL, questTiles]);
+       There is no scale transform to reach for here: MapLibre draws a polygon
+       where its coordinates say, so the pop is carried by opacity and by the
+       edge thickening and settling. */
+    const t0 = performance.now();
+    const frame = (now: number) => {
+      const t = Math.min(1, (now - t0) / POP_MS);
+      // Out and back: bright in the first third, settling through the rest.
+      const swell = t < 0.34 ? t / 0.34 : 1 - (t - 0.34) / 0.66;
+      src()?.setData(collection([cellFeature(cell, {
+        fill: 0.42 + swell * 0.48,
+        line: 0.5 + swell * 0.5,
+        width: 1 + swell * 2.6,
+      })]));
+      if (t < 1) {
+        popping.current = requestAnimationFrame(frame);
+        return;
+      }
+      popping.current = null;
+      src()?.setData(collection([]));
+    };
+    popping.current = requestAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => () => {
+    if (popping.current) cancelAnimationFrame(popping.current);
+  }, []);
 
   /* ---- the trail ------------------------------------------------------- */
   useEffect(() => {
@@ -205,17 +245,24 @@ export function MapView({
     }
     setScreen(next);
     setBearing(m.getBearing());
-  }, [markers]);
+    /* The accuracy ring is in metres on the ground, so it has to be re-sized
+       every time the camera changes rather than being a fixed number of
+       pixels. A phone indoors reports hundreds of metres, and drawing that as
+       a small dot would be claiming a precision we do not have. */
+    setAccuracyPx(accuracyM
+      ? accuracyM / metresPerPixel(m.getZoom(), m.getCenter().lat)
+      : 0);
+  }, [markers, accuracyM]);
 
   useEffect(() => {
     const m = map.current;
     if (!m || !ready) return;
     place();
-    paintFog();
+    paintVisited();
     m.on("move", place);
-    m.on("moveend", paintFog);
-    return () => { m.off("move", place); m.off("moveend", paintFog); };
-  }, [ready, place, paintFog]);
+    m.on("moveend", paintVisited);
+    return () => { m.off("move", place); m.off("moveend", paintVisited); };
+  }, [ready, place, paintVisited]);
 
   /* ---- framing --------------------------------------------------------- */
   const fitKey = fit ? fit.map((f) => `${f.lat},${f.lng}`).join("|") : "";
@@ -230,24 +277,93 @@ export function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitKey, ready]);
 
-  /* The one place the browser's location prompt is allowed to fire: a press,
-     never a page load. A refusal is not an error state, it is the map staying
-     where it was, so the button reports it and moves on. */
+  /* ---- following a live position --------------------------------------- */
+  const [fix, setFix] = useState<Fix | null>(null);
+  const [heading, setHeading] = useState<number | null>(null);
   const [locating, setLocating] = useState(false);
-  const recentre = useCallback(async () => {
+  const stopWatch = useRef<(() => void) | null>(null);
+  const stopHeading = useRef<(() => void) | null>(null);
+  const lastCell = useRef<string | null>(null);
+
+  useEffect(() => () => { stopWatch.current?.(); stopHeading.current?.(); }, []);
+
+  /* The one place the browser's location prompt is allowed to fire: a press,
+     never a page load. docs/ux-loops.md §B-2.
+
+     A refusal is not an error state, it is the map staying where it was, so
+     the button says so and moves on. */
+  const locate = useCallback(async () => {
     if (locating) return;
     setLocating(true);
     try {
-      const fix = await getPosition();
-      map.current?.easeTo({ center: [fix.lng, fix.lat], zoom: 15.5, duration: 620 });
-      onLocate?.({ lat: fix.lat, lng: fix.lng });
+      const first = await getPosition();
+      setFix(first);
+      setAccuracyM(first.accuracyM);
+      onLocate?.({ lat: first.lat, lng: first.lng });
+      following.current = true;
+      map.current?.easeTo({ center: [first.lng, first.lat], zoom: 16, duration: 620 });
+
+      /* Heading is a separate grant from location on Safari, and a device with
+         no magnetometer never answers at all, so the pin has to be right
+         without it. Asked here because it must come from inside the gesture. */
+      if (!stopHeading.current) stopHeading.current = await watchHeading(setHeading);
+
+      if (!stopWatch.current) {
+        stopWatch.current = watchPosition(
+          (next) => {
+            setFix(next);
+            setAccuracyM(next.accuracyM);
+            onLocate?.({ lat: next.lat, lng: next.lng });
+            if (following.current) {
+              map.current?.easeTo({ center: [next.lng, next.lat], duration: 450 });
+            }
+            /* Unlocking is the walker's business, not the camera's, so it is
+               keyed off the fix and always at RES_FINEST: ground you walked is
+               76m of ground whatever the map happens to be drawing. */
+            const cell = cellAt({ lat: next.lat, lng: next.lng }, RES_FINEST);
+            if (cell !== lastCell.current) {
+              lastCell.current = cell;
+              if (!visited.includes(cell)) {
+                pop(cell);
+                onUnlock?.(cell);
+              }
+            }
+          },
+          (reason) => {
+            /* A phone loses its fix under a bridge and finds it again. Once
+               there has been one good reading, that is weather rather than
+               failure, and putting a notice on screen for it teaches people to
+               ignore notices. Only a permission being taken away is worth
+               saying out loud. */
+            if (reason === "denied") {
+              following.current = false;
+              onLocateFail?.(locationMessage(reason));
+            }
+          },
+        );
+      }
     } catch (err) {
       map.current?.easeTo({ center: [homeLng, homeLat], zoom: 15, duration: 520 });
       if (err instanceof LocationError) onLocateFail?.(locationMessage(err.reason));
     } finally {
       setLocating(false);
     }
-  }, [homeLat, homeLng, locating, onLocate, onLocateFail]);
+    // visited is read inside the watch callback, which is created once; the
+    // page owns the set and re-supplies it, so reading a stale array here only
+    // ever risks a second pop on a cell already lit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [homeLat, homeLng, locating, onLocate, onLocateFail, onUnlock, pop]);
+
+  /* The page gets first refusal. On the first press it shows what the location
+     is for, and bumps `locateSignal` once the walker has agreed, so the
+     browser's own prompt is never the first thing anyone sees. */
+  const recentre = useCallback(() => {
+    if (onAskLocation?.() === false) return;
+    void locate();
+  }, [locate, onAskLocation]);
+
+  useImperativeHandle(ref, () => ({ locate: () => void locate() }), [locate]);
+
 
   const north = useCallback(() => {
     map.current?.easeTo({ bearing: 0, duration: 400 });
@@ -264,7 +380,10 @@ export function MapView({
       /* Reflected so the map's state is inspectable from the outside: a blank
          rectangle and a loaded map look identical in a screenshot. */
       data-map={ready ? "ready" : "loading"}
-      data-markers={markers.length}>
+      data-markers={markers.length}
+      /* Walked cells currently lit, so a test can tell an empty set from a
+         broken one without reaching into MapLibre. */
+      data-visited={visited.length}>
       {/* Sized rather than inset. MapLibre's own stylesheet sets
           `.maplibregl-map { position: relative }` on whatever container it is
           given, which beats an `absolute inset-0` and collapses the element to
@@ -272,6 +391,47 @@ export function MapView({
           loading, and a map that never loads looks exactly like a map with no
           data on it. */}
       <div ref={wrap} className="gesture h-full w-full" />
+
+      {/* How well the phone knows where it is, and which way you are facing.
+          Both sit under the markers so the dot is never obscured by its own
+          uncertainty. The ring is only drawn once there is a real reading: a
+          ring around a default position would be claiming a fix we do not
+          have. */}
+      {fix && screen.you ? (
+        <>
+          {accuracyPx > 14 ? (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute z-0 border border-rust/30 bg-rust/10"
+              style={{
+                left: screen.you.x, top: screen.you.y,
+                width: accuracyPx * 2, height: accuracyPx * 2,
+                transform: "translate(-50%, -50%)",
+                borderRadius: "var(--r-full)",
+              }}
+            />
+          ) : null}
+          {heading != null ? (
+            /* A cone rather than an arrow, because a phone compass is worth
+               about this much confidence. Rotated against the map's own
+               bearing so it points at the ground, not at the screen. */
+            <div
+              aria-hidden
+              className="pointer-events-none absolute z-0"
+              style={{
+                left: screen.you.x, top: screen.you.y,
+                width: 0, height: 0,
+                borderLeft: "9px solid transparent",
+                borderRight: "9px solid transparent",
+                borderBottom: "20px solid var(--rust)",
+                opacity: 0.55,
+                transform: `translate(-50%, -100%) rotate(${heading - bearing}deg)`,
+                transformOrigin: "50% 100%",
+              }}
+            />
+          ) : null}
+        </>
+      ) : null}
 
       {/* Markers are DOM rather than symbol layers: they carry the app's own
           glyphs, they are the same components the buttons that filter them use,
@@ -282,6 +442,9 @@ export function MapView({
         if (mk.kind === "note" && hiddenSet.has("note")) return null;
         if (mk.kind === "community" && hiddenSet.has("community")) return null;
         if (mk.kind === "point" && hiddenSet.has("point")) return null;
+        // The quests toggle used to hide a tinted cell. It hides the marker
+        // that replaced it, so the control still does what its label says.
+        if (mk.kind === "quest" && hiddenSet.has("quests")) return null;
         const glyph = GLYPH[mk.kind];
         return (
           <button

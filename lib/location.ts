@@ -72,3 +72,82 @@ export function locationMessage(reason: LocationFailure): string {
     default: return "No fix available just now.";
   }
 }
+
+/** Following a walk rather than asking once.
+ *
+ *  `getPosition` answers "where am I" for a recentre press. This answers
+ *  "where am I now", which is what a walk needs: the pin has to keep up, and
+ *  tiles unlock from it. Returns a stop function. Readings that fail `usable`
+ *  are dropped rather than passed on, because one NaN centre takes the map
+ *  down and iOS has shipped that reading more than once.
+ *
+ *  Errors after the first fix are not fatal. A phone loses its fix under a
+ *  bridge and finds it again, and tearing the pin off the map for that is
+ *  worse than leaving it where it last was. */
+export function watchPosition(
+  onFix: (fix: Fix) => void,
+  onFail?: (reason: LocationFailure) => void,
+): () => void {
+  if (typeof navigator === "undefined" || !navigator.geolocation) {
+    onFail?.("unsupported");
+    return () => {};
+  }
+  const id = navigator.geolocation.watchPosition(
+    ({ coords }) => {
+      if (!usable(coords)) return;
+      onFix({ lat: coords.latitude, lng: coords.longitude, accuracyM: coords.accuracy });
+    },
+    (err) => {
+      onFail?.(err.code === err.PERMISSION_DENIED ? "denied"
+        : err.code === err.TIMEOUT ? "timeout" : "unavailable");
+    },
+    { enableHighAccuracy: true, timeout: 15_000, maximumAge: 5_000 },
+  );
+  return () => navigator.geolocation.clearWatch(id);
+}
+
+interface WebkitOrientationEvent extends DeviceOrientationEvent {
+  /** Safari only, and the one worth having: it is true north already, where
+   *  `alpha` is relative to wherever the device decided to start. */
+  webkitCompassHeading?: number;
+}
+
+type OrientationCtor = typeof DeviceOrientationEvent & {
+  requestPermission?: () => Promise<"granted" | "denied">;
+};
+
+/** Which way you are facing, in degrees clockwise from north.
+ *
+ *  Two things make this less simple than it looks. Safari needs its own
+ *  permission, asked from inside a user gesture, and it is a different grant
+ *  from the location one, so a walker can hold one and not the other. And only
+ *  Safari reports a true north heading directly: everywhere else `alpha` is
+ *  measured anticlockwise from the device's own starting orientation, so it is
+ *  subtracted from 360 to face the same way round as a compass.
+ *
+ *  A device with no magnetometer reports nothing at all, which is why the
+ *  caller has to cope with never being called. */
+export async function watchHeading(
+  onHeading: (deg: number) => void,
+): Promise<() => void> {
+  if (typeof window === "undefined" || !("DeviceOrientationEvent" in window)) return () => {};
+  const ctor = window.DeviceOrientationEvent as OrientationCtor;
+
+  if (typeof ctor.requestPermission === "function") {
+    try {
+      if ((await ctor.requestPermission()) !== "granted") return () => {};
+    } catch {
+      // Thrown when not called from a gesture. Nothing to do but go without.
+      return () => {};
+    }
+  }
+
+  const handler = (e: DeviceOrientationEvent) => {
+    const ev = e as WebkitOrientationEvent;
+    const deg = ev.webkitCompassHeading ?? (e.alpha == null ? null : 360 - e.alpha);
+    if (deg == null || !Number.isFinite(deg)) return;
+    onHeading(((deg % 360) + 360) % 360);
+  };
+  window.addEventListener("deviceorientation", handler, true);
+  return () => window.removeEventListener("deviceorientation", handler, true);
+}
