@@ -14,6 +14,7 @@ import {
 import { BASEMAP_URL, surveyStyle } from "@/lib/map/style";
 import type { LatLng } from "@/lib/data";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
+import { AddWheel, type WheelOption } from "@/components/map/AddWheel";
 import { cn } from "@/lib/cn";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -68,6 +69,12 @@ export interface MapViewProps {
    *  and the two landed on top of each other, which is where the squares
    *  behind the circles came from. */
   controls?: React.ReactNode;
+  /** What a long press on open ground can add. Empty or absent switches the
+   *  gesture off, which is what a preview map wants. */
+  addOptions?: WheelOption[];
+  /** The chosen option, and the ground that was held. Not the map centre and
+   *  not the walker: the place the thumb was on. */
+  onAdd?: (id: string, at: LatLng) => void;
 }
 
 /** How long a tile takes to pop when you step into it. Long enough to read as
@@ -101,7 +108,7 @@ const GLYPH: Record<MapMarker["kind"], MarkName | null> = {
  *  the part that mattered. docs/v1-map-build.md slice 1. */
 export function MapView({
   markers = [], trail = [], visited = [], onMarker, onUnlock, onAskLocation, ref,
-  controls,
+  controls, addOptions = [], onAdd,
   home = DEFAULT_CENTRE, hidden = [], interactive = true, fit, initialZoom = 13,
   onLocate, onLocateFail,
 }: MapViewProps) {
@@ -270,6 +277,69 @@ export function MapView({
     return () => { m.off("move", place); m.off("moveend", paintVisited); };
   }, [ready, place, paintVisited]);
 
+  /* ---- press and hold to add ------------------------------------------- */
+  /** Where the thumb went down, once the hold has been held long enough. */
+  const [wheel, setWheel] = useState<{ x: number; y: number; at: LatLng } | null>(null);
+  const hold = useRef<{ id: number; x: number; y: number; timer: number } | null>(null);
+
+  const cancelHold = useCallback(() => {
+    if (hold.current) clearTimeout(hold.current.timer);
+    hold.current = null;
+  }, []);
+
+  /* The map is pinned while the wheel is open. Without this the same drag that
+     chooses an option also pans the ground under it, so the pin would land
+     somewhere the walker never pointed at. */
+  useEffect(() => {
+    const m = map.current;
+    if (!m) return;
+    if (wheel) {
+      m.dragPan.disable();
+      m.dragRotate.disable();
+      m.touchZoomRotate.disable();
+    } else {
+      m.dragPan.enable();
+      m.dragRotate.enable();
+      m.touchZoomRotate.enable();
+    }
+  }, [wheel]);
+
+  useEffect(() => () => cancelHold(), [cancelHold]);
+
+  const HOLD_MS = 500;
+  /** How far the thumb may wander and still count as a hold rather than a pan.
+   *  Nobody holds a phone perfectly still, and a stricter number makes the
+   *  gesture feel broken rather than precise. */
+  const HOLD_SLOP = 12;
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    const m = map.current;
+    if (!m || !onAdd || addOptions.length === 0 || wheel) return;
+    /* A second finger means a pinch, which is a zoom and never an add. */
+    if (!e.isPrimary) { cancelHold(); return; }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    cancelHold();
+    hold.current = {
+      id: e.pointerId, x, y,
+      timer: window.setTimeout(() => {
+        const ll = m.unproject([x, y]);
+        setWheel({ x, y, at: { lat: ll.lat, lng: ll.lng } });
+        hold.current = null;
+      }, HOLD_MS),
+    };
+  }, [addOptions.length, cancelHold, onAdd, wheel]);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    const h = hold.current;
+    if (!h || e.pointerId !== h.id) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (Math.hypot(e.clientX - rect.left - h.x, e.clientY - rect.top - h.y) > HOLD_SLOP) {
+      cancelHold();
+    }
+  }, [cancelHold]);
+
   /* ---- framing --------------------------------------------------------- */
   const fitKey = fit ? fit.map((f) => `${f.lat},${f.lng}`).join("|") : "";
   useEffect(() => {
@@ -396,7 +466,17 @@ export function MapView({
           nothing: a zero height container means the map never finishes
           loading, and a map that never loads looks exactly like a map with no
           data on it. */}
-      <div ref={wrap} className="gesture h-full w-full" />
+      <div
+        ref={wrap}
+        className="gesture h-full w-full"
+        /* On the map surface itself rather than the wrapper, so a press that
+           starts on a marker or a control is that control's business. */
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={cancelHold}
+        onPointerCancel={cancelHold}
+        onPointerLeave={cancelHold}
+      />
 
       {/* How well the phone knows where it is, and which way you are facing.
           Both sit under the markers so the dot is never obscured by its own
@@ -498,6 +578,15 @@ export function MapView({
           </button>
           {controls}
         </div>
+      ) : null}
+
+      {wheel ? (
+        <AddWheel
+          at={{ x: wheel.x, y: wheel.y }}
+          options={addOptions}
+          onPick={(id) => { const at = wheel.at; setWheel(null); onAdd?.(id, at); }}
+          onCancel={() => setWheel(null)}
+        />
       ) : null}
     </div>
   );

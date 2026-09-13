@@ -40,6 +40,9 @@ export default function MapScreen() {
   const [openNote, setOpenNote] = useState<Note | null>(null);
   const [openCp, setOpenCp] = useState<CommunityPoint | null>(null);
   const [addMode, setAddMode] = useState<AddMode>(null);
+  /* Where a long press landed. The dock's own add button has no point on the
+     map behind it, so that route still drops the pin where the walker is. */
+  const [addAt, setAddAt] = useState<LatLng | null>(null);
   const settings = useSettings();
   const [open, setOpen] = useState<Point | null>(null);
   const [tale, setTale] = useState(false);
@@ -91,6 +94,16 @@ export default function MapScreen() {
         home={here}
         initialZoom={12.8}
         ref={mapRef}
+        /* A held finger on open ground opens the wheel. Markers and controls
+           take their own presses, so this only fires on the map itself. */
+        addOptions={[
+          { id: "note", label: "Note", glyph: "note" },
+          { id: "point", label: "Point", glyph: "point" },
+        ]}
+        onAdd={(id, at) => {
+          setAddAt(at);
+          setAddMode(id as AddMode);
+        }}
         onAskLocation={() => {
           if (agreedLocation) return true;
           setAskLocation(true);
@@ -265,12 +278,11 @@ export default function MapScreen() {
           frames are not trapped in the dock's stacking context. */}
       <MapAdd
         mode={addMode}
-        setMode={setAddMode}
+        setMode={(m) => { setAddMode(m); if (!m) setAddAt(null); }}
         quests={quests.data ?? []}
-        /* Where the map opens. Becomes the live position in slice 6, which is
-           also when a pin dropped anywhere but under your feet stops being a
-           reasonable thing to allow. */
-        at={here}
+        /* The ground that was held, when the wheel opened it. The dock's add
+           button has no such point, so it falls back to the walker. */
+        at={addAt ?? here}
         onAdded={() => setRefresh((n) => n + 1)}
       />
 

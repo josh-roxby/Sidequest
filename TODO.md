@@ -206,6 +206,15 @@ rather than half-migrated.
 
 ### Block 1: wrong on a screen you can reach today
 
+- [ ] **Assembled walks die with the tab.** They live in session storage,
+      which carries them from the picker to the walk screen and through a
+      reload, and no further. Persisting one properly is a database question
+      and waits on the migrations
+- [ ] **The long press wheel is circles on an arc, not pie wedges.** Asked for
+      as segments; built as circles because a wedge at thumb size is cramped at
+      the outside, empty at the inside and has nowhere to put a label. Worth a
+      look before it is settled
+
 - [ ] **Quest routes are not surveyed lines.** The corpus is anchored to real
       places in the right order at the right distance, but the line between
       anchors is generated, so it does not follow streets and cannot be walked

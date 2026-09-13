@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { assembleQuest } from "../lib/quest/assemble.ts";
 import { drawnLength } from "../lib/quest/route.ts";
 import { POINTS } from "../lib/data/mock/fixtures.ts";
-import { TIERS, type Point, type Tier } from "../lib/data/types.ts";
+import { TIERS, type Point } from "../lib/data/types.ts";
 import { distanceM } from "../lib/geo.ts";
 
 /** A walk you cannot start from where you are standing is not a walk. The
