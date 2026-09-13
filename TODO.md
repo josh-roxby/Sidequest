@@ -206,10 +206,16 @@ rather than half-migrated.
 
 ### Block 1: wrong on a screen you can reach today
 
-- [ ] **The Dublin point corpus is thin enough to read as broken.** Six points
-      across D03 and D09 means a Trot or a Stroll honestly reports "0 points
-      within reach" from Clontarf Road. The number is true and the screen is
-      right to say so; the fix is more points, not a friendlier number
+- [ ] **Quest routes are not surveyed lines.** The corpus is anchored to real
+      places in the right order at the right distance, but the line between
+      anchors is generated, so it does not follow streets and cannot be walked
+      turn by turn. Real routing needs OSM street data, which the build machine
+      cannot reach. Slice 5
+- [ ] **Seed the Dublin corpus into Supabase.** Asked for, not done: the
+      schema in `supabase/migrations/` is unapplied, and a seed would have to
+      invent `pois`, `countries` and `zones` rows against tables that exist
+      nowhere yet, unrunnable and unverifiable. `scripts/build-dublin.mjs` is
+      the source, so it can emit the SQL the day migrations are approved
 
 - [ ] **The first-run nav hint sits over the waypoint rail.** "Tap for all /
       Hold and drag" in `NavButton` is placed above the button precisely to

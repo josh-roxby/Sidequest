@@ -15,7 +15,13 @@
  *  The anchors are real places in D03 and D09. The routes between them are
  *  fixture geography and are not surveyed paths: they are the right length in
  *  the right place, which is what a mock corpus owes you. The surveyed lines
- *  arrive with the dataset. docs/data-pipeline.md */
+ *  arrive with the dataset. docs/data-pipeline.md
+ *
+ *  Say that plainly, because it decides what these are good for. A walk here
+ *  starts at a real place, visits real places in a sensible order and is the
+ *  distance it claims, so it is worth walking. The drawn line between those
+ *  places does not follow streets and will cut across a block on the map.
+ *  Follow the anchors, not the line, until slice 5 routes them for real. */
 import { writeFileSync } from "node:fs";
 
 const R = 6371000;
@@ -243,6 +249,120 @@ const POINTS = [
   },
 ];
 
+/* ---- more ground in D03 and D09 ---------------------------------------- */
+
+const MORE_POINTS = [
+  ["p-marino-crescent", "Marino Crescent", "Cor Mhaire Nó", "Terrace", "built", "Marino",
+   53.3647, -6.2310, "A Georgian crescent built, they say, out of spite.",
+   ["Free", "Street", "18th century", "Literary"],
+   [["fact", "Born at number fifteen",
+     "Bram Stoker was born at 15 Marino Crescent in 1847 and lived there as a child. The house is still a private one and is marked only by a plaque."],
+    ["architecture", "A wall of houses",
+     "Built in 1792 by Charles Ffolliott. Tradition has it he laid the terrace out to block Lord Charlemont's view of the sea from the Casino, after a dispute over the carting of building material across his land."]]],
+
+  ["p-clontarf-castle", "Clontarf Castle", "Caisleán Chluain Tarbh", "Castle", "built", "Clontarf",
+   53.3652, -6.2076, "A Victorian castle on ground that has held one since the Normans.",
+   ["Paid entry", "Hotel", "19th century", "Castle"],
+   [["architecture", "Morrison's rebuild",
+     "What stands is an 1837 rebuild by William Vitruvius Morrison, in the baronial manner of the time. The castle it replaced was medieval, and the site has been fortified since not long after the Norman arrival."],
+    ["placename", "Cluain Tarbh",
+     "The meadow of the bull. The same name gives Clontarf its own, and the battle fought near here in 1014 took it from the ground rather than the other way round."]]],
+
+  ["p-wooden-bridge", "The Wooden Bridge", "An Droichead Adhmaid", "Bridge", "built", "Clontarf",
+   53.3663, -6.1755, "A timber causeway onto an island that did not exist before it.",
+   ["Free", "Coastal", "19th century", "Level walking"],
+   [["fact", "Older than the island it reaches",
+     "The bridge was put across to carry stone out for the Bull Wall. The wall changed how the tide ran, sand began to settle behind it, and Bull Island grew afterwards. The crossing is older than the ground at the far end of it."]]],
+
+  ["p-dollymount", "Dollymount Strand", "Trá Dhumhach", "Strand", "water", "Clontarf",
+   53.3690, -6.1455, "Five kilometres of sand inside a capital city.",
+   ["Free", "Coastal", "Level walking", "Biosphere"],
+   [["fact", "A biosphere by accident",
+     "Bull Island is a UNESCO biosphere reserve, and the only one that lies inside a capital city. None of it was planned: it is silt that the Bull Wall stopped moving."]]],
+
+  ["p-croydon-park", "Croydon Park", "Páirc Croydon", "Park", "green", "Fairview",
+   53.3672, -6.2352, "A small park that fed the children of the 1913 Lockout.",
+   ["Free", "Level walking", "Labour history", "20th century"],
+   [["fact", "Drill ground and soup kitchen",
+     "Croydon Park House was rented by the ITGWU as a recreation ground. During the 1913 Lockout it was where strikers' families were fed, and where the Irish Citizen Army drilled in the open."]]],
+
+  ["p-griffith-park", "Griffith Park", "Páirc Uí Ghríofa", "Riverside park", "green", "Drumcondra",
+   53.3728, -6.2617, "A long green strip following the Tolka.",
+   ["Free", "Level walking", "Riverside", "20th century"],
+   [["fact", "Laid out on a flood plain",
+     "The park follows the Tolka because the ground either side of the river floods. Keeping it as parkland was the cheaper answer to a river that comes up, and the paths still go under in a bad winter."]]],
+
+  ["p-griffith-avenue", "Griffith Avenue", "Ascaill Uí Ghríofa", "Avenue", "green", "Marino",
+   53.3748, -6.2398, "A long avenue of limes, laid out with the houses.",
+   ["Free", "Street", "Trees", "20th century"],
+   [["fact", "The longest, it is claimed",
+     "Griffith Avenue is regularly called the longest tree-lined avenue in Europe. The claim is hard to stand up and easy to enjoy. The limes were planted with the houses in the 1920s and 1930s."],
+    ["placename", "Named for Arthur Griffith",
+     "Laid out in the years after independence and named for Arthur Griffith, who had died in 1922."]]],
+
+  ["p-killester", "Killester", "Cill Easra", "Housing scheme", "built", "Killester",
+   53.3722, -6.1972, "Cottages built for men who came back from the First World War.",
+   ["Free", "Street", "20th century", "Social history"],
+   [["fact", "The ex-servicemen's cottages",
+     "The estate was built in the 1920s for Irish veterans of the First World War, under a scheme meant to house men returning to a country that had changed while they were away. The long gardens and low cottages are still the shape of it."]]],
+
+  ["p-rose-garden", "The Rose Garden", "An Gairdín Rósanna", "Garden", "green", "Raheny",
+   53.3742, -6.1693, "A walled trial garden inside the old Guinness demesne.",
+   ["Free", "Level walking", "Seasonal", "Garden"],
+   [["fact", "A garden that judges roses",
+     "The rose garden is a trial ground: new varieties are grown here and assessed over several seasons before anyone puts a name to them. Best of it is high summer."]]],
+
+  ["p-tolka-estuary", "The Tolka Estuary", "Inbhear na Tulchann", "Estuary", "water", "Fairview",
+   53.3610, -6.2408, "Where the Tolka meets the tide, and where Fairview used to end.",
+   ["Free", "Coastal", "Birds", "Level walking"],
+   [["fact", "The old shoreline",
+     "Fairview Strand is a street nowhere near the sea because it used to be one. The slob lands were reclaimed in the 1900s and the park was laid out on them; the estuary is what is left of the water that was there."]]],
+];
+
+for (const [id, name, nameGa, category, group, townland, lat, lng, blurb, tags, lore] of MORE_POINTS) {
+  POINTS.push({ id, name, nameGa, category, group, townland, lat, lng, visited: false, blurb, tags, lore });
+}
+
+/** The compact table. Everything here is a short walk anchored to real ground
+ *  in D03 and D09, which is where these are meant to be walked. */
+const SMALL = [
+  // ---- trots, 900 to 1300m -------------------------------------------------
+  ["q-t-fairview-park",   "Fairview Park Round",        "trot", 53.3640, -6.2380, "Fairview Park",   "Fairview",   1100, "loop", "made",    6,  "A circuit of the park that was mudflat inside living memory.",                 "p-fairview"],
+  ["q-t-marino-crescent", "Marino Crescent",            "trot", 53.3647, -6.2310, "Marino Crescent", "Marino",     1000, "loop", "made",    8,  "The crescent, the green in front of it, and the house Bram Stoker was born in.", "p-marino-crescent"],
+  ["q-t-casino",          "The Casino Grounds",         "trot", 53.3692, -6.2286, "Marino",          "Marino",     950,  "loop", "made",    10, "Once round the lawn of a garden temple that hides sixteen rooms.",             "p-casino-marino"],
+  ["q-t-croydon",         "Croydon Park",               "trot", 53.3672, -6.2352, "Croydon Park",    "Fairview",   1000, "loop", "made",    7,  "A small park with more history in it than its size suggests.",                 "p-croydon-park"],
+  ["q-t-clontarf-prom",   "The Promenade",              "trot", 53.3625, -6.2050, "Clontarf Road",   "Clontarf",   1200, "line", "made",    4,  "Out along the seafront and back, with the bay open the whole way.",            null],
+  ["q-t-clontarf-castle", "Clontarf Castle Walls",      "trot", 53.3652, -6.2076, "Clontarf",        "Clontarf",   1050, "loop", "made",    9,  "Round the castle grounds and back by the road.",                               "p-clontarf-castle"],
+  ["q-t-griffith-park",   "Griffith Park and the Tolka","trot", 53.3728, -6.2617, "Drumcondra",      "Drumcondra", 1200, "loop", "unpaved", 5,  "The river path out and the top of the park back.",                             "p-griffith-park"],
+  ["q-t-griffith-limes",  "The Griffith Avenue Limes",  "trot", 53.3748, -6.2398, "Griffith Avenue", "Marino",     1300, "line", "made",    6,  "A stretch of the long avenue and back under the same trees.",                  "p-griffith-avenue"],
+  ["q-t-vernon",          "Vernon Avenue to the Water", "trot", 53.3672, -6.1884, "Vernon Avenue",   "Clontarf",   1100, "line", "made",    12, "Down the avenue to the seafront and back up it.",                              null],
+  ["q-t-rose-garden",     "St Anne's Rose Garden",      "trot", 53.3742, -6.1693, "Raheny",          "Raheny",     1000, "loop", "unpaved", 5,  "The walled garden and the trees around it.",                                   "p-rose-garden"],
+
+  // ---- strolls, 2600 to 3400m ---------------------------------------------
+  ["q-s-castle-prom",     "The Castle and the Shore",   "stroll", 53.3625, -6.2050, "Clontarf Road",   "Clontarf",   2700, "loop", "made",    14, "Along the seafront, up to the castle, back down by the road.",            "p-clontarf-castle"],
+  ["q-s-fairview-marino", "Fairview to the Crescent",   "stroll", 53.3640, -6.2380, "Fairview Park",   "Fairview",   2800, "loop", "made",    16, "The park, then the Georgian crescent behind it.",                         "p-marino-crescent"],
+  ["q-s-croydon-fairview","Two Parks in Fairview",      "stroll", 53.3640, -6.2380, "Fairview Park",   "Fairview",   2900, "loop", "made",    12, "The big park and the small one, and the Lockout history in between.",     "p-croydon-park"],
+  ["q-s-crescent-casino", "Crescent and Casino",        "stroll", 53.3647, -6.2310, "Marino Crescent", "Marino",     3000, "loop", "made",    18, "The terrace that blocked the view, then the building it was blocking.",   "p-casino-marino"],
+  ["q-s-tolka-botanic",   "The Tolka to the Gardens",   "stroll", 53.3728, -6.2617, "Drumcondra",      "Drumcondra", 3100, "loop", "unpaved", 15, "The river path west to the glasshouses and back along the top.",          "p-botanic"],
+  ["q-s-limes-casino",    "Limes and the Casino",       "stroll", 53.3748, -6.2398, "Griffith Avenue", "Marino",     3200, "loop", "made",    20, "Down the avenue of limes and round the garden temple at the end of it.",  "p-casino-marino"],
+  ["q-s-yacht-vernon",    "Belgrove and the Bay",       "stroll", 53.3637, -6.1958, "Clontarf",        "Clontarf",   2900, "loop", "made",    16, "Up through the avenues and back along the water.",                        null],
+  ["q-s-vernon-bridge",   "Out to the Wooden Bridge",   "stroll", 53.3672, -6.1884, "Vernon Avenue",   "Clontarf",   3000, "loop", "made",    10, "Down to the causeway that made the island, and back by the shore.",       "p-wooden-bridge"],
+  ["q-s-stannes-roses",   "St Anne's and the Roses",    "stroll", 53.3735, -6.1740, "Raheny",          "Raheny",     2800, "loop", "unpaved", 14, "The demesne paths and the walled garden inside them.",                    "p-rose-garden"],
+  ["q-s-killester",       "Killester and Donnycarney",  "stroll", 53.3722, -6.1972, "Killester",       "Killester",  3300, "loop", "made",    22, "The ex-servicemen's cottages and the long gardens behind them.",          "p-killester"],
+];
+
+const ENCOUNTERS = {
+  made:    ["terrain", "Pavement throughout"],
+  unpaved: ["terrain", "Soft underfoot after rain"],
+  rough:   ["terrain", "Rough ground in places"],
+};
+
+const HONESTY = {
+  made:    ["Road crossings", "Lit for most of it"],
+  unpaved: ["Muddy after rain", "Unlit in places"],
+  rough:   ["Uneven underfoot", "Not for a pushchair"],
+};
+
 const QUESTS = [
   {
     id: "q-bull-island", plate: "quest-bull-island", startName: "Clontarf Road",
@@ -378,6 +498,44 @@ const QUESTS = [
     ],
   },
 ];
+
+/* ---- expand the compact table ------------------------------------------ */
+
+/** Walking pace, metres per minute. 72 is a shade over 4.3 km/h, which is an
+ *  unhurried adult on the flat. Derived rather than typed twenty times: a
+ *  duration that disagrees with its own distance is the kind of thing nobody
+ *  notices until a walker is standing in the dark. */
+const DURATION_M_PER_MIN = 72;
+
+const byPointId = new Map(MORE_POINTS.map((p) => [p[0], p]));
+
+for (const [id, title, tier, lat, lng, startName, townland, distanceM, shape, surface, ascentM, flavour, pointId] of SMALL) {
+  const named = pointId
+    ? (byPointId.get(pointId)?.[1] ?? POINTS.find((p) => p.id === pointId)?.name)
+    : null;
+  if (pointId && !named) throw new Error(`${id} links ${pointId}, which is not a point`);
+
+  QUESTS.push({
+    id, plate: `quest-${id.replace(/^q-[ts]-/, "")}`, startName,
+    start: { lat, lng },
+    title, flavour, tier, shape, surface, ascentM,
+    distanceM,
+    durationMin: Math.round(distanceM / DURATION_M_PER_MIN),
+    townland,
+    honesty: HONESTY[surface],
+    encounters: [
+      ...(named ? [["point", named]] : []),
+      ENCOUNTERS[surface],
+      ["view", shape === "line" ? "The way back, from the other side" : "The turn for home"],
+    ],
+    /* A linked objective is placed on its point and its distance along is read
+       off the route. An unlinked one is a moment on the walk, so it is put at
+       the halfway mark, which on a loop is the far side. */
+    objectives: named
+      ? [[named, pointId, true, Math.round(distanceM * 0.45)]]
+      : [[shape === "line" ? "The turn" : "The far side", null, false, Math.round(distanceM * 0.5)]],
+  });
+}
 
 /* ---- emit -------------------------------------------------------------- */
 
