@@ -285,6 +285,50 @@ matters enough to want one.
 
 ---
 
+## Slice 5 arrived early: routing on the tiles we already have
+
+The plan had routing waiting on a Valhalla build or a PostGIS graph, both of
+which need infrastructure nobody has approved and data this machine cannot
+reach. It turned out not to need either.
+
+The basemap tiles already carry the `transportation` layer, which is the roads
+and the paths, and MapLibre keeps them parsed in memory for every tile it has
+loaded. So the router reads the map rather than the network:
+`lib/map/streets.ts` pulls the walkable classes out, `lib/quest/graph.ts`
+welds them into a graph and runs A* over it, and the assembler routes a walk on
+real ways.
+
+Three things make it work rather than nearly work.
+
+**Welding.** Vector tiles are cut at their boundaries, so one street arrives as
+two lines whose ends nearly coincide. Without stitching nodes within two metres
+of each other, every tile edge is a wall the router cannot cross.
+
+**Length leads, not the point.** Routing out to the nearest point and back gives
+whatever distance the streets happen to give, which is how a stroll comes out
+four hundred metres long. The turning point is chosen by how far away it is on
+foot, half the walk out, and among candidates at roughly that distance the one
+nearest something worth seeing wins. The point is then whatever the finished
+route passes close to.
+
+**The two shapes are actually two shapes.** A there and back returns along the
+ways it went out, which is what the words mean. A loop routes the return again
+with the outward edges made four times as expensive, so it comes home by other
+streets wherever other streets exist and retraces only where there is genuinely
+no other way. A dead end still gets you home rather than refusing to produce a
+walk.
+
+**What is verified and what is not.** The graph and the router are tested
+against a synthetic street grid: welding across a tile cut, refusing to invent a
+crossing between two streets twenty metres apart, shortest paths, both shapes,
+dead ends, and staying on the network. The adapter that pulls features out of
+MapLibre is not tested at all, because every tile host is blocked from this
+machine. It fails safe in every direction: no basemap, no tiles, or no streets
+near the walker all produce an empty list, and an empty list is the geometric
+route the app drew before any of this existed.
+
+---
+
 ## Slice 2: the survey plate style
 
 "Correct map presentation" is a stylesheet, and it is its own slice because it

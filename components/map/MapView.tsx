@@ -12,6 +12,8 @@ import {
   type Fix,
 } from "@/lib/location";
 import { BASEMAP_URL, surveyStyle } from "@/lib/map/style";
+import { walkableLines } from "@/lib/map/streets";
+import type { Path } from "@/lib/quest/route";
 import type { LatLng } from "@/lib/data";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
 import { AddWheel, type WheelOption } from "@/components/map/AddWheel";
@@ -31,6 +33,12 @@ export interface MapMarker {
 export interface MapViewHandle {
   /** Start following the walker, skipping the gate. */
   locate: () => void;
+  /** Put the camera somewhere and settle, so the tiles for that ground load.
+   *  Resolves when the map is idle, or after a moment if it never settles. */
+  settleOn: (at: LatLng, zoom?: number) => Promise<void>;
+  /** The walkable ways the basemap has loaded, for the router. Empty whenever
+   *  there is no basemap, no tiles, or no ground covered yet. */
+  streets: () => Path[];
 }
 
 export interface MapViewProps {
@@ -438,7 +446,23 @@ export function MapView({
     void locate();
   }, [locate, onAskLocation]);
 
-  useImperativeHandle(ref, () => ({ locate: () => void locate() }), [locate]);
+  useImperativeHandle(ref, () => ({
+    locate: () => void locate(),
+    settleOn: (at: LatLng, zoom = 15) => new Promise<void>((resolve) => {
+      const m = map.current;
+      if (!m) { resolve(); return; }
+      /* Resolve on idle, which is when the tiles for this ground have arrived
+         and been parsed. The timeout is the floor: on a dead network idle never
+         comes, and a picker that waits forever for a basemap it will not get is
+         worse than one that routes geometrically. */
+      let done = false;
+      const finish = () => { if (done) return; done = true; m.off("idle", finish); resolve(); };
+      m.on("idle", finish);
+      window.setTimeout(finish, 2500);
+      m.jumpTo({ center: [at.lng, at.lat], zoom });
+    }),
+    streets: () => (map.current ? walkableLines(map.current) : []),
+  }), [locate]);
 
 
   const north = useCallback(() => {

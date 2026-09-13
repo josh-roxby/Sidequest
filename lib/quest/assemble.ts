@@ -2,6 +2,7 @@ import { distanceM } from "../geo.ts";
 import { TIERS, type LatLng, type Objective, type Point, type Quest, type QuestShape, type Tier }
   from "../data/types.ts";
 import { alongRoute, atAlong, circleRoute, offset, viaRoute, type Path } from "./route.ts";
+import { buildGraph, routeOfLength, type Graph } from "./graph.ts";
 
 /** Building a walk from where the walker is standing.
  *
@@ -32,6 +33,9 @@ export interface Assembled {
   /** The point the walk was built around, when there was one in reach. Null
    *  means the walk is real and the ground around it is simply unrecorded. */
   anchor: Point | null;
+  /** Whether the line follows real ways. False means it was drawn
+   *  geometrically and will cut across blocks, which the walker is told. */
+  routed: boolean;
 }
 
 /** Points worth aiming at, nearest first, inside the tier's reach. */
@@ -73,13 +77,17 @@ function durationMin(distanceM_: number, stops: number): number {
  *  `shape` "either" lets the assembler pick, which it does by preferring a
  *  loop: a loop shows you more ground for the same distance. */
 export function assembleQuest({
-  from, tier, shape = "either", points, seed = "",
+  from, tier, shape = "either", points, seed = "", streets,
 }: {
   from: LatLng;
   tier: Tier;
   shape?: QuestShape | "either";
   points: Point[];
   seed?: string;
+  /** Walkable ways from the basemap tiles, when the map has any loaded. Given
+   *  these the route follows pavements and park paths; without them it is drawn
+   *  geometrically and says so. */
+  streets?: Path[];
 }): Assembled {
   const spec = TIERS.find((t) => t.id === tier)!;
   /* Midway through the tier's band. Picking the floor makes every walk feel
@@ -89,6 +97,69 @@ export function assembleQuest({
   const key = `${seed}|${tier}|${wanted}|${from.lat.toFixed(4)},${from.lng.toFixed(4)}`;
 
   const near = candidates(from, points, spec.reachM);
+  const graph: Graph | null = streets && streets.length > 0 ? buildGraph(streets) : null;
+
+  /* With a street graph the walk is routed on real ways, and the distance comes
+     out of the route rather than being imposed on it. So the point to aim at is
+     the one whose round trip lands nearest the tier's target while staying
+     inside the tier's band: picking the nearest point regardless would hand
+     someone a four hundred metre "stroll".
+     
+     Without a graph it falls back to the nearest point the geometry can reach
+     at the stated distance, which is what this did before and is still better
+     than nothing. */
+  if (graph) {
+    /* Length leads. The turning point is whatever is half a walk away on foot,
+       preferring one near something worth reaching, so the walk comes out the
+       length the tier promises instead of however far the nearest point
+       happens to be. */
+    const r = routeOfLength(graph, from, targetM, wanted,
+      near.map(({ p }) => ({ lat: p.lat, lng: p.lng })));
+
+    if (r && r.metres >= spec.minM && r.metres <= spec.maxM) {
+      /* A point counts as on the walk if the route passes close enough to
+         stand at it. Routed walks turn where the streets allow, which is not
+         always the doorstep. */
+      const onRoute = near
+        .map(({ p }) => ({ p, d: nearestOnPath(r.path, { lat: p.lat, lng: p.lng }) }))
+        .filter((x) => x.d < 120)
+        .sort((a, b) => a.d - b.d)[0]?.p ?? null;
+
+      const shapeLine = wanted === "loop"
+        ? "A loop: it comes home a different way"
+        : "There and back along the same way";
+
+      return {
+        anchor: onRoute,
+        routed: true,
+        quest: buildQuest({
+          key, from, tier, shape: wanted, targetM: r.metres, path: r.path,
+          title: onRoute ? onRoute.name : "A walk from your door",
+          flavour: onRoute
+            ? `Out to ${onRoute.name} and back, on the streets and paths as the map has them.`
+            : "Routed on real ways from where you are standing. Nothing of ours is logged along it, so what you find is yours.",
+          objectives: onRoute
+            ? [{
+                id: "o-1", pointId: onRoute.id, label: onRoute.name, required: true,
+                reached: false, atM: atAlong(r.path, { lat: onRoute.lat, lng: onRoute.lng }),
+                lat: onRoute.lat, lng: onRoute.lng,
+              }]
+            : [{
+                id: "o-1", pointId: null, label: "The turn for home", required: false,
+                reached: false, atM: Math.round(r.metres / 2), ...r.turn,
+              }],
+          encounters: [
+            ...(onRoute
+              ? [{ kind: "point" as const, label: onRoute.name, detail: onRoute.blurb }]
+              : [{ kind: "terrain" as const, label: "Unrecorded ground", detail: "We have nothing logged along this one" }]),
+            { kind: "terrain", label: "Streets and paths as the map has them" },
+          ],
+          honesty: ["Built from where you are standing", shapeLine],
+          stops: onRoute ? 1 : 0,
+        }),
+      };
+    }
+  }
 
   /* Nearest first, but a point is only usable if the route out to it and back
      fits inside the distance the tier promises. A point at the very edge of the
@@ -100,6 +171,7 @@ export function assembleQuest({
     if (!path) continue;
     return {
       anchor: p,
+      routed: false,
       quest: buildQuest({
         key, from, tier, shape: wanted, targetM, path,
         title: p.name,
@@ -125,6 +197,7 @@ export function assembleQuest({
   const path = viaRoute(from, [turn], targetM) ?? circleRoute(from, targetM, key);
   return {
     anchor: null,
+    routed: false,
     quest: buildQuest({
       key, from, tier, shape: wanted, targetM, path,
       title: "Ground we have not recorded",
@@ -146,7 +219,7 @@ export function assembleQuest({
 function buildQuest(a: {
   key: string; from: LatLng; tier: Tier; shape: QuestShape; targetM: number;
   path: Path; title: string; flavour: string; objectives: Objective[];
-  encounters: Quest["encounters"]; stops: number;
+  encounters: Quest["encounters"]; stops: number; honesty?: string[];
 }): Quest {
   return {
     /* Stamped with the position it was built from, so the same walker asking
@@ -165,7 +238,7 @@ function buildQuest(a: {
     townland: "",
     start: a.from,
     startName: "Where you are",
-    honesty: [
+    honesty: a.honesty ?? [
       "Built from where you are standing",
       "The line is not a surveyed route: follow the places, not the path",
     ],
@@ -179,4 +252,11 @@ function hash(s: string): string {
   let h = 2166136261;
   for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
   return (h >>> 0).toString(36);
+}
+
+/** How close a path comes to a place. */
+function nearestOnPath(path: Path, p: LatLng): number {
+  let best = Infinity;
+  for (const [lng, lat] of path) best = Math.min(best, distanceM(p, { lat, lng }));
+  return best;
 }

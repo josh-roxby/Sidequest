@@ -215,11 +215,15 @@ rather than half-migrated.
       the outside, empty at the inside and has nowhere to put a label. Worth a
       look before it is settled
 
-- [ ] **Quest routes are not surveyed lines.** The corpus is anchored to real
-      places in the right order at the right distance, but the line between
-      anchors is generated, so it does not follow streets and cannot be walked
-      turn by turn. Real routing needs OSM street data, which the build machine
-      cannot reach. Slice 5
+- [ ] **Check a routed walk on a device.** Assembled walks now route over the
+      roads and paths in the basemap tiles, which no machine here can load, so
+      the router is tested against a synthetic street grid and the adapter that
+      feeds it real tiles is not tested at all. It fails safe: no tiles means a
+      geometric line, which is what the app did before. One look settles it
+- [ ] **The committed corpus still has drawn lines, not routed ones.** The
+      twenty seven baked walks in `lib/data/mock/dublin.ts` predate the router
+      and still cut across blocks. They could be re-cut through the same graph
+      once there is a machine that can load tiles
 - [ ] **Seed the Dublin corpus into Supabase.** Asked for, not done: the
       schema in `supabase/migrations/` is unapplied, and a seed would have to
       invent `pois`, `countries` and `zones` rows against tables that exist

@@ -323,6 +323,175 @@ for (const [id, name, nameGa, category, group, townland, lat, lng, blurb, tags, 
   POINTS.push({ id, name, nameGa, category, group, townland, lat, lng, visited: false, blurb, tags, lore });
 }
 
+/* ---- 25 more, close in around Fairview, Marino and Griffith Avenue ------
+ *
+ *  Density is the point. A walk is assembled by looking for something worth
+ *  turning at within half its length, and with six points across two postal
+ *  districts most walks turned at nothing. These sit within about a kilometre
+ *  of each other so a trot has something on it, not just an adventure.
+ *
+ *  Compact rows because the lore is one paragraph each and the shape never
+ *  varies: id, name, Irish name, category, group, townland, lat, lng, blurb,
+ *  tags, then one piece of lore as kind/title/body. */
+const CLOSE_POINTS = [
+  ["p-fairview-strand", "Fairview Strand", "Trá Fhionnradhairc", "Street", "water", "Fairview", 53.3628, -6.2432,
+   "A street called a strand, a good way from the sea.",
+   ["Free", "Street", "Reclaimed"],
+   ["placename", "A strand with no sea",
+    "The tide came up to here before the slob lands were reclaimed in the 1900s. The name outlived the water by about a century."]],
+
+  ["p-annesley-bridge", "Annesley Bridge", "Droichead Annesley", "Bridge", "built", "Fairview", 53.3606, -6.2420,
+   "The crossing where the Tolka meets the tide.",
+   ["Free", "Street", "19th century"],
+   ["architecture", "Built for a toll road",
+    "The bridge carried the road out to Clontarf and Howth, and the river beneath it is the Tolka in its last few hundred metres before the estuary."]],
+
+  ["p-marino-mart", "Marino Mart", "Margadh Mhaire Nó", "Terrace", "built", "Marino", 53.3650, -6.2296,
+   "A curved parade of shops at the gate of the scheme.",
+   ["Free", "Street", "20th century"],
+   ["architecture", "The shopfront of a housing scheme",
+    "Built with the Marino scheme in the 1920s as its shops, laid out on a curve so the parade closes the view from the main road."]],
+
+  ["p-marino-park", "Marino Park", "Páirc Mhaire Nó", "Park", "green", "Marino", 53.3676, -6.2318,
+   "The green the whole scheme was planned around.",
+   ["Free", "Level walking", "20th century"],
+   ["fact", "Garden city, built",
+    "Marino was Dublin's first big municipal housing scheme, laid out on garden city lines in the 1920s with greens and long back gardens rather than tenement yards."]],
+
+  ["p-griffith-park-weir", "The Tolka Weir", "Cora na Tulchann", "Weir", "water", "Drumcondra", 53.3722, -6.2586,
+   "A low weir with a fish pass beside it.",
+   ["Free", "Riverside", "Wildlife"],
+   ["fact", "A ladder for fish",
+    "The Tolka carries sea trout, and the passes cut beside its weirs are there so the fish can get above them to spawn."]],
+
+  ["p-drumcondra-bridge", "Drumcondra Bridge", "Droichead Dhroim Conrach", "Bridge", "built", "Drumcondra", 53.3691, -6.2564,
+   "An eighteenth century bridge still carrying the road north.",
+   ["Free", "Street", "18th century"],
+   ["architecture", "Older than the road it serves",
+    "A stone arch bridge over the Tolka, widened more than once as the road out of the city grew into a main route north."]],
+
+  ["p-clonliffe", "Clonliffe Road", "Bóthar Chluain Life", "Street", "built", "Drumcondra", 53.3654, -6.2503,
+   "A long straight run between the river and the stadium.",
+   ["Free", "Street", "Level walking"],
+   ["placename", "Cluain Life",
+    "The meadow of the Liffey, though it is the Tolka that runs beside it. Names outlast the reasons for them."]],
+
+  ["p-fairview-park-bandstand", "The Bandstand", "An Ceoláras", "Bandstand", "green", "Fairview", 53.3646, -6.2364,
+   "The bandstand in the middle of the reclaimed ground.",
+   ["Free", "Level walking", "20th century"],
+   ["fact", "Built on rubbish",
+    "Everything under this park was the foreshore until the city filled it in, largely with its own refuse, and laid the park out on top."]],
+
+  ["p-alfie-byrne", "Alfie Byrne Road", "Bóthar Alfie Byrne", "Street", "built", "Clontarf", 53.3620, -6.2214,
+   "Named for the man who was Lord Mayor ten times.",
+   ["Free", "Street", "20th century"],
+   ["fact", "Ten times Lord Mayor",
+    "Alfie Byrne was elected Lord Mayor of Dublin nine years running in the 1930s and once more after, and was known for answering his own door to anyone who called."]],
+
+  ["p-east-wall", "East Wall", "An Balla Thoir", "District", "built", "East Wall", 53.3570, -6.2340,
+   "A pocket of the city hemmed in by water on three sides.",
+   ["Free", "Street", "19th century"],
+   ["placename", "The wall itself",
+    "The name is the sea wall built to reclaim the ground. The district sits on what the wall took from the tide."]],
+
+  ["p-north-strand", "North Strand", "An Trá Thuaidh", "Street", "built", "North Strand", 53.3590, -6.2470,
+   "Another road named for a shoreline that was moved.",
+   ["Free", "Street", "20th century"],
+   ["fact", "The night of the bombs",
+    "On 31 May 1941 German bombs fell on the North Strand, killing twenty eight people and destroying much of the street. The rebuilt houses are why the terrace changes character partway along."]],
+
+  ["p-marino-institute", "Marino Institute Grounds", "Institiúid Mhaire Nó", "Grounds", "green", "Marino", 53.3702, -6.2318,
+   "Playing fields and old trees behind a long wall.",
+   ["Free", "Level walking", "Trees"],
+   ["fact", "The demesne's last green",
+    "These grounds are part of what was Lord Charlemont's demesne, and the reason the Casino still has open ground around it rather than houses."]],
+
+  ["p-griffith-crossing", "Griffith Avenue Crossing", "Crosbhealach Uí Ghríofa", "Junction", "built", "Marino", 53.3758, -6.2336,
+   "Where the long avenue meets the road north.",
+   ["Free", "Street", "20th century"],
+   ["fact", "A mile of limes each way",
+    "From this junction the avenue runs long and straight in both directions, which is what gives the claim about its length whatever truth it has."]],
+
+  ["p-donnycarney-church", "Our Lady of Consolation", "Eaglais Mhuire", "Church", "sacred", "Donnycarney", 53.3800, -6.2128,
+   "A mid century church with a free standing tower.",
+   ["Free", "Architecture", "20th century"],
+   ["architecture", "Post war modern",
+    "Built in the 1950s in a plain modern manner, with the bell tower set apart from the body of the church rather than built into it."]],
+
+  ["p-killester-park", "Killester Park", "Páirc Chill Easra", "Park", "green", "Killester", 53.3740, -6.1940,
+   "A small park in the middle of the veterans' estate.",
+   ["Free", "Level walking", "20th century"],
+   ["fact", "Green for the cottages",
+    "Laid out as part of the ex-servicemen's scheme, on the principle that the houses should have somewhere to walk to that was not a road."]],
+
+  ["p-clontarf-station", "Clontarf Road Station", "Stáisiún Bhóthar Chluain Tarbh", "Station", "built", "Clontarf", 53.3628, -6.2199,
+   "A DART halt on the old Dublin and Drogheda line.",
+   ["Free", "Transport", "19th century"],
+   ["fact", "On the 1844 alignment",
+    "The line through here opened in 1844 as the Dublin and Drogheda Railway, and the modern DART still runs on its alignment."]],
+
+  ["p-bram-stoker-park", "Bram Stoker Park", "Páirc Bram Stoker", "Park", "green", "Marino", 53.3660, -6.2302,
+   "A small green named for the crescent's most famous child.",
+   ["Free", "Level walking", "Literary"],
+   ["fact", "Named late",
+    "Stoker left Marino as a child and the park took his name long after, which is the usual order of these things."]],
+
+  ["p-fairview-crescent", "Fairview Crescent", "Corrán Fhionnradhairc", "Terrace", "built", "Fairview", 53.3636, -6.2398,
+   "A curve of red brick facing the park.",
+   ["Free", "Street", "19th century"],
+   ["architecture", "Facing what was water",
+    "The terrace was built looking out over the estuary. The park in front of it is younger than the houses."]],
+
+  ["p-tolka-park", "Tolka Park", "Páirc na Tulchann", "Ground", "built", "Drumcondra", 53.3668, -6.2478,
+   "A football ground wedged against the river.",
+   ["Free", "Street", "20th century"],
+   ["fact", "Hemmed in by the Tolka",
+    "The ground has been here since the 1950s and cannot grow, because the river is along one side of it and the houses are along the other."]],
+
+  ["p-richmond-road", "Richmond Road", "Bóthar Richmond", "Street", "built", "Drumcondra", 53.3672, -6.2500,
+   "The river road between Drumcondra and Fairview.",
+   ["Free", "Street", "Riverside"],
+   ["fact", "It floods",
+    "The Tolka came over this road badly in 1954 and again in 2002, which is why so much of the ground beside it is kept as parkland rather than built on."]],
+
+  ["p-croydon-green", "Croydon Green", "Faiche Croydon", "Green", "green", "Marino", 53.3684, -6.2344,
+   "A square of grass with the houses turned in towards it.",
+   ["Free", "Level walking", "20th century"],
+   ["architecture", "Turned inward on purpose",
+    "The Marino scheme puts greens inside its blocks and faces the houses onto them, which is the garden city idea in its plainest form."]],
+
+  ["p-st-vincents", "St Vincent's, Fairview", "Naomh Uinseann", "School", "built", "Fairview", 53.3658, -6.2378,
+   "A long institutional frontage on the Fairview road.",
+   ["Free", "Street", "19th century"],
+   ["architecture", "Built to be seen from the road",
+    "A nineteenth century institutional building of the kind that lined the approaches to the city, set back behind railings with its long face to the traffic."]],
+
+  ["p-philipsburgh", "Philipsburgh Avenue", "Ascaill Philipsburgh", "Street", "built", "Fairview", 53.3672, -6.2394,
+   "The spine road up from Fairview to Marino.",
+   ["Free", "Street", "Level walking"],
+   ["fact", "The way up from the water",
+    "The avenue climbs away from the old shoreline, which is why the ground rises so steadily along it from the park."]],
+
+  ["p-brian-boru", "Brian Boru Bridge", "Droichead Bhriain Bóraimhe", "Bridge", "built", "Clontarf", 53.3612, -6.2318,
+   "Named for the king killed at the battle fought nearby.",
+   ["Free", "Street", "20th century"],
+   ["fact", "The battle and the bridge",
+    "Brian Boru was killed at Clontarf in 1014 in the hour his side won. The bridge, the road and a good deal else round here carry his name."]],
+
+  ["p-marino-casino-lawn", "The Casino Lawn", "Faiche an Chasaíno", "Lawn", "green", "Marino", 53.3688, -6.2274,
+   "The open ground the garden temple was built to sit in.",
+   ["Free", "Level walking", "18th century"],
+   ["fact", "A building with a setting",
+    "The Casino was designed to be seen across open lawn from the house, and the lawn is the only part of that arrangement still doing its job."]],
+];
+
+for (const [id, name, nameGa, category, group, townland, lat, lng, blurb, tags, lore] of CLOSE_POINTS) {
+  POINTS.push({
+    id, name, nameGa, category, group, townland, lat, lng, visited: false, blurb, tags,
+    lore: [lore],
+  });
+}
+
 /** The compact table. Everything here is a short walk anchored to real ground
  *  in D03 and D09, which is where these are meant to be walked. */
 const SMALL = [

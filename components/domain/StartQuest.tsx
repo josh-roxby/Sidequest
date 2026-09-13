@@ -1,9 +1,9 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ThumbAction } from "@/components/shell/ThumbAction";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
-import { MapView } from "@/components/map/MapView";
+import { MapView, type MapViewHandle } from "@/components/map/MapView";
 import { DEFAULT_CENTRE } from "@/lib/map/project";
 import { QuestGenerating } from "./QuestGenerating";
 import { ShapeChip } from "@/components/primitives/ShapeChip";
@@ -16,6 +16,7 @@ import { useAsync } from "@/hooks/use-async";
 import { assembleQuest } from "@/lib/quest/assemble";
 import { putGenerated } from "@/lib/quest/session";
 import { getPosition } from "@/lib/location";
+import type { Path } from "@/lib/quest/route";
 
 const TIER_MARK: Record<Tier, MarkName> = {
   trot: "trot", stroll: "stroll", sidequest: "sidequest", adventure: "adventure",
@@ -45,6 +46,7 @@ export function StartQuest() {
    *  silence. */
   const [failed, setFailed] = useState<"none" | "empty" | "error">("none");
 
+  const mapRef = useRef<MapViewHandle>(null);
   const spec = TIERS.find((t) => t.id === tier)!;
   const territory = useAsync(() => data.getTerritory(), []);
   const points = useAsync(() => data.getPointsNearby(), []);
@@ -90,8 +92,22 @@ export function StartQuest() {
       } catch {
         // Falls through to the home position, and says so on the card.
       }
+      /* The preview map earns its keep here. Moving it to the walker and
+         waiting for it to settle loads the basemap tiles for that ground, and
+         those tiles carry the roads and paths the router needs. No tiles, no
+         streets, and the walk falls back to geometry rather than failing. */
+      let streets: Path[] = [];
+      if (located) {
+        try {
+          await mapRef.current?.settleOn(at, 15);
+          streets = mapRef.current?.streets() ?? [];
+        } catch {
+          // A map that will not settle is a walk drawn geometrically, not an error.
+        }
+      }
+
       const all = await data.getPointsNearby();
-      const { quest } = assembleQuest({ from: at, tier, shape, points: all });
+      const { quest } = assembleQuest({ from: at, tier, shape, points: all, streets });
 
       /* Both facts ride on the walk rather than on this screen, because this
          screen is gone a second later and the walk is what the walker reads
@@ -129,7 +145,7 @@ export function StartQuest() {
           have already cleared is the honest header for that decision. */}
       <div className="relative min-h-0 flex-1 overflow-hidden border border-rule"
         style={{ borderRadius: "var(--r-md)" }}>
-        <MapView interactive={false} initialZoom={15.7}
+        <MapView ref={mapRef} interactive={false} initialZoom={15.7}
           markers={[{ id: "you", ...DEFAULT_CENTRE, kind: "you" }]} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
           style={{ background: "linear-gradient(to top, var(--paper) 12%, transparent)" }} />

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { assembleQuest } from "../lib/quest/assemble.ts";
 import { drawnLength } from "../lib/quest/route.ts";
+import { overlap } from "../lib/quest/graph.ts";
 import { POINTS } from "../lib/data/mock/fixtures.ts";
 import { TIERS, type Point } from "../lib/data/types.ts";
 import { distanceM } from "../lib/geo.ts";
@@ -115,4 +116,91 @@ test("duration keeps pace with distance", () => {
     assert.ok(kmh > 2.5 && kmh < 5.5,
       `${tier} implies ${kmh.toFixed(1)} km/h, which is not a walk`);
   }
+});
+
+/* ---- routing on real ways ----------------------------------------------- */
+
+/** A grid of streets round Clontarf, standing in for what the basemap tiles
+ *  hand over. About 110m blocks, which is a city block. */
+function streetGrid(origin = CLONTARF, n = 22, block = 0.001) {
+  const lines: [number, number][][] = [];
+  const lat0 = origin.lat - (n / 2) * block;
+  const lng0 = origin.lng - (n / 2) * block;
+  for (let r = 0; r <= n; r++) {
+    lines.push(Array.from({ length: n + 1 }, (_, c) =>
+      [lng0 + c * block, lat0 + r * block] as [number, number]));
+  }
+  for (let c = 0; c <= n; c++) {
+    lines.push(Array.from({ length: n + 1 }, (_, r) =>
+      [lng0 + c * block, lat0 + r * block] as [number, number]));
+  }
+  return lines;
+}
+
+test("given streets, the walk stays on them", () => {
+  const streets = streetGrid();
+  const { quest, routed } = assembleQuest({
+    from: CLONTARF, tier: "stroll", shape: "loop", points: POINTS, streets,
+  });
+  assert.ok(routed, "it fell back to geometry when streets were available");
+
+  /* Every vertex of the route is a point on one of the lines it was given. A
+     line that cut across a block would not be. */
+  const onStreet = new Set(streets.flat().map(([lng, lat]) =>
+    `${lng.toFixed(5)},${lat.toFixed(5)}`));
+  for (const [lng, lat] of quest.path) {
+    assert.ok(onStreet.has(`${lng.toFixed(5)},${lat.toFixed(5)}`),
+      `the route left the street network at ${lng},${lat}`);
+  }
+});
+
+test("a routed there and back retraces itself, a routed loop does not", () => {
+  const streets = streetGrid();
+  const line = assembleQuest({
+    from: CLONTARF, tier: "stroll", shape: "line", points: POINTS, streets,
+  }).quest;
+  const loop = assembleQuest({
+    from: CLONTARF, tier: "stroll", shape: "loop", points: POINTS, streets,
+  }).quest;
+
+  assert.equal(line.shape, "line");
+  assert.equal(loop.shape, "loop");
+  assert.ok(Math.abs(overlap(line.path) - 0.5) < 0.01,
+    "a there and back does not return along the way it went out");
+  assert.ok(overlap(loop.path) < 0.3,
+    `the loop retraces ${Math.round(overlap(loop.path) * 100)}% of itself`);
+});
+
+test("a routed walk is still the distance it claims, inside its tier", () => {
+  const streets = streetGrid();
+  for (const tier of ALL_TIERS) {
+    const spec = TIERS.find((t) => t.id === tier)!;
+    const { quest, routed } = assembleQuest({
+      from: CLONTARF, tier, shape: "loop", points: POINTS, streets,
+    });
+    const drawn = drawnLength(quest.path);
+    assert.ok(Math.abs(drawn - quest.distanceM) < 30,
+      `${tier} draws ${Math.round(drawn)}m against a stated ${quest.distanceM}m`);
+    assert.ok(quest.distanceM >= spec.minM && quest.distanceM <= spec.maxM,
+      `${tier} is ${quest.distanceM}m, outside ${spec.minM}-${spec.maxM}m (routed: ${routed})`);
+  }
+});
+
+test("streets that reach nowhere near the walker are ignored, not trusted", () => {
+  /* A graph loaded for somewhere else must not drag the walk across the city.
+     Falling back to geometry is the right answer, not snapping to a far street. */
+  const elsewhere = streetGrid({ lat: 53.30, lng: -6.40 });
+  const { quest, routed } = assembleQuest({
+    from: CLONTARF, tier: "stroll", points: POINTS, streets: elsewhere,
+  });
+  assert.equal(routed, false, "it routed onto streets nowhere near the walker");
+  const first = { lng: quest.path[0][0], lat: quest.path[0][1] };
+  assert.ok(distanceM(first, CLONTARF) < 5, "the walk no longer starts where the walker is");
+});
+
+test("an empty street list behaves exactly as no street list", () => {
+  const withNone = assembleQuest({ from: CLONTARF, tier: "trot", points: POINTS, streets: [] });
+  const without = assembleQuest({ from: CLONTARF, tier: "trot", points: POINTS });
+  assert.equal(withNone.routed, false);
+  assert.deepEqual(withNone.quest.path, without.quest.path);
 });
