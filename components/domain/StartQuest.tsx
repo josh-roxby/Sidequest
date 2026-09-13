@@ -13,6 +13,9 @@ import { estimateDurationS, formatDistance, formatDuration } from "@/lib/walking
 import { cn } from "@/lib/cn";
 import { distanceM } from "@/lib/geo";
 import { useAsync } from "@/hooks/use-async";
+import { assembleQuest } from "@/lib/quest/assemble";
+import { putGenerated } from "@/lib/quest/session";
+import { getPosition } from "@/lib/location";
 
 const TIER_MARK: Record<Tier, MarkName> = {
   trot: "trot", stroll: "stroll", sidequest: "sidequest", adventure: "adventure",
@@ -73,9 +76,32 @@ export function StartQuest() {
     setFailed("none");
     setPending(null);
     try {
-      const all = await data.getQuests(tier);
-      const match = all.filter((q) => shape === "either" || q.shape === shape);
-      setPending((match.length ? match : all)[0] ?? null);
+      /* Where the walker actually is, asked for here because this is a press.
+         A refusal is not fatal: the walk is then built from the home position,
+         which is at least the right county, and the card says so. What must
+         not happen again is handing someone in Dublin a walk in Clare because
+         it happened to be first in the list. */
+      let at = DEFAULT_CENTRE;
+      let located = false;
+      try {
+        const fix = await getPosition();
+        at = { lat: fix.lat, lng: fix.lng };
+        located = true;
+      } catch {
+        // Falls through to the home position, and says so on the card.
+      }
+      const all = await data.getPointsNearby();
+      const { quest } = assembleQuest({ from: at, tier, shape, points: all });
+
+      /* Both facts ride on the walk rather than on this screen, because this
+         screen is gone a second later and the walk is what the walker reads
+         before setting off. Honesty lines are already shown in the brief. */
+      const built: Quest = located ? quest : {
+        ...quest,
+        honesty: ["Built from your home area, not from a live fix", ...quest.honesty],
+      };
+      putGenerated(built);
+      setPending(built);
     } catch {
       /* Without this the takeover stays up forever on a read that throws,
          which is a worse failure than the one it is covering. */

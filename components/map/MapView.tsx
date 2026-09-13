@@ -63,6 +63,11 @@ export interface MapViewProps {
   /** Lets the page start following once the walker has agreed to the gate it
    *  showed them, without making them press the control a second time. */
   ref?: React.Ref<MapViewHandle>;
+  /** A page's own map controls, rendered into the same column as the compass
+   *  and the recentre. Pages used to float their own stack at the same gutter
+   *  and the two landed on top of each other, which is where the squares
+   *  behind the circles came from. */
+  controls?: React.ReactNode;
 }
 
 /** How long a tile takes to pop when you step into it. Long enough to read as
@@ -96,6 +101,7 @@ const GLYPH: Record<MapMarker["kind"], MarkName | null> = {
  *  the part that mattered. docs/v1-map-build.md slice 1. */
 export function MapView({
   markers = [], trail = [], visited = [], onMarker, onUnlock, onAskLocation, ref,
+  controls,
   home = DEFAULT_CENTRE, hidden = [], interactive = true, fit, initialZoom = 13,
   onLocate, onLocateFail,
 }: MapViewProps) {
@@ -402,7 +408,7 @@ export function MapView({
           {accuracyPx > 14 ? (
             <div
               aria-hidden
-              className="pointer-events-none absolute z-0 border border-rust/30 bg-rust/10"
+              className="pointer-events-none absolute z-20 border border-rust/40 bg-rust/10"
               style={{
                 left: screen.you.x, top: screen.you.y,
                 width: accuracyPx * 2, height: accuracyPx * 2,
@@ -417,7 +423,7 @@ export function MapView({
                bearing so it points at the ground, not at the screen. */
             <div
               aria-hidden
-              className="pointer-events-none absolute z-0"
+              className="pointer-events-none absolute z-20"
               style={{
                 left: screen.you.x, top: screen.you.y,
                 width: 0, height: 0,
@@ -454,7 +460,11 @@ export function MapView({
             onClick={() => onMarker?.(mk.id)}
             disabled={!onMarker}
             className={cn(
-              "absolute z-10 flex items-center justify-center border",
+              /* The walker outranks everything else on the map. A dot hidden
+                 behind a point marker is the one thing that must never happen:
+                 it is the only mark on screen that answers "where am I". */
+              mk.kind === "you" ? "absolute z-30" : "absolute z-10",
+              "flex items-center justify-center border",
               mk.kind === "you"
                 ? "h-3.5 w-3.5 border-surface bg-rust"
                 : "h-7 w-7 bg-surface",
@@ -486,6 +496,7 @@ export function MapView({
             style={{ borderRadius: "var(--r-full)" }}>
             <Mark name="center" size={15} />
           </button>
+          {controls}
         </div>
       ) : null}
     </div>

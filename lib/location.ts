@@ -144,10 +144,25 @@ export async function watchHeading(
 
   const handler = (e: DeviceOrientationEvent) => {
     const ev = e as WebkitOrientationEvent;
-    const deg = ev.webkitCompassHeading ?? (e.alpha == null ? null : 360 - e.alpha);
+    /* `alpha` on a plain deviceorientation event is measured from wherever the
+       device happened to be when it started listening, so it is a rotation
+       rather than a heading. Only take it when the event says it is absolute,
+       or when Safari has already given us true north. */
+    const deg = ev.webkitCompassHeading
+      ?? (e.absolute && e.alpha != null ? 360 - e.alpha : null);
     if (deg == null || !Number.isFinite(deg)) return;
     onHeading(((deg % 360) + 360) % 360);
   };
+
+  /* Two events, because the useful one is not the same everywhere. Chrome on
+     Android fires `deviceorientationabsolute` and leaves `deviceorientation`
+     relative; Safari fires only `deviceorientation` and puts true north on its
+     own `webkitCompassHeading`. Listening to both and filtering on absolute
+     covers the pair without guessing which browser this is. */
+  window.addEventListener("deviceorientationabsolute", handler, true);
   window.addEventListener("deviceorientation", handler, true);
-  return () => window.removeEventListener("deviceorientation", handler, true);
+  return () => {
+    window.removeEventListener("deviceorientationabsolute", handler, true);
+    window.removeEventListener("deviceorientation", handler, true);
+  };
 }

@@ -10,7 +10,7 @@ import { ShapeChip } from "@/components/primitives/ShapeChip";
 import { Data, Label } from "@/components/primitives/Text";
 import { EncounterList } from "@/components/domain/EncounterList";
 import { Frame } from "@/components/shell/Frame";
-import { data, type Objective, type Point } from "@/lib/data";
+import { data, type Objective, type Point, type LatLng } from "@/lib/data";
 import { DEFAULT_CENTRE } from "@/lib/map/project";
 import { estimateDurationS, formatDistance, formatDuration } from "@/lib/walking";
 import { useAsync } from "@/hooks/use-async";
@@ -32,20 +32,24 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   const [noting, setNoting] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [noteCount, setNoteCount] = useState(0);
+  /* Where the walker actually is, once they have asked to be placed. Until
+     then the start of the route is the honest stand-in. */
+  const [here, setHere] = useState<LatLng | null>(null);
 
   const q = quest.data;
 
   const markers = useMemo<MapMarker[]>(() => {
-    if (!q) return [{ id: "you", ...DEFAULT_CENTRE, kind: "you" }];
+    const you = here ?? (q ? { lat: q.path[0][1], lng: q.path[0][0] } : DEFAULT_CENTRE);
+    if (!q) return [{ id: "you", ...you, kind: "you" }];
     return [
-      { id: "you", lat: q.path[0][1], lng: q.path[0][0], kind: "you" as const },
+      { id: "you", ...you, kind: "you" as const },
       ...q.objectives.map((o) => ({
         id: o.id, lat: o.lat, lng: o.lng,
         kind: (o.reached ? "objective-done" : "objective") as MapMarker["kind"],
         label: o.label,
       })),
     ];
-  }, [q]);
+  }, [q, here]);
 
   const trail = useMemo<[number, number][]>(
     () => (q?.path ?? []),
@@ -97,7 +101,37 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
     <div className="absolute inset-0 overflow-hidden">
       <MapView markers={markers} trail={trail}
         fit={fitPoints}
-        home={q?.path[0] ? { lat: q.path[0][1], lng: q.path[0][0] } : undefined} />
+        home={q?.path[0] ? { lat: q.path[0][1], lng: q.path[0][0] } : undefined}
+        /* Without this the camera flew to the walker and the dot stayed at the
+           quest start, so pressing locate moved the map away from the only mark
+           that answers "where am I". */
+        onLocate={setHere}
+        controls={
+          <>
+            <button
+              type="button"
+              onClick={() => setEnding(true)}
+              aria-label="End walk"
+              className="flex h-11 w-11 items-center justify-center border border-rust bg-rust text-field-ink active:scale-[0.97]"
+              style={{ borderRadius: "var(--r-full)" }}
+            >
+              <Mark name="flag" size={17} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setNoting(true)}
+              aria-label="Write a note"
+              className="relative flex h-11 w-11 items-center justify-center border border-rule bg-surface text-stone active:scale-[0.97]"
+              style={{ borderRadius: "var(--r-full)" }}
+            >
+              <Mark name="note" size={17} />
+              {noteCount > 0 ? (
+                <span aria-hidden className="absolute right-1.5 top-1.5 h-1.5 w-1.5 bg-field"
+                  style={{ borderRadius: "var(--r-full)" }} />
+              ) : null}
+            </button>
+          </>
+        } />
 
       {/* Opens once, on arrival, so you set off knowing roughly what is out
           there without having read the whole walk in advance. */}
@@ -258,33 +292,6 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
           you have already walked for.
         </p>
       </Frame>
-
-      {/* End walk and notes live beside the nav button rather than replacing
-          it, so the rest of the app stays reachable mid-walk. */}
-      <div className="absolute flex flex-col gap-1.5"
-        style={{ right: "var(--gutter)", top: "calc(env(safe-area-inset-top) + var(--gutter))" }}>
-        <button
-          type="button"
-          onClick={() => setEnding(true)}
-          aria-label="End walk"
-          className="flex h-11 w-11 items-center justify-center border border-rust bg-rust text-field-ink active:scale-[0.97]"
-          style={{ borderRadius: "var(--r-sm)" }}
-        >
-          <Mark name="flag" size={17} />
-        </button>
-        <button
-          type="button"
-          onClick={() => setNoting(true)}
-          aria-label="Write a note"
-          className="relative flex h-11 w-11 items-center justify-center border border-rule bg-surface text-stone active:scale-[0.97]"
-          style={{ borderRadius: "var(--r-sm)" }}
-        >
-          <Mark name="note" size={17} />
-          {noteCount > 0 ? (
-            <span aria-hidden className="absolute right-1 top-1 h-1.5 w-1.5 bg-field" />
-          ) : null}
-        </button>
-      </div>
 
       <Frame
         open={noting}
