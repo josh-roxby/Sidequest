@@ -119,7 +119,14 @@ export function StartQuest() {
       }
 
       const all = await data.getPointsNearby();
-      const { quest } = assembleQuest({ from: at, tier, shape, points: all, streets });
+      /* Fresh every press. The assembler is deterministic on purpose, so that
+         reopening a walk gives back the same walk rather than a new one under
+         the same heading; without a seed that also meant asking twice from the
+         same spot always produced the same walk, which from a desk in Fairview
+         was the Casino at Marino every single time. The seed is what makes the
+         next press a different walk while the one in hand stays put. */
+      const seed = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      const { quest } = assembleQuest({ from: at, tier, shape, points: all, streets, seed });
 
       /* Both facts ride on the walk rather than on this screen, because this
          screen is gone a second later and the walk is what the walker reads

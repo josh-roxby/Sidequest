@@ -20,13 +20,20 @@ export interface TierSpec {
   minM: number;
   maxM: number;
   reachM: number;
+  /** How many places a walk of this tier tries to take in.
+   *
+   *  A trot has time for one thing. Three hours is a long way to go for one
+   *  thing, so an adventure strings several together. It is a ceiling rather
+   *  than a quota: a walk takes in as many as fit inside the distance it
+   *  promises, and somewhere with nothing recorded still gets a walk. */
+  stops: number;
 }
 
 export const TIERS: TierSpec[] = [
-  { id: "trot",      label: "Trot",      duration: "15 MIN", targetMinutes: 15,  minM: 900,   maxM: 1300,  reachM: 350 },
-  { id: "stroll",    label: "Stroll",    duration: "45 MIN", targetMinutes: 45,  minM: 2600,  maxM: 3400,  reachM: 1000 },
-  { id: "sidequest", label: "Sidequest", duration: "1H 30",  targetMinutes: 90,  minM: 5500,  maxM: 6500,  reachM: 2000 },
-  { id: "adventure", label: "Adventure", duration: "3H 00",  targetMinutes: 180, minM: 10000, maxM: 13000, reachM: 4000 },
+  { id: "trot",      label: "Trot",      duration: "15 MIN", targetMinutes: 15,  minM: 900,   maxM: 1300,  reachM: 350,  stops: 1 },
+  { id: "stroll",    label: "Stroll",    duration: "45 MIN", targetMinutes: 45,  minM: 2600,  maxM: 3400,  reachM: 1000, stops: 1 },
+  { id: "sidequest", label: "Sidequest", duration: "1H 30",  targetMinutes: 90,  minM: 5500,  maxM: 6500,  reachM: 2000, stops: 2 },
+  { id: "adventure", label: "Adventure", duration: "3H 00",  targetMinutes: 180, minM: 10000, maxM: 13000, reachM: 4000, stops: 5 },
 ];
 
 export type CategoryGroup =

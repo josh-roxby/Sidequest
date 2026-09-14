@@ -52,24 +52,97 @@ test("the walk stays near the walker, and never sends them to another county", (
   }
 });
 
-test("it reaches for the nearest point worth reaching", () => {
-  const { quest, anchor } = assembleQuest({ from: CLONTARF, tier: "stroll", points: POINTS });
-  assert.ok(anchor, "nothing was anchored, in a corpus with points all round Clontarf");
-
+test("it reaches for a point that is actually in reach", () => {
+  /* It used to reach for the *nearest*, which is deterministic and therefore
+     the same walk every time: from a desk in Fairview, the Casino at Marino,
+     forever. Nearest was also the wrong instinct, because the tier is about
+     the time you have rather than about proximity. So the contract is now
+     weaker on purpose: somewhere real, inside the reach, and on the walk. */
   const spec = TIERS.find((t) => t.id === "stroll")!;
-  const reachable = POINTS
-    .map((p) => ({ p, d: distanceM(CLONTARF, { lat: p.lat, lng: p.lng }) }))
-    .filter((x) => x.d <= spec.reachM && x.d > 120)
-    .sort((a, b) => a.d - b.d);
-  assert.ok(reachable.length > 0, "the fixture has nothing in reach to test against");
-  assert.equal(anchor!.id, reachable[0].p.id, "a nearer point was passed over");
+  const reachable = new Set(POINTS
+    .filter((p) => {
+      const d = distanceM(CLONTARF, { lat: p.lat, lng: p.lng });
+      return d <= spec.reachM && d > 120;
+    })
+    .map((p) => p.id));
+  assert.ok(reachable.size > 0, "the fixture has nothing in reach to test against");
 
-  // And the walk actually goes there.
-  const objective = quest.objectives.find((o) => o.pointId === anchor!.id);
-  assert.ok(objective, "the anchor point is not an objective on its own walk");
-  const off = distanceM({ lat: objective!.lat, lng: objective!.lng },
-    { lat: anchor!.lat, lng: anchor!.lng });
-  assert.ok(off < 50, `the objective sits ${Math.round(off)}m from its point`);
+  for (let i = 0; i < 20; i++) {
+    const { quest, anchor } = assembleQuest({
+      from: CLONTARF, tier: "stroll", points: POINTS, seed: `seed-${i}`,
+    });
+    assert.ok(anchor, "nothing was anchored, in a corpus with points all round Clontarf");
+    assert.ok(reachable.has(anchor!.id), `${anchor!.name} is not inside the tier's reach`);
+
+    // And the walk actually goes there.
+    const objective = quest.objectives.find((o) => o.pointId === anchor!.id);
+    assert.ok(objective, "the anchor point is not an objective on its own walk");
+    const off = distanceM({ lat: objective!.lat, lng: objective!.lng },
+      { lat: anchor!.lat, lng: anchor!.lng });
+    assert.ok(off < 50, `the objective sits ${Math.round(off)}m from its point`);
+  }
+});
+
+test("asking twice gives two different walks", () => {
+  /* The complaint this exists for: every press produced the Casino at Marino.
+     A walk you have already done is not an answer to "where should I go". */
+  const sets = new Set<string>();
+  for (let i = 0; i < 30; i++) {
+    const { quest } = assembleQuest({
+      from: CLONTARF, tier: "sidequest", points: POINTS, seed: `press-${i}`,
+    });
+    sets.add(quest.objectives.map((o) => o.pointId).sort().join(","));
+  }
+  assert.ok(sets.size > 10,
+    `thirty presses produced ${sets.size} different walks, which is a rut`);
+});
+
+test("the same seed still opens the same walk", () => {
+  /* The other half of it. Randomness lives in the seed the caller passes, not
+     inside the assembler, so reopening a walk gives back that walk rather than
+     a new one under the same heading. */
+  const once = assembleQuest({ from: CLONTARF, tier: "sidequest", points: POINTS, seed: "fixed" }).quest;
+  const twice = assembleQuest({ from: CLONTARF, tier: "sidequest", points: POINTS, seed: "fixed" }).quest;
+  assert.equal(once.id, twice.id);
+  assert.deepEqual(once.path, twice.path);
+  assert.deepEqual(once.objectives, twice.objectives);
+});
+
+test("a longer walk takes in more places", () => {
+  /* Three hours is a long way to go for one thing. */
+  for (const tier of ALL_TIERS) {
+    const spec = TIERS.find((t) => t.id === tier)!;
+    const counts: number[] = [];
+    for (let i = 0; i < 12; i++) {
+      const { quest } = assembleQuest({
+        from: CLONTARF, tier, points: POINTS, seed: `n-${i}`, streets: streetGrid(),
+      });
+      const stops = quest.objectives.filter((o) => o.pointId).length;
+      assert.ok(stops <= spec.stops,
+        `a ${tier} took in ${stops} places against a ceiling of ${spec.stops}`);
+      counts.push(stops);
+    }
+    /* A ceiling, not a quota: somewhere thin still gets a walk. But where the
+       corpus is thick the tier should be using the room it has. */
+    assert.ok(Math.max(...counts) === spec.stops,
+      `no ${tier} ever reached its ${spec.stops} places, in a corpus full of them`);
+  }
+});
+
+test("every place a walk names is a real point, and the walk passes it", () => {
+  for (const tier of ALL_TIERS) {
+    const { quest } = assembleQuest({
+      from: CLONTARF, tier, points: POINTS, seed: "x", streets: streetGrid(),
+    });
+    for (const o of quest.objectives.filter((x) => x.pointId)) {
+      const p = POINTS.find((q) => q.id === o.pointId);
+      assert.ok(p, `${tier} names ${o.pointId}, which is in no corpus`);
+      const closest = Math.min(...quest.path.map(([lng, lat]) =>
+        distanceM({ lat, lng }, { lat: p!.lat, lng: p!.lng })));
+      assert.ok(closest < 200,
+        `${tier} claims ${p!.name} but passes ${Math.round(closest)}m from it`);
+    }
+  }
 });
 
 test("empty ground still produces a walk, and says that it has nothing on it", () => {

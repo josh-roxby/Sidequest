@@ -1,8 +1,8 @@
 import { distanceM } from "../geo.ts";
 import { TIERS, type LatLng, type Objective, type Point, type Quest, type QuestShape, type Tier }
   from "../data/types.ts";
-import { alongRoute, atAlong, circleRoute, offset, viaRoute, type Path } from "./route.ts";
-import { buildGraph, routeOfLength, type Graph } from "./graph.ts";
+import { alongRoute, atAlong, circleRoute, offset, rng, viaRoute, type Path } from "./route.ts";
+import { buildGraph, routeOfLength, routeVia, type Graph } from "./graph.ts";
 
 /** Building a walk from where the walker is standing.
  *
@@ -42,10 +42,103 @@ export interface Assembled {
 function candidates(from: LatLng, points: Point[], reachM: number): { p: Point; d: number }[] {
   return points
     .map((p) => ({ p, d: distanceM(from, { lat: p.lat, lng: p.lng }) }))
-    /* Inside the radius, and far enough out to be somewhere to go: a point you
-       are already standing on makes a walk with no journey in it. */
+    /* Inside the radius, and far enough out to be worth setting off for: a
+       point you are already standing on is not somewhere to walk to. */
     .filter((x) => x.d <= reachM && x.d > 120)
     .sort((a, b) => a.d - b.d);
+}
+
+/** How much of the walk's length may be spent simply reaching its places.
+ *
+ *  The chain from the start through every stop and home is a straight-line
+ *  floor on the route: real streets are always longer. Leaving a quarter of the
+ *  distance in hand is what stops a five point adventure being picked as a
+ *  twenty kilometre walk. */
+const CHAIN_BUDGET = 0.75;
+
+/** The places this walk will take in, picked at random from what is in reach.
+ *
+ *  It used to take the nearest point and nothing else, which is deterministic
+ *  and therefore the same walk every single time: from a desk in Fairview the
+ *  answer was the Casino at Marino, again, forever. Nearest is also the wrong
+ *  instinct. The point of the tier is the time you have, not proximity, and a
+ *  walker who asks for three hours has said they want to go somewhere.
+ *
+ *  So the order is shuffled and stops are taken while they fit. The seed is the
+ *  caller's, which is how the same opened walk stays the same walk while a
+ *  fresh press gets a fresh one. */
+function chooseStops(
+  near: { p: Point; d: number }[], want: number, from: LatLng, targetM: number,
+  next: () => number,
+): Point[] {
+  const pool = [...near];
+  /* Fisher-Yates on the seeded stream. Sorting by a random key instead would
+     bias towards whatever the comparator saw first. */
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(next() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  const budget = targetM * CHAIN_BUDGET;
+  const taken: Point[] = [];
+  for (const { p } of pool) {
+    if (taken.length >= want) break;
+    const trial = order(from, [...taken, p]);
+    if (chainLength(from, trial) <= budget) taken.push(p);
+  }
+  return order(from, taken);
+}
+
+/** The straight-line walk through these places and home again. */
+function chainLength(from: LatLng, stops: Point[]): number {
+  let m = 0;
+  let at: LatLng = from;
+  for (const p of stops) { m += distanceM(at, { lat: p.lat, lng: p.lng }); at = p; }
+  return m + distanceM(at, from);
+}
+
+/** Stops in the order a walker would take them.
+ *
+ *  Nearest neighbour from the start. Not the shortest tour, which is the
+ *  travelling salesman and not worth solving for five points, but enough to
+ *  stop a walk crossing its own path three times on the way round. */
+function order(from: LatLng, stops: Point[]): Point[] {
+  const left = [...stops];
+  const out: Point[] = [];
+  let at: LatLng = from;
+  while (left.length) {
+    let best = 0;
+    for (let i = 1; i < left.length; i++) {
+      if (distanceM(at, { lat: left[i].lat, lng: left[i].lng })
+        < distanceM(at, { lat: left[best].lat, lng: left[best].lng })) best = i;
+    }
+    const [p] = left.splice(best, 1);
+    out.push(p);
+    at = p;
+  }
+  return out;
+}
+
+/** What to call a walk that takes in several places. */
+function titleOf(stops: Point[]): string {
+  if (stops.length === 0) return "A walk from your door";
+  if (stops.length === 1) return stops[0].name;
+  if (stops.length === 2) return `${stops[0].name} and ${stops[1].name}`;
+  return `${stops[0].name} and ${stops.length - 1} more`;
+}
+
+function flavourOf(stops: Point[], routed: boolean): string {
+  const how = routed
+    ? "on the streets and paths as the map has them"
+    : "from where you are standing";
+  if (stops.length === 0) {
+    return routed
+      ? "Routed on real ways from where you are standing. Nothing of ours is logged along it, so what you find is yours."
+      : "Nothing we know of is within reach, so this one is yours to find. The distance is right and the way back is the other half.";
+  }
+  if (stops.length === 1) return `Out to ${stops[0].name} and back, ${how}.`;
+  const names = stops.map((p) => p.name);
+  return `Round by ${names.slice(0, -1).join(", ")} and ${names.at(-1)}, ${how}.`;
 }
 
 /** The direction with the most room in it.
@@ -97,101 +190,114 @@ export function assembleQuest({
   const key = `${seed}|${tier}|${wanted}|${from.lat.toFixed(4)},${from.lng.toFixed(4)}`;
 
   const near = candidates(from, points, spec.reachM);
+  const next = rng(key);
+  const stops = chooseStops(near, spec.stops, from, targetM, next);
+  const stopAt = stops.map((p) => ({ lat: p.lat, lng: p.lng }));
+
   const graph: Graph | null = streets && streets.length > 0
     ? buildGraph(streets.map((s) => s.coords), streets.map((s) => s.level))
     : null;
 
-  /* With a street graph the walk is routed on real ways, and the distance comes
-     out of the route rather than being imposed on it. So the point to aim at is
-     the one whose round trip lands nearest the tier's target while staying
-     inside the tier's band: picking the nearest point regardless would hand
-     someone a four hundred metre "stroll".
-     
-     Without a graph it falls back to the nearest point the geometry can reach
-     at the stated distance, which is what this did before and is still better
-     than nothing. */
-  if (graph) {
-    /* Length leads. The turning point is whatever is half a walk away on foot,
-       preferring one near something worth reaching, so the walk comes out the
-       length the tier promises instead of however far the nearest point
-       happens to be. */
-    const r = routeOfLength(graph, from, targetM, wanted,
-      near.map(({ p }) => ({ lat: p.lat, lng: p.lng })));
+  const objectivesFor = (path: Path) => stops.map((p, i) => ({
+    id: `o-${i + 1}`,
+    pointId: p.id,
+    label: p.name,
+    required: true,
+    reached: false,
+    atM: atAlong(path, { lat: p.lat, lng: p.lng }),
+    lat: p.lat,
+    lng: p.lng,
+  }));
 
+  const encountersFor = (routedLine: boolean) => [
+    ...stops.map((p) => ({ kind: "point" as const, label: p.name, detail: p.blurb })),
+    ...(stops.length === 0
+      ? [{ kind: "terrain" as const, label: "Unrecorded ground", detail: "We have nothing logged along this one" }]
+      : []),
+    {
+      kind: "terrain" as const,
+      label: routedLine ? "Streets and paths as the map has them" : "Streets and paths as you find them",
+    },
+  ];
+
+  /* With a street graph the walk is routed on real ways and the distance comes
+     out of the route rather than being imposed on it.
+     
+     Two ways to route it. With places to take in, the walk calls at each of
+     them and the way home is stretched to the length the tier promises. With
+     nothing recorded in reach, length leads instead: the turn is whatever is
+     half a walk away on foot. Both come back inside the tier's band or not at
+     all, because a four hundred metre "stroll" is worse than an honest
+     straight line. */
+  if (graph) {
+    /* One shape for both, because only the walk with nothing to aim at has a
+       turning point worth naming. */
+    const r: { path: Path; metres: number; turn?: LatLng } | null = stops.length > 0
+      ? routeVia(graph, from, stopAt, wanted, targetM)
+      : routeOfLength(graph, from, targetM, wanted);
 
     if (r && r.metres >= spec.minM && r.metres <= spec.maxM) {
-      /* A point counts as on the walk if the route passes close enough to
+      /* A place counts as on the walk if the route passes close enough to
          stand at it. Routed walks turn where the streets allow, which is not
-         always the doorstep. */
-      const onRoute = near
-        .map(({ p }) => ({ p, d: nearestOnPath(r.path, { lat: p.lat, lng: p.lng }) }))
-        .filter((x) => x.d < 120)
-        .sort((a, b) => a.d - b.d)[0]?.p ?? null;
+         always the doorstep, and a stop the line never reaches is a promise
+         the walk does not keep. */
+      const missed = stops.filter((p) =>
+        nearestOnPath(r.path, { lat: p.lat, lng: p.lng }) >= 150);
 
-      const shapeLine = wanted === "loop"
-        ? "A loop: it comes home a different way"
-        : "There and back along the same way";
+      if (missed.length === 0) {
+        const shapeLine = wanted === "loop"
+          ? "A loop: it comes home a different way"
+          : "There and back along the same way";
 
-      return {
-        anchor: onRoute,
-        routed: true,
-        quest: buildQuest({
-          key, from, tier, shape: wanted, targetM: r.metres, path: r.path,
-          title: onRoute ? onRoute.name : "A walk from your door",
-          flavour: onRoute
-            ? `Out to ${onRoute.name} and back, on the streets and paths as the map has them.`
-            : "Routed on real ways from where you are standing. Nothing of ours is logged along it, so what you find is yours.",
-          objectives: onRoute
-            ? [{
-                id: "o-1", pointId: onRoute.id, label: onRoute.name, required: true,
-                reached: false, atM: atAlong(r.path, { lat: onRoute.lat, lng: onRoute.lng }),
-                lat: onRoute.lat, lng: onRoute.lng,
-              }]
-            : [{
-                id: "o-1", pointId: null, label: "The turn for home", required: false,
-                reached: false, atM: Math.round(r.metres / 2), ...r.turn,
-              }],
-          encounters: [
-            ...(onRoute
-              ? [{ kind: "point" as const, label: onRoute.name, detail: onRoute.blurb }]
-              : [{ kind: "terrain" as const, label: "Unrecorded ground", detail: "We have nothing logged along this one" }]),
-            { kind: "terrain", label: "Streets and paths as the map has them" },
-          ],
-          honesty: [
-            "Built from where you are standing",
-            "Routed on real streets and paths",
-            shapeLine,
-          ],
-          stops: onRoute ? 1 : 0,
-        }),
-      };
+        return {
+          anchor: stops[0] ?? null,
+          routed: true,
+          quest: buildQuest({
+            key, from, tier, shape: wanted, targetM: r.metres, path: r.path,
+            title: titleOf(stops),
+            flavour: flavourOf(stops, true),
+            objectives: stops.length > 0 ? objectivesFor(r.path) : [{
+              id: "o-1", pointId: null, label: "The turn for home", required: false,
+              reached: false, atM: Math.round(r.metres / 2),
+              ...(r.turn ?? alongRoute(r.path, r.metres / 2)),
+            }],
+            encounters: encountersFor(true),
+            honesty: [
+              "Built from where you are standing",
+              "Routed on real streets and paths",
+              shapeLine,
+            ],
+            stops: stops.length,
+          }),
+        };
+      }
     }
   }
 
-  /* Nearest first, but a point is only usable if the route out to it and back
-     fits inside the distance the tier promises. A point at the very edge of the
-     reach can be too far to get to and home again, so the next one down is
-     tried rather than stretching the walk past its tier. */
-  for (const { p } of near) {
-    const anchor = { lat: p.lat, lng: p.lng };
-    const path = viaRoute(from, [anchor], targetM);
+  /* No graph, or a route that would not keep its promises. Drawn geometrically
+     instead, which cuts across blocks and says so. Stops are dropped one at a
+     time from the far end until the chain fits the distance: a walk to three
+     of the four places is still a walk, and refusing to draw one is not. */
+  for (let take = stops.length; take > 0; take--) {
+    const some = stops.slice(0, take);
+    const path = viaRoute(from, some.map((p) => ({ lat: p.lat, lng: p.lng })), targetM);
     if (!path) continue;
     return {
-      anchor: p,
+      anchor: some[0],
       routed: false,
       quest: buildQuest({
         key, from, tier, shape: wanted, targetM, path,
-        title: p.name,
-        flavour: `Out to ${p.name} and back, from where you are standing.`,
-        objectives: [{
-          id: "o-1", pointId: p.id, label: p.name, required: true, reached: false,
-          atM: atAlong(path, anchor), lat: p.lat, lng: p.lng,
-        }],
+        title: titleOf(some),
+        flavour: flavourOf(some, false),
+        objectives: some.map((p, i) => ({
+          id: `o-${i + 1}`, pointId: p.id, label: p.name, required: true, reached: false,
+          atM: atAlong(path, { lat: p.lat, lng: p.lng }), lat: p.lat, lng: p.lng,
+        })),
         encounters: [
-          { kind: "point", label: p.name, detail: p.blurb },
-          { kind: "terrain", label: "Streets and paths as you find them" },
+          ...some.map((p) => ({ kind: "point" as const, label: p.name, detail: p.blurb })),
+          { kind: "terrain" as const, label: "Streets and paths as you find them" },
         ],
-        stops: 1,
+        stops: some.length,
       }),
     };
   }
@@ -208,7 +314,7 @@ export function assembleQuest({
     quest: buildQuest({
       key, from, tier, shape: wanted, targetM, path,
       title: "Ground we have not recorded",
-      flavour: "Nothing we know of is within reach, so this one is yours to find. The distance is right and the way back is the other half.",
+      flavour: flavourOf([], false),
       objectives: [{
         id: "o-1", pointId: null, label: "The turn for home", required: false,
         reached: false, atM: Math.round(targetM / 2),

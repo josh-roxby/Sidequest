@@ -24,7 +24,7 @@ export type Path = [number, number][];
 /** Deterministic noise from a seed string, so the same request draws the same
  *  walk twice. A walk that changes shape when you glance away is not a walk
  *  anybody can trust. */
-function rng(seed: string): () => number {
+export function rng(seed: string): () => number {
   let h = 2166136261;
   for (const c of seed) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
   return () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 10000) / 10000; };
