@@ -178,7 +178,15 @@ Full plan with what each slice replaces and how you know it worked in
       routing cost, duration estimate, and the line on the map. Ascent and
       contours both from the national LiDAR
 - [ ] **Slice 4. The points library.** Pipeline passes 0 to 8 into Postgres.
-      Run Clare first as a build tactic, then nationally
+      Run Clare first as a build tactic, then nationally.
+      **This is what national heritage coverage is waiting on, and it cannot be
+      started here:** data.gov.ie, the Logainm API, Wikidata and every OSM
+      endpoint are refused by this machine's proxy, so the SMR's 140,000
+      archaeological records and the NIAH's architectural prose cannot be
+      fetched, and a dataset written from memory instead would be exactly the
+      fabricated data the phase forbids. The mock corpus carries hand placed
+      heritage points for D03 and D09 only, good to about a hundred metres, as
+      a stand in. Run the pipeline somewhere with network and this goes away
 - [ ] **Slice 5. Routing and assembly.** Graph build offline, A* at request
       time. Check pgRouting before writing either
 - [ ] **Slice 6. Collecting a point.** The loop. `useLiveLocation` into the

@@ -140,3 +140,53 @@ test("both quest shapes are reachable in every tier that offers them", () => {
     assert.ok(shapes.size > 0, `${t.label} offers no shape at all`);
   }
 });
+
+/* ---- what a point has to be worth ---------------------------------------- */
+
+test("every point carries a historical reference", () => {
+  /* The complaint this exists for: the corpus filled up with street names and
+     junctions, and a walk anchored on Philipsburgh Avenue is a walk about
+     nothing. A point has to be somewhere with something recorded about it, or
+     it should not be somewhere we send anybody. */
+  const HISTORICAL = new Set(["archaeology", "architecture", "placename", "fact"]);
+  for (const p of POINTS) {
+    assert.ok(p.lore.length > 0, `${p.name} has nothing recorded about it`);
+    assert.ok(p.lore.some((l) => HISTORICAL.has(l.kind)),
+      `${p.name} carries lore but none of it is historical`);
+    assert.ok(p.blurb.trim().length > 0, `${p.name} has no blurb`);
+    for (const l of p.lore) {
+      /* A share-alike source is linked rather than quoted, so its entry
+         carries no body on purpose: PRD section 8.12. What it must carry
+         instead is somewhere to go. */
+      if (l.linkOnly) {
+        assert.ok(l.sourceUrl.startsWith("http"),
+          `${p.name}: "${l.title}" is link only and has no link`);
+        continue;
+      }
+      assert.ok(l.body.trim().length > 40,
+        `${p.name}: "${l.title}" says almost nothing`);
+    }
+  }
+});
+
+test("the corpus is not all addresses", () => {
+  /* A ceiling on filler rather than a ban on it. A street with a real story
+     attached earns its place; a corpus that is mostly streets does not. */
+  const ADDRESS = new Set(["Street", "Junction", "Avenue", "Lawn", "Green"]);
+  const addresses = POINTS.filter((p) => ADDRESS.has(p.category));
+  assert.ok(addresses.length / POINTS.length < 0.25,
+    `${addresses.length} of ${POINTS.length} points are addresses rather than places: `
+    + addresses.map((p) => p.name).join(", "));
+});
+
+test("there are places worth a detour, and they are spread about", () => {
+  /* Depth of record is what the picker leans on to choose somewhere worth
+     walking to, so a corpus with nothing deep in it gives the picker nothing
+     to work with. */
+  const deep = POINTS.filter((p) => p.lore.length >= 2);
+  assert.ok(deep.length >= 10,
+    `only ${deep.length} points have more than one thing recorded about them`);
+  const townlands = new Set(deep.map((p) => p.townland));
+  assert.ok(townlands.size >= 5,
+    `the well recorded places are all in ${[...townlands].join(", ")}`);
+});

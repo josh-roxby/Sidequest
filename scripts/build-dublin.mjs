@@ -406,11 +406,6 @@ const CLOSE_POINTS = [
    ["fact", "The demesne's last green",
     "These grounds are part of what was Lord Charlemont's demesne, and the reason the Casino still has open ground around it rather than houses."]],
 
-  ["p-griffith-crossing", "Griffith Avenue Crossing", "Crosbhealach Uí Ghríofa", "Junction", "built", "Marino", 53.3758, -6.2336,
-   "Where the long avenue meets the road north.",
-   ["Free", "Street", "20th century"],
-   ["fact", "A mile of limes each way",
-    "From this junction the avenue runs long and straight in both directions, which is what gives the claim about its length whatever truth it has."]],
 
   ["p-donnycarney-church", "Our Lady of Consolation", "Eaglais Mhuire", "Church", "sacred", "Donnycarney", 53.3800, -6.2128,
    "A mid century church with a free standing tower.",
@@ -454,11 +449,6 @@ const CLOSE_POINTS = [
    ["fact", "It floods",
     "The Tolka came over this road badly in 1954 and again in 2002, which is why so much of the ground beside it is kept as parkland rather than built on."]],
 
-  ["p-croydon-green", "Croydon Green", "Faiche Croydon", "Green", "green", "Marino", 53.3684, -6.2344,
-   "A square of grass with the houses turned in towards it.",
-   ["Free", "Level walking", "20th century"],
-   ["architecture", "Turned inward on purpose",
-    "The Marino scheme puts greens inside its blocks and faces the houses onto them, which is the garden city idea in its plainest form."]],
 
   ["p-st-vincents", "St Vincent's, Fairview", "Naomh Uinseann", "School", "built", "Fairview", 53.3658, -6.2378,
    "A long institutional frontage on the Fairview road.",
@@ -478,12 +468,87 @@ const CLOSE_POINTS = [
    ["fact", "The battle and the bridge",
     "Brian Boru was killed at Clontarf in 1014 in the hour his side won. The bridge, the road and a good deal else round here carry his name."]],
 
-  ["p-marino-casino-lawn", "The Casino Lawn", "Faiche an Chasaíno", "Lawn", "green", "Marino", 53.3688, -6.2274,
-   "The open ground the garden temple was built to sit in.",
-   ["Free", "Level walking", "18th century"],
-   ["fact", "A building with a setting",
-    "The Casino was designed to be seen across open lawn from the house, and the lawn is the only part of that arrangement still doing its job."]],
 ];
+
+/** The heritage sites: the ones that would carry a brown sign.
+ *
+ *  The corpus was thick with streets and junctions, which are addresses rather
+ *  than places worth walking to, and a walk anchored on Philipsburgh Avenue is
+ *  a walk about nothing. These are the other kind: somewhere with a date on it.
+ *  Two lore entries each, because the point of going is what is there.
+ *
+ *  Placed by hand against the points already in the corpus rather than
+ *  surveyed, so they are good to about a hundred metres. The dataset in
+ *  `docs/data-pipeline.md` is what fixes that, and it needs a machine that can
+ *  reach data.gov.ie. */
+const HERITAGE = [
+  ["p-glasnevin-cemetery", "Glasnevin Cemetery", "Reilig Ghlas Naíon", "Cemetery", "sacred", "Glasnevin", 53.3707, -6.2794,
+   "The first cemetery in Ireland open to every denomination, and where most of its history is buried.",
+   ["Free", "Guided", "19th century", "Level walking"],
+   [["fact", "Opened so that Catholics could be buried with their own rites",
+     "Daniel O'Connell pushed for it and it opened in 1832, at a time when Catholic burial rites were restricted. It was open to every denomination from the start, which was the point of it. O'Connell is buried here himself, under a round tower raised over his grave in 1869."],
+    ["fact", "A round tower closed for decades",
+     "The tower was damaged by a bomb in 1971 and shut to the public for a long time afterwards. Parnell, Michael Collins, Roger Casement and Maud Gonne are all in the same ground."]]],
+
+  ["p-croke-park", "Croke Park", "Páirc an Chrócaigh", "Stadium", "built", "Drumcondra", 53.3607, -6.2512,
+   "The ground where Bloody Sunday happened, and the home of Gaelic games since.",
+   ["Paid entry", "Guided", "20th century"],
+   [["fact", "The first Bloody Sunday",
+     "On 21 November 1920, during a match between Dublin and Tipperary, British forces fired into the ground. Fourteen people were killed. One of them was the Tipperary captain Michael Hogan, and the Hogan Stand carries his name."],
+    ["placename", "Named for an archbishop",
+     "Thomas Croke, Archbishop of Cashel, was the first patron of the Gaelic Athletic Association. The ground was renamed for him in 1913."]]],
+
+  ["p-five-lamps", "The Five Lamps", "Na Cúig Lampaí", "Landmark", "built", "North Strand", 53.3562, -6.2472,
+   "A cast iron lamp standard where five streets meet, and a name the whole district goes by.",
+   ["Free", "Street", "19th century"],
+   [["fact", "Five arms for five roads",
+     "Erected in the 1880s in memory of General Henry Hall, with an arm for each of the roads meeting under it. People have called the district after the lamp ever since, which is a rare thing for a piece of street furniture."],
+    ["fact", "It survived the night of the bombs",
+     "The German bombs that fell on the North Strand on 31 May 1941 landed a few hundred metres from here. The lamp is still standing and much of the street around it is not the street it was."]]],
+
+  ["p-royal-canal", "The Royal Canal at Binns Bridge", "An Chanáil Ríoga", "Canal", "water", "Drumcondra", 53.3625, -6.2605,
+   "A canal dug to reach the Shannon, now walked far more than it was ever worked.",
+   ["Free", "Level walking", "19th century", "Waterside"],
+   [["fact", "Cut in competition, and it never paid",
+     "The Royal Canal reached the Shannon in 1817, dug in competition with the Grand Canal on the south side of the city. It never made money, was bought by a railway company that laid its line along the bank, and the towpath outlived the trade."],
+    ["placename", "Binns Bridge",
+     "Named for John Binns, a director of the canal company, whose name ended up on the crossing rather than on the waterway."]]],
+
+  ["p-aldborough-house", "Aldborough House", "Teach Aldborough", "Town house", "built", "North Strand", 53.3556, -6.2472,
+   "The last of the great Georgian townhouses, and the longest empty.",
+   ["Street", "18th century", "No entry"],
+   [["architecture", "The last one built",
+     "Raised in the 1790s for the second Earl of Aldborough, and the last private palace of its kind built in Dublin. The Act of Union took the aristocracy and their building money to London within a decade of its completion."],
+    ["fact", "A school, a barracks, a depot",
+     "It has been all three since it stopped being a house, and has stood empty for long stretches in between. It is on the register of protected structures and is not open."]]],
+
+  ["p-charleville-mall", "Charleville Mall Library", "Leabharlann Charleville Mall", "Library", "built", "North Strand", 53.3583, -6.2450,
+   "One of the city's first free public libraries, on the canal bank.",
+   ["Free", "20th century", "Waterside"],
+   [["architecture", "Built when free books were still an argument",
+     "Opened in 1900, among the first rate-supported public libraries in Dublin, at a time when whether the public should have free access to books was a live question. It sits on the Royal Canal and it is still a library."]]],
+
+  ["p-st-patricks-drumcondra", "St Patrick's College", "Coláiste Phádraig", "College", "built", "Drumcondra", 53.3707, -6.2578,
+   "The college that trained a large share of the country's primary teachers.",
+   ["Street", "19th century", "Grounds"],
+   [["fact", "A century of national school teachers",
+     "Founded in 1875 to train Catholic primary teachers, and for more than a hundred years the place a great many of the country's national school teachers passed through. It is part of Dublin City University now."]]],
+
+  ["p-clontarf-1014", "The Battle of Clontarf", "Cluain Tarbh", "Battle site", "ancient", "Clontarf", 53.3640, -6.2160,
+   "The battle everyone knows the date of, on ground nobody can agree on.",
+   ["Free", "Street", "11th century"],
+   [["archaeology", "Good Friday, 1014",
+     "Brian Boru's army met a Leinster and Norse alliance on 23 April 1014. Brian's side won and Brian was killed in his tent as the fighting ended, which is the part everyone remembers."],
+    ["fact", "Nobody can point at the spot",
+     "The battle is named for Clontarf, but the fighting ranged across ground that is streets and houses now, and the weir, the wood and the shoreline it was fought around have all moved or gone. Where exactly it happened is still argued over."]]],
+];
+
+for (const [id, name, nameGa, category, group, townland, lat, lng, blurb, tags, lore] of HERITAGE) {
+  POINTS.push({
+    id, name, nameGa, category, group, townland, lat, lng, visited: false, blurb, tags,
+    lore: lore.map(([kind, title, body]) => [kind, title, body]),
+  });
+}
 
 for (const [id, name, nameGa, category, group, townland, lat, lng, blurb, tags, lore] of CLOSE_POINTS) {
   POINTS.push({

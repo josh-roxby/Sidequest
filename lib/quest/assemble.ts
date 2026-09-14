@@ -2,7 +2,7 @@ import { distanceM } from "../geo.ts";
 import { TIERS, type LatLng, type Objective, type Point, type Quest, type QuestShape, type Tier }
   from "../data/types.ts";
 import { alongRoute, atAlong, circleRoute, offset, rng, viaRoute, type Path } from "./route.ts";
-import { buildGraph, routeOfLength, routeVia, type Graph } from "./graph.ts";
+import { buildGraph, nearestNode, routeOfLength, routeVia, type Graph } from "./graph.ts";
 
 /** Building a walk from where the walker is standing.
  *
@@ -71,17 +71,30 @@ function chooseStops(
   near: { p: Point; d: number }[], want: number, from: LatLng, targetM: number,
   next: () => number,
 ): Point[] {
-  const pool = [...near];
-  /* Fisher-Yates on the seeded stream. Sorting by a random key instead would
-     bias towards whatever the comparator saw first. */
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(next() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+  /* Drawn in a random order, but not a flat one. A place with two things
+     recorded about it is more worth walking to than a street with one, so
+     depth of record is a thumb on the scale: it leans the walk towards the
+     Casino and away from Philipsburgh Avenue without ever ruling the avenue
+     out. Anything with nothing written about it can still come up, which is
+     what keeps a thin corpus usable. */
+  const weight = (x: Point) => (1 + x.lore.length) ** 2;
+  const rest = near.map(({ p }) => p);
+  const pool: Point[] = [];
+  while (rest.length) {
+    let total = 0;
+    for (const x of rest) total += weight(x);
+    let r = next() * total;
+    let i = 0;
+    for (; i < rest.length - 1; i++) {
+      r -= weight(rest[i]);
+      if (r <= 0) break;
+    }
+    pool.push(rest.splice(i, 1)[0]);
   }
 
   const budget = targetM * CHAIN_BUDGET;
   const taken: Point[] = [];
-  for (const { p } of pool) {
+  for (const p of pool) {
     if (taken.length >= want) break;
     const trial = order(from, [...taken, p]);
     if (chainLength(from, trial) <= budget) taken.push(p);
@@ -189,16 +202,21 @@ export function assembleQuest({
   const wanted: QuestShape = shape === "either" ? "loop" : shape;
   const key = `${seed}|${tier}|${wanted}|${from.lat.toFixed(4)},${from.lng.toFixed(4)}`;
 
-  const near = candidates(from, points, spec.reachM);
   const next = rng(key);
-  const stops = chooseStops(near, spec.stops, from, targetM, next);
-  const stopAt = stops.map((p) => ({ lat: p.lat, lng: p.lng }));
-
   const graph: Graph | null = streets && streets.length > 0
     ? buildGraph(streets.map((s) => s.coords), streets.map((s) => s.level))
     : null;
 
-  const objectivesFor = (path: Path) => stops.map((p, i) => ({
+  /* Somewhere the streets cannot reach is not somewhere to send a walker.
+     Filtering here rather than discovering it during routing is what stops one
+     unreachable place, picked at random, costing the whole walk its streets and
+     dropping the line back to an arc across the ground. Without a graph
+     everything is a candidate, which is the same answer as before. */
+  const near = candidates(from, points, spec.reachM)
+    .filter(({ p }) => !graph || nearestNode(graph, { lat: p.lat, lng: p.lng }) !== null);
+  const stops = chooseStops(near, spec.stops, from, targetM, next);
+
+  const objectivesFor = (path: Path, on: Point[]) => on.map((p, i) => ({
     id: `o-${i + 1}`,
     pointId: p.id,
     label: p.name,
@@ -209,9 +227,9 @@ export function assembleQuest({
     lng: p.lng,
   }));
 
-  const encountersFor = (routedLine: boolean) => [
-    ...stops.map((p) => ({ kind: "point" as const, label: p.name, detail: p.blurb })),
-    ...(stops.length === 0
+  const encountersFor = (on: Point[], routedLine: boolean) => [
+    ...on.map((p) => ({ kind: "point" as const, label: p.name, detail: p.blurb })),
+    ...(on.length === 0
       ? [{ kind: "terrain" as const, label: "Unrecorded ground", detail: "We have nothing logged along this one" }]
       : []),
     {
@@ -230,47 +248,56 @@ export function assembleQuest({
      all, because a four hundred metre "stroll" is worse than an honest
      straight line. */
   if (graph) {
-    /* One shape for both, because only the walk with nothing to aim at has a
-       turning point worth naming. */
-    const r: { path: Path; metres: number; turn?: LatLng } | null = stops.length > 0
-      ? routeVia(graph, from, stopAt, wanted, targetM)
-      : routeOfLength(graph, from, targetM, wanted);
+    /* Tried with every stop, then with one fewer, and so on down to one.
+       A single place the streets cannot reach, at the far end of the walk,
+       used to cost the whole route its streets and drop the line back to an
+       arc across the ground. Losing the last stop is a much smaller loss than
+       losing the road under all of them. Stops are ordered nearest first, so
+       what goes is always the far end. */
+    const floor = stops.length > 0 ? 1 : 0;
+    for (let take = stops.length; take >= floor; take--) {
+      const some = stops.slice(0, take);
+      /* One shape for both, because only the walk with nothing to aim at has a
+         turning point worth naming. */
+      const r: { path: Path; metres: number; turn?: LatLng } | null = some.length > 0
+        ? routeVia(graph, from, some.map((x) => ({ lat: x.lat, lng: x.lng })), wanted, targetM)
+        : routeOfLength(graph, from, targetM, wanted);
+      if (!r) continue;
+      if (r.metres < spec.minM || r.metres > spec.maxM) continue;
 
-    if (r && r.metres >= spec.minM && r.metres <= spec.maxM) {
       /* A place counts as on the walk if the route passes close enough to
          stand at it. Routed walks turn where the streets allow, which is not
          always the doorstep, and a stop the line never reaches is a promise
          the walk does not keep. */
-      const missed = stops.filter((p) =>
-        nearestOnPath(r.path, { lat: p.lat, lng: p.lng }) >= 150);
+      const missed = some.some((x) =>
+        nearestOnPath(r.path, { lat: x.lat, lng: x.lng }) >= 150);
+      if (missed) continue;
 
-      if (missed.length === 0) {
-        const shapeLine = wanted === "loop"
-          ? "A loop: it comes home a different way"
-          : "There and back along the same way";
+      const shapeLine = wanted === "loop"
+        ? "A loop: it comes home a different way"
+        : "There and back along the same way";
 
-        return {
-          anchor: stops[0] ?? null,
-          routed: true,
-          quest: buildQuest({
-            key, from, tier, shape: wanted, targetM: r.metres, path: r.path,
-            title: titleOf(stops),
-            flavour: flavourOf(stops, true),
-            objectives: stops.length > 0 ? objectivesFor(r.path) : [{
-              id: "o-1", pointId: null, label: "The turn for home", required: false,
-              reached: false, atM: Math.round(r.metres / 2),
-              ...(r.turn ?? alongRoute(r.path, r.metres / 2)),
-            }],
-            encounters: encountersFor(true),
-            honesty: [
-              "Built from where you are standing",
-              "Routed on real streets and paths",
-              shapeLine,
-            ],
-            stops: stops.length,
-          }),
-        };
-      }
+      return {
+        anchor: some[0] ?? null,
+        routed: true,
+        quest: buildQuest({
+          key, from, tier, shape: wanted, targetM: r.metres, path: r.path,
+          title: titleOf(some),
+          flavour: flavourOf(some, true),
+          objectives: some.length > 0 ? objectivesFor(r.path, some) : [{
+            id: "o-1", pointId: null, label: "The turn for home", required: false,
+            reached: false, atM: Math.round(r.metres / 2),
+            ...(r.turn ?? alongRoute(r.path, r.metres / 2)),
+          }],
+          encounters: encountersFor(some, true),
+          honesty: [
+            "Built from where you are standing",
+            "Routed on real streets and paths",
+            shapeLine,
+          ],
+          stops: some.length,
+        }),
+      };
     }
   }
 

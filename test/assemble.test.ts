@@ -115,7 +115,8 @@ test("a longer walk takes in more places", () => {
     const counts: number[] = [];
     for (let i = 0; i < 12; i++) {
       const { quest } = assembleQuest({
-        from: CLONTARF, tier, points: POINTS, seed: `n-${i}`, streets: streetGrid(),
+        from: CLONTARF, tier, points: POINTS, seed: `n-${i}`,
+        streets: streetGrid(CLONTARF, spec.reachM * 1.3),
       });
       const stops = quest.objectives.filter((o) => o.pointId).length;
       assert.ok(stops <= spec.stops,
@@ -131,8 +132,10 @@ test("a longer walk takes in more places", () => {
 
 test("every place a walk names is a real point, and the walk passes it", () => {
   for (const tier of ALL_TIERS) {
+    const spec = TIERS.find((t) => t.id === tier)!;
     const { quest } = assembleQuest({
-      from: CLONTARF, tier, points: POINTS, seed: "x", streets: streetGrid(),
+      from: CLONTARF, tier, points: POINTS, seed: "x",
+      streets: streetGrid(CLONTARF, spec.reachM * 1.3),
     });
     for (const o of quest.objectives.filter((x) => x.pointId)) {
       const p = POINTS.find((q) => q.id === o.pointId);
@@ -194,18 +197,26 @@ test("duration keeps pace with distance", () => {
 /* ---- routing on real ways ----------------------------------------------- */
 
 /** A grid of streets round Clontarf, standing in for what the basemap tiles
- *  hand over. About 110m blocks, which is a city block. */
-function streetGrid(origin = CLONTARF, n = 22, block = 0.001) {
+ *  hand over. About 110m blocks, which is a city block.
+ *
+ *  Sized in metres rather than in degrees, because a degree of longitude at
+ *  this latitude is a little over half a degree of latitude: a grid laid out
+ *  with the same step in both came out half as wide as it was tall, and a
+ *  walk that reached past its edge was quietly dropping off the network. */
+function streetGrid(origin = CLONTARF, radiusM = 1300, blockM = 110) {
+  const dLat = blockM / 111_320;
+  const dLng = blockM / (111_320 * Math.cos((origin.lat * Math.PI) / 180));
+  const n = Math.ceil((2 * radiusM) / blockM);
   const lines: { coords: [number, number][]; level: number }[] = [];
-  const lat0 = origin.lat - (n / 2) * block;
-  const lng0 = origin.lng - (n / 2) * block;
+  const lat0 = origin.lat - (n / 2) * dLat;
+  const lng0 = origin.lng - (n / 2) * dLng;
   for (let r = 0; r <= n; r++) {
     lines.push({ level: 0, coords: Array.from({ length: n + 1 }, (_, c) =>
-      [lng0 + c * block, lat0 + r * block] as [number, number]) });
+      [lng0 + c * dLng, lat0 + r * dLat] as [number, number]) });
   }
   for (let c = 0; c <= n; c++) {
     lines.push({ level: 0, coords: Array.from({ length: n + 1 }, (_, r) =>
-      [lng0 + c * block, lat0 + r * block] as [number, number]) });
+      [lng0 + c * dLng, lat0 + r * dLat] as [number, number]) });
   }
   return lines;
 }
@@ -217,13 +228,23 @@ test("given streets, the walk stays on them", () => {
   });
   assert.ok(routed, "it fell back to geometry when streets were available");
 
-  /* Every vertex of the route is a point on one of the lines it was given. A
-     line that cut across a block would not be. */
-  const onStreet = new Set(streets.flatMap((s) => s.coords).map(([lng, lat]) =>
-    `${lng.toFixed(5)},${lat.toFixed(5)}`));
+  /* Every vertex of the route sits on one of the lines it was given. A line
+     that cut across a block would not.
+     
+     Measured in metres rather than matched as text: route coordinates are
+     rounded to six decimals on the way out, and comparing those as strings
+     against the grid's own made the test turn on which side of a rounding
+     boundary a vertex landed, twenty centimetres either way. */
+  const rows = new Set(streets.flatMap((s) => s.coords).map(([, lat]) => lat));
+  const cols = new Set(streets.flatMap((s) => s.coords).map(([lng]) => lng));
+  const nearest = (xs: Set<number>, v: number) =>
+    Math.min(...[...xs].map((x) => Math.abs(x - v)));
   for (const [lng, lat] of quest.path) {
-    assert.ok(onStreet.has(`${lng.toFixed(5)},${lat.toFixed(5)}`),
-      `the route left the street network at ${lng},${lat}`);
+    const offRow = nearest(rows, lat) * 111_320;
+    const offCol = nearest(cols, lng) * 111_320 * Math.cos((lat * Math.PI) / 180);
+    assert.ok(Math.min(offRow, offCol) < 1,
+      `the route left the street network at ${lng},${lat}, `
+      + `${Math.round(Math.min(offRow, offCol))}m from the nearest street`);
   }
 });
 
