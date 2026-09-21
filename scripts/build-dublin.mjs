@@ -400,11 +400,6 @@ const CLOSE_POINTS = [
    ["fact", "The night of the bombs",
     "On 31 May 1941 German bombs fell on the North Strand, killing twenty eight people and destroying much of the street. The rebuilt houses are why the terrace changes character partway along."]],
 
-  ["p-marino-institute", "Marino Institute Grounds", "Institiúid Mhaire Nó", "Grounds", "green", "Marino", 53.3702, -6.2318,
-   "Playing fields and old trees behind a long wall.",
-   ["Free", "Level walking", "Trees"],
-   ["fact", "The demesne's last green",
-    "These grounds are part of what was Lord Charlemont's demesne, and the reason the Casino still has open ground around it rather than houses."]],
 
 
   ["p-donnycarney-church", "Our Lady of Consolation", "Eaglais Mhuire", "Church", "sacred", "Donnycarney", 53.3800, -6.2128,

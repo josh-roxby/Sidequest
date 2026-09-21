@@ -298,3 +298,49 @@ test("an empty street list behaves exactly as no street list", () => {
   assert.equal(withNone.routed, false);
   assert.deepEqual(withNone.quest.path, without.quest.path);
 });
+
+test("it does not send you back where it just sent you", () => {
+  /* Picking at random is not the same as not repeating yourself. With a
+     handful of places in reach a fair draw still offers the same one twice in
+     three presses often enough to read as "it always sends me to the same
+     place", which is what it read as from Griffith Wood. Randomness cannot fix
+     that; remembering can. */
+  const at = { lat: 53.3739, lng: -6.2520 };   // Griffith Avenue, Drumcondra end
+  let recent: string[] = [];
+  const lastSeen = new Map<string, number>();
+  let tooSoon = 0;
+
+  for (let i = 0; i < 10; i++) {
+    const { quest } = assembleQuest({
+      from: at, tier: "stroll", shape: "loop", points: POINTS,
+      seed: `press-${i}`, avoid: recent,
+    });
+    const ids = quest.objectives.map((o) => o.pointId).filter((x): x is string => !!x);
+    assert.ok(ids.length > 0, `press ${i} offered nowhere at all`);
+    for (const id of ids) {
+      if (lastSeen.has(id) && i - lastSeen.get(id)! <= 3) tooSoon++;
+      lastSeen.set(id, i);
+    }
+    recent = [...ids, ...recent.filter((x) => !ids.includes(x))].slice(0, 12);
+  }
+  assert.equal(tooSoon, 0,
+    `${tooSoon} places came round again within three presses of the last time`);
+});
+
+test("a thin area still offers a walk rather than running out", () => {
+  /* The other side of it. Leaning away from somewhere recent must never become
+     refusing to go there: with four places in reach, ruling out the last
+     several would leave nothing at all, and a repeat is a far smaller failure
+     than being told there is nowhere to go. */
+  const at = { lat: 53.3748, lng: -6.2398 };
+  const everything = POINTS.map((p) => p.id);
+  for (let i = 0; i < 5; i++) {
+    const { quest } = assembleQuest({
+      from: at, tier: "stroll", shape: "loop", points: POINTS,
+      seed: `x-${i}`, avoid: everything,
+    });
+    const ids = quest.objectives.map((o) => o.pointId).filter(Boolean);
+    assert.ok(ids.length > 0,
+      "with everything marked as recently seen it gave up instead of repeating");
+  }
+});

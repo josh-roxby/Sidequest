@@ -69,7 +69,7 @@ const CHAIN_BUDGET = 0.75;
  *  fresh press gets a fresh one. */
 function chooseStops(
   near: { p: Point; d: number }[], want: number, from: LatLng, targetM: number,
-  next: () => number,
+  next: () => number, avoid: string[] = [],
 ): Point[] {
   /* Drawn in a random order, but not a flat one. A place with two things
      recorded about it is more worth walking to than a street with one, so
@@ -77,7 +77,21 @@ function chooseStops(
      Casino and away from Philipsburgh Avenue without ever ruling the avenue
      out. Anything with nothing written about it can still come up, which is
      what keeps a thin corpus usable. */
-  const weight = (x: Point) => (1 + x.lore.length) ** 2;
+  const weight = (x: Point) => {
+    const depth = (1 + x.lore.length) ** 2;
+    /* Somewhere the walker was sent recently is pushed right down the order,
+       and the more recently the harder. Not removed: an area with four places
+       in it would run out of walks altogether, and being sent somewhere twice
+       is a much smaller failure than being told there is nowhere to go. */
+    const seen = avoid.indexOf(x.id);
+    if (seen < 0) return depth;
+    /* Halving per place in the history, so the one offered last press is
+       effectively out and the one offered eight presses ago is barely
+       penalised. The effect is least-recently-offered-wins with noise on top,
+       rather than a flat discount that a handful of candidates quickly
+       flattens out again. */
+    return depth / 2 ** Math.max(1, 8 - seen);
+  };
   const rest = near.map(({ p }) => p);
   const pool: Point[] = [];
   while (rest.length) {
@@ -183,7 +197,7 @@ function durationMin(distanceM_: number, stops: number): number {
  *  `shape` "either" lets the assembler pick, which it does by preferring a
  *  loop: a loop shows you more ground for the same distance. */
 export function assembleQuest({
-  from, tier, shape = "either", points, seed = "", streets,
+  from, tier, shape = "either", points, seed = "", streets, avoid = [],
 }: {
   from: LatLng;
   tier: Tier;
@@ -194,6 +208,9 @@ export function assembleQuest({
    *  these the route follows real streets and paths; without them it is drawn
    *  geometrically and says so. */
   streets?: { coords: Path; level: number }[];
+  /** Places this walker was sent to recently, most recent first. Leaned away
+   *  from rather than ruled out, so a thin area still has walks in it. */
+  avoid?: string[];
 }): Assembled {
   const spec = TIERS.find((t) => t.id === tier)!;
   /* Midway through the tier's band. Picking the floor makes every walk feel
@@ -214,7 +231,7 @@ export function assembleQuest({
      everything is a candidate, which is the same answer as before. */
   const near = candidates(from, points, spec.reachM)
     .filter(({ p }) => !graph || nearestNode(graph, { lat: p.lat, lng: p.lng }) !== null);
-  const stops = chooseStops(near, spec.stops, from, targetM, next);
+  const stops = chooseStops(near, spec.stops, from, targetM, next, avoid);
 
   const objectivesFor = (path: Path, on: Point[]) => on.map((p, i) => ({
     id: `o-${i + 1}`,

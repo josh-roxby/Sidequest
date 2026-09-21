@@ -62,14 +62,71 @@ export function getPosition(timeoutMs = 10_000): Promise<Fix> {
   });
 }
 
-/** What to say when it does not work. Never blames the walker and never asks
- *  them to go into browser settings, which nobody does. */
+/** What to say when it does not work, on the map, where a missing fix is an
+ *  inconvenience rather than a dead end. */
 export function locationMessage(reason: LocationFailure): string {
   switch (reason) {
     case "denied": return "Location is off for this site, so the map is showing your home area.";
     case "timeout": return "Could not get a fix in time. Open sky helps.";
     case "unsupported": return "This browser will not share a location.";
     default: return "No fix available just now.";
+  }
+}
+
+/** What to say when a walk cannot be built without it, which is a dead end and
+ *  has to be answered rather than noted.
+ *
+ *  Each of these is a different thing being wrong and a different thing to do
+ *  about it, which is the whole reason they are separated. "Denied" is a
+ *  browser setting. "Unavailable" is usually the device's own location
+ *  services switched off, one level above the browser, and telling someone to
+ *  check their site permissions when the problem is in iOS Settings sends them
+ *  round in a circle. */
+export function locationBlocker(reason: LocationFailure): { title: string; body: string } {
+  switch (reason) {
+    case "denied":
+      return {
+        title: "Location is blocked for this site",
+        body: "A walk is built from where you are standing, so there is nothing to build without it. Allow location for this page in your browser settings, then try again.",
+      };
+    case "unavailable":
+      return {
+        title: "Your device is not giving a position",
+        body: "Location services look to be switched off on the device itself, which is a separate setting from this page. Turn them on, then try again. Standing near a window helps if you are indoors.",
+      };
+    case "timeout":
+      return {
+        title: "Still looking for you",
+        body: "The device did not settle on a position in time. Somewhere with a view of the sky usually takes a few seconds. Try again.",
+      };
+    default:
+      return {
+        title: "This browser will not share a location",
+        body: "A walk is built from where you are standing, and this browser cannot tell us. Safari or Chrome on a phone will.",
+      };
+  }
+}
+
+/** What the browser already thinks about sharing a location.
+ *
+ *  Worth knowing before asking, because "granted" and "denied" need different
+ *  words in front of the walker and only "prompt" will actually raise the
+ *  browser's own dialogue. Not every browser implements it for geolocation,
+ *  hence "unknown", which is treated as "prompt" everywhere it matters.
+ *
+ *  It is only half the answer. A granted permission says the page may ask; it
+ *  does not say the device will answer, and on a phone with location services
+ *  switched off system wide it answers granted and then fails. That is why
+ *  nothing here replaces actually asking for a fix. */
+export async function permissionState(): Promise<"granted" | "denied" | "prompt" | "unknown"> {
+  if (typeof navigator === "undefined" || !navigator.permissions?.query) return "unknown";
+  try {
+    const status = await navigator.permissions.query({ name: "geolocation" });
+    return status.state;
+  } catch {
+    /* Firefox historically threw on this name, and a browser that will not
+       answer the question is the same as one that was never asked. */
+    return "unknown";
   }
 }
 
@@ -165,4 +222,41 @@ export async function watchHeading(
     window.removeEventListener("deviceorientationabsolute", handler, true);
     window.removeEventListener("deviceorientation", handler, true);
   };
+}
+
+/* ---- the last place we actually found the walker -------------------------- */
+
+const LAST_FIX = "sq.last-fix";
+
+/** Remembering where the walker was, so the app can open somewhere true.
+ *
+ *  Geolocation is never fired on a page load, which is the right rule and
+ *  leaves the first screen with no idea where anybody is. The old answer was a
+ *  hardcoded Clontarf, so the picker told every walker in the country they
+ *  were in Clontarf with forty six points around them. A remembered fix is the
+ *  honest version of the same shortcut: it is somewhere the walker really was,
+ *  and when there is none the screen says so rather than inventing one. */
+export function rememberFix(p: LatLng): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(LAST_FIX, JSON.stringify({ lat: p.lat, lng: p.lng }));
+  } catch {
+    // Storage blocked or full. The app simply opens without a remembered place.
+  }
+}
+
+export function lastFix(): LatLng | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(LAST_FIX);
+    if (!raw) return null;
+    const v: unknown = JSON.parse(raw);
+    if (typeof v !== "object" || v === null) return null;
+    const { lat, lng } = v as Record<string, unknown>;
+    if (typeof lat !== "number" || typeof lng !== "number") return null;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng };
+  } catch {
+    return null;
+  }
 }

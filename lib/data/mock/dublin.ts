@@ -433,17 +433,6 @@ export const DUBLIN_POINTS: Point[] = [
     ],
   },
   {
-    plate: "poi-marino-institute", id: "p-marino-institute", name: "Marino Institute Grounds", nameGa: "Institiúid Mhaire Nó",
-    blurb: "Playing fields and old trees behind a long wall.", visited: false, tags: ["Free","Level walking","Trees"],
-    category: "Grounds", group: "green", townland: "Marino",
-    lat: 53.3702, lng: -6.2318,
-    lore: [
-      { kind: "fact", title: "The demesne's last green",
-        body: "These grounds are part of what was Lord Charlemont's demesne, and the reason the Casino still has open ground around it rather than houses.",
-        sourceName: "Fixture", sourceUrl: "", licence: "", linkOnly: false },
-    ],
-  },
-  {
     plate: "poi-donnycarney-church", id: "p-donnycarney-church", name: "Our Lady of Consolation", nameGa: "Eaglais Mhuire",
     blurb: "A mid century church with a free standing tower.", visited: false, tags: ["Free","Architecture","20th century"],
     category: "Church", group: "sacred", townland: "Donnycarney",
