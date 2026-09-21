@@ -1,7 +1,9 @@
 import type {
-  CommunityPoint, DataSource, Friend, FriendQuest, Note, Quest, Tale, Tier,
+  CommunityPoint, DataSource, Friend, FriendQuest, LatLng, Note, Quest, Tale, Tier,
   WalkDetail,
 } from "../types";
+import { gatheredNear, merge } from "./gathered";
+import { lastFix } from "../../location";
 import {
   ACTIVITY, BADGES, CATEGORIES, CHALLENGES, COLLECTIBLES, COMMUNITY,
   COMMUNITY_POINTS, FRIEND_QUESTS, FRIENDS, HOME_CARDS, NOTES, POINTS, QUESTS,
@@ -16,6 +18,12 @@ const proposed: CommunityPoint[] = [];
  *  development rather than theoretical. Raise it to inspect a skeleton, set
  *  it to 0 for fast iteration. */
 const LATENCY_MS = Number(process.env.NEXT_PUBLIC_MOCK_LATENCY_MS ?? 180);
+
+/** How far around the walker to pull gathered points from. Comfortably past
+ *  an adventure's four kilometre reach, so the picker has more to choose from
+ *  than the longest walk strictly needs, and well short of downloading the
+ *  country. */
+const GATHER_RADIUS_M = 25_000;
 
 /** Set NEXT_PUBLIC_MOCK_FAIL to a method name to exercise its error state
  *  without breaking anything else. e.g. NEXT_PUBLIC_MOCK_FAIL=getQuests */
@@ -33,7 +41,15 @@ export const mockSource: DataSource = {
     settle<Quest[]>("getQuests", QUESTS.filter((q) => q.tier === tier)),
   getQuest: (id: string) =>
     settle<Quest | null>("getQuest", QUESTS.find((q) => q.id === id) ?? null),
-  getPointsNearby: () => settle("getPointsNearby", POINTS),
+  /* The hand written corpus, plus whatever gathered counties are within reach.
+     `near` decides what gets downloaded: the island is several megabytes and
+     nobody needs Donegal to walk around Fairview. With no position at all it
+     answers with the corpus alone, which is honest rather than guessing. */
+  getPointsNearby: async (near?: LatLng, radiusM = GATHER_RADIUS_M) => {
+    const at = near ?? lastFix();
+    const gathered = at ? await gatheredNear(at, radiusM) : [];
+    return settle("getPointsNearby", merge(POINTS, gathered));
+  },
   getWalks: () => settle("getWalks", WALKS),
   getCategories: () => settle("getCategories", CATEGORIES),
   getCollectibles: () => settle("getCollectibles", COLLECTIBLES),

@@ -116,7 +116,10 @@ lib/
   location.ts   the geolocation prompt, fired from a press and nowhere else
 data/
   points/       county point files gathered by a Cowork session, NDJSON.
-                Not written here: this machine cannot reach data.gov.ie
+                Not written here: this machine cannot reach data.gov.ie.
+                `npm run ingest:points` turns them into per county JSON under
+                public/, which the app fetches only for counties near the
+                walker. The corpus in lib/data/mock stays in the bundle
 supabase/
   migrations/   written, not applied
 docs/           PRD, design system, UX loops, reface plan, data pipeline,
@@ -142,6 +145,7 @@ npm run type-check
 npm run media       # which plates have landed, which are still waiting
 npm run build
 npm run check:points  # validate gathered county point files before ingesting
+npm run ingest:points # build public/data/points/ from data/points/*.ndjson
 ```
 
 ## Conventions

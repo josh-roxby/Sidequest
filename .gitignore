@@ -48,3 +48,7 @@ next-env.d.ts
 
 # Copied from node_modules at build time by scripts/copy-maplibre-worker.mjs
 public/vendor/
+
+# Built by scripts/ingest-points.mjs from data/points/*.ndjson. Generated
+# output, and large: the source files are what belong in the repo.
+/public/data/points

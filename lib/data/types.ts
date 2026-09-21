@@ -59,6 +59,12 @@ export interface Point {
   category: string;
   group: CategoryGroup;
   townland: string;
+  /** Which county it is in. Absent on the hand written corpus, which predates
+   *  the dataset covering more than one. */
+  county?: string;
+  /** The town or village it belongs to, where it belongs to one. Open country
+   *  has none, and that is the honest answer rather than the nearest town. */
+  settlement?: string;
   tags: string[];
   /** One line, always shown. What it is, before you have been.  */
   blurb: string;
@@ -332,7 +338,14 @@ export interface DataSource {
   getTerritory(): Promise<Territory>;
   getQuests(tier: Tier): Promise<Quest[]>;
   getQuest(id: string): Promise<Quest | null>;
-  getPointsNearby(): Promise<Point[]>;
+  /** Places worth walking to, around a position.
+   *
+   *  `near` decides which of the gathered county files are worth downloading:
+   *  the whole island is several megabytes and nobody needs Donegal to walk
+   *  around Fairview. Omitted, it falls back to the last place the walker was
+   *  actually found, and with no fix at all it answers with the hand written
+   *  corpus alone rather than guessing. */
+  getPointsNearby(near?: LatLng, radiusM?: number): Promise<Point[]>;
   getWalks(): Promise<WalkRecord[]>;
   getCategories(): Promise<CategoryProgress[]>;
   getCollectibles(): Promise<Collectible[]>;

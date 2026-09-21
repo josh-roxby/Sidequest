@@ -12,7 +12,8 @@
  *    node scripts/check-points.mjs            # every file in data/points/
  */
 import { readFileSync, readdirSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const COUNTIES = new Set([
   "Antrim", "Armagh", "Carlow", "Cavan", "Clare", "Cork", "Derry", "Londonderry",
@@ -48,7 +49,7 @@ const metres = (a, b) => {
 const words = (s) => s.trim().split(/\s+/).filter(Boolean).length;
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
 
-function checkFile(path) {
+export function checkFile(path) {
   const problems = [];
   const warnings = [];
   const raw = readFileSync(path, "utf8");
@@ -177,6 +178,12 @@ function checkFile(path) {
   return { path, count: points.length, problems, warnings, bySettlement };
 }
 
+/* Imported by the ingest as well as run on its own, so the two can never
+   disagree about what a good record is. */
+const invokedDirectly = process.argv[1]
+  && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+if (!invokedDirectly) { /* exported only */ } else {
+
 const args = process.argv.slice(2);
 const dir = "data/points";
 const files = args.length > 0
@@ -222,3 +229,4 @@ if (bad > 0) {
   process.exit(1);
 }
 console.log("Nothing blocking.");
+}
