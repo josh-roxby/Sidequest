@@ -66,17 +66,25 @@ export function StartQuest() {
   const territory = useAsync(() => data.getTerritory(), []);
   const points = useAsync(() => data.getPointsNearby(), []);
 
-  /* "Nearby" has to be measured, not assumed. The read hands back the whole
-     corpus, so taking the first row put a Clare townland under a Dublin county
-     heading. The nearest point names where you are, and the count is the ones
-     inside this tier's reach, which is the radius the walk is actually built
-     from. */
-  /* Where the walker was the last time we actually found them. Read once, on
-     mount, because geolocation is never fired on a page load and a remembered
-     place is the only honest thing this screen can open with. Null on a first
-     ever visit, which the screen says rather than papers over. */
-  const [here] = useState<LatLng | null>(() => lastFix());
+  /* Where the walker was the last time we actually found them. Geolocation is
+     never fired on a page load, so a remembered place is the only honest thing
+     this screen can open with, and null on a first visit is what it says. */
+  const [here, setHere] = useState<LatLng | null>(null);
+  useEffect(() => {
+    /* Read after mount, not in a `useState` initialiser. This screen is
+       prerendered, so an initialiser runs on a server with no local storage,
+       renders "Not placed yet" into the markup, and then the client renders
+       the remembered place instead. React calls that a hydration mismatch and
+       throws. The same trap took the lit ground off the map screen. */
+    const fix = lastFix();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only read, impossible before mount
+    if (fix) setHere(fix);
+  }, []);
 
+  /* "Nearby" has to be measured, not assumed. The read hands back everything
+     in range, so taking the first row put a Clare townland under a Dublin
+     county heading. The nearest point names where you are, and the count is
+     the ones inside this tier's reach. */
   const around = useMemo(() => {
     const all = points.data ?? [];
     /* No remembered fix means we do not know, and saying so beats the old
@@ -104,11 +112,6 @@ export function StartQuest() {
     setBlocked(null);
     setPending(null);
     try {
-      /* Where the walker actually is, asked for here because this is a press.
-         A refusal is not fatal: the walk is then built from the home position,
-         which is at least the right county, and the card says so. What must
-         not happen again is handing someone in Dublin a walk in Clare because
-         it happened to be first in the list. */
       /* Asked for every time, not once. A granted permission only says the
          page may ask; it does not say the device will answer, and a phone with
          location services switched off system wide answers granted and then

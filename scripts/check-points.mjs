@@ -36,7 +36,10 @@ const FILLER = [
   "a testament to", "boasts",
 ];
 
-const COMMERCIAL = ["hotel", "restaurant", "café", "cafe", "pub ", "shopping centre", "shop"];
+/* Whole words. Substring matching flagged "Archbishop's palace" as a shop,
+   which is the sort of false positive that teaches somebody to skim past the
+   warnings. */
+const COMMERCIAL = /\b(hotel|restaurant|caf[eé]|pub|bar|shop|shopping centre|takeaway|guesthouse|hostel)\b/i;
 
 const metres = (a, b) => {
   const R = 6371000, rad = (d) => (d * Math.PI) / 180;
@@ -133,10 +136,8 @@ export function checkFile(path) {
     if (all.includes("—")) at("contains an em dash");
     const lower = all.toLowerCase();
     for (const f of FILLER) if (lower.includes(f)) warn(`uses "${f}"`);
-    for (const c of COMMERCIAL) {
-      if (typeof p.category === "string" && p.category.toLowerCase().includes(c.trim())) {
-        warn(`category "${p.category}" looks like a commercial venue`);
-      }
+    if (typeof p.category === "string" && COMMERCIAL.test(p.category)) {
+      warn(`category "${p.category}" looks like a commercial venue`);
     }
 
     const key = p.settlement ?? "(open country)";
