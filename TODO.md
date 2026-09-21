@@ -32,12 +32,12 @@ you can start a walk, and nothing that happens after that is recorded.
       entered, and distance covered comes from the track in `lib/quest/track.ts`
       rather than from a fixture flag. Verified against a simulated 600m walk:
       599m measured, eight cells lit
-- [~] **2. It has to still be there tomorrow.** Half done. `lib/fog/store.ts`
-      keeps the ground covered and both the map and the walk screen read it, so
-      cells survive a reload and a walk taken yesterday is still lit. **Still
-      missing: ending a walk records nothing.** No history row, no distance, no
-      points reached, and `/history` still shows fixtures. That is the next
-      piece
+- [x] **2. It has to still be there tomorrow.** Done. `lib/fog/store.ts` keeps
+      the ground covered and `lib/walk/history.ts` keeps the walks, each with
+      its own route attached so a walk from last month still draws itself.
+      `/history` reads real walks only and shows its empty state when there are
+      none, because the three fixtures from Clare were telling everybody they
+      had been on walks they had never heard of
 - [ ] **3. Points of interest outside Dublin 3.** See the phases below. Until
       this lands the app works for about four square kilometres of the north
       side and politely refuses everywhere else
@@ -46,9 +46,15 @@ you can start a walk, and nothing that happens after that is recorded.
       ground covered is safe, because that is the question somebody in that
       position actually has
 
+Which leaves **points of interest** as the one blocker between this and
+something worth sending to somebody.
+
 **The national dataset, in phases.**
 
-- [ ] **Phase 0. Somewhere that can reach the internet.** Nothing else here can
+- [ ] **Phase 0. Somewhere that can reach the internet.** The brief is written
+      and ready to run: [`docs/cowork-poi-brief.md`](./docs/cowork-poi-brief.md),
+      one county per session, output to `data/points/<county>.ndjson`. Still
+      needs `scripts/ingest-points.mjs` to read those files back in. Nothing else here can
       start until this exists. data.gov.ie, the Logainm API, Wikidata and every
       OSM endpoint are refused by the proxy on the machine this repo is built
       on. Recommended: a GitHub Action that runs the ingest and commits the

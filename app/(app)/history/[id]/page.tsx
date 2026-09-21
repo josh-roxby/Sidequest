@@ -21,6 +21,20 @@ import { useRoutedQuest } from "@/hooks/use-routed-quest";
  *  The map, then what it earned you, then what you learned, then what you
  *  wrote down. Distance and time are the least interesting things here, so
  *  they sit in one row and get out of the way. */
+/** The number and its unit, split, because the stat row puts the number in
+ *  mono and the unit underneath as the label.
+ *
+ *  It used to strip " KM" off the end and label the result KM regardless, so a
+ *  999 metre walk read "999 M" under a label saying KM, and a one minute walk
+ *  read "1" under a label saying TIME. The unit has to come from the value.
+ *
+ *  A duration over an hour reads "1H 30" and carries its units inside itself,
+ *  so it keeps the fallback label. */
+function split(formatted: string, fallback: string): { value: string; key: string } {
+  const m = formatted.match(/^(.*?)\s+(M|KM|MIN)$/);
+  return m ? { value: m[1], key: m[2] } : { value: formatted, key: fallback };
+}
+
 export default function TrailScreen({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -72,13 +86,17 @@ export default function TrailScreen({ params }: { params: Promise<{ id: string }
               <Data className="text-[10px] uppercase text-rust">Ended early</Data>
             ) : null}
           </div>
-          <p className="t-small mt-2 text-stone">Townland of {d.walk.townland}</p>
+          {/* Only when there is one. A walk built out in open ground has no
+              townland to name, and the label alone reads as a bug. */}
+          {d.walk.townland ? (
+            <p className="t-small mt-2 text-stone">Townland of {d.walk.townland}</p>
+          ) : null}
 
           <div className="mt-4">
             <StatRow
               items={[
-                { value: formatDistance(d.walk.distanceM).replace(" KM", ""), key: "km" },
-                { value: formatDuration(d.walk.durationMin * 60).replace(" MIN", ""), key: "time" },
+                { ...split(formatDistance(d.walk.distanceM), "M") },
+                { ...split(formatDuration(d.walk.durationMin * 60), "TIME") },
                 { value: `${d.walk.tilesGained}`, key: "tiles" },
               ]}
             />

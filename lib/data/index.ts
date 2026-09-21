@@ -2,6 +2,7 @@ import type { DataSource } from "./types";
 import { mockSource } from "./mock";
 import { supabaseSource } from "./supabase";
 import { getGenerated, isGenerated } from "../quest/session";
+import { localWalkDetail, localWalks } from "../walk/history";
 
 /** The single read interface every screen uses. Screens never import
  *  Supabase and cannot tell which implementation is behind this.
@@ -21,6 +22,18 @@ export const data: DataSource = {
   ...source,
   getQuest: async (id: string) =>
     (isGenerated(id) ? getGenerated(id) : null) ?? source.getQuest(id),
+
+  /* Walks the walker actually took, and only those.
+   *
+   *  The corpus carries three written walks in Clare for the design to have
+   *  something to lay out against, and showing them here told everybody they
+   *  had been on three walks they had never heard of. History is wired now,
+   *  so it shows what is real and an empty state when there is nothing, which
+   *  is the rule this phase runs on. */
+  getWalks: async () => localWalks(),
+
+  getWalkDetail: async (id: string) =>
+    localWalkDetail(id) ?? source.getWalkDetail(id),
 };
 
 export * from "./types";

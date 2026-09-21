@@ -82,3 +82,66 @@ test("you arrive by being there", () => {
   /* A street away is not. */
   assert.deepEqual(arrivedAt(places, offset(atFirst, 200, 90)), []);
 });
+
+/* ---- writing a finished walk down ---------------------------------------- */
+
+import { walkRecordFrom } from "../lib/walk/history.ts";
+import type { Quest } from "../lib/data/types.ts";
+
+const QUEST = {
+  id: "q-gen-abc", tier: "stroll", shape: "loop", surface: "made", ascentM: 0,
+  title: "Marino Park", flavour: "", distanceM: 3000, durationMin: 45,
+  startsAwayM: 0, townland: "Marino", objectives: [], honesty: [],
+  path: [[-6.238, 53.364], [-6.238, 53.364]], encounters: [],
+} as unknown as Quest;
+
+const HOUR_AGO = 1_700_000_000_000;
+
+test("a walk you finished is recorded as finished", () => {
+  const r = walkRecordFrom({
+    quest: QUEST, walkedM: 2980, startedAt: HOUR_AGO,
+    endedAt: HOUR_AGO + 48 * 60_000, tilesGained: 31,
+  });
+  assert.equal(r.status, "completed");
+  assert.equal(r.distanceM, 2980);
+  assert.equal(r.durationMin, 48);
+  assert.equal(r.tilesGained, 31);
+  assert.equal(r.tier, "stroll");
+  assert.equal(r.townland, "Marino");
+  assert.match(r.dateISO, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test("a walk you gave up on says so", () => {
+  const r = walkRecordFrom({
+    quest: QUEST, walkedM: 400, startedAt: HOUR_AGO,
+    endedAt: HOUR_AGO + 9 * 60_000, tilesGained: 4,
+  });
+  assert.equal(r.status, "abandoned");
+});
+
+test("finishing is judged on ground covered, not waypoints ticked", () => {
+  /* Somebody who walks the whole loop but passes a point on the far side of
+     the road has done the walk, and the app arguing with them about it is the
+     app arguing with somebody who was there. */
+  const r = walkRecordFrom({
+    quest: QUEST, walkedM: 2401, startedAt: HOUR_AGO,
+    endedAt: HOUR_AGO + 40 * 60_000, tilesGained: 20,
+  });
+  assert.equal(r.status, "completed", "80% of the route was not counted as done");
+});
+
+test("the same walk written twice is the same row", () => {
+  /* A double press on End walk, or a back navigation into it, must not leave
+     two of the same walk in the history. */
+  const a = walkRecordFrom({ quest: QUEST, walkedM: 2980, startedAt: HOUR_AGO, endedAt: HOUR_AGO + 1, tilesGained: 3 });
+  const b = walkRecordFrom({ quest: QUEST, walkedM: 2990, startedAt: HOUR_AGO, endedAt: HOUR_AGO + 900, tilesGained: 3 });
+  assert.equal(a.id, b.id);
+});
+
+test("a walk that took seconds still reads as a minute", () => {
+  /* Zero minutes beside a distance reads as broken rather than as brief. */
+  const r = walkRecordFrom({
+    quest: QUEST, walkedM: 50, startedAt: HOUR_AGO, endedAt: HOUR_AGO + 8_000, tilesGained: 1,
+  });
+  assert.equal(r.durationMin, 1);
+});

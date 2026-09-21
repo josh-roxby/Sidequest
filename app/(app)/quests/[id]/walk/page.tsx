@@ -17,6 +17,7 @@ import { useAsync } from "@/hooks/use-async";
 import { useVisited } from "@/hooks/use-visited";
 import { useRoutedQuest } from "@/hooks/use-routed-quest";
 import { arrivedAt, emptyTrack, extend } from "@/lib/quest/track";
+import { recordWalk, walkRecordFrom } from "@/lib/walk/history";
 import { cn } from "@/lib/cn";
 
 /** The walk itself: the map takes the screen and the quest sits over it.
@@ -46,6 +47,11 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   const [arrived, setArrived] = useState<Set<string>>(() => new Set());
   /* Ground covered on earlier walks, already lit when the screen opens. */
   const [visited, unlock] = useVisited();
+  /* When Set off was pressed, and the cells this walk in particular earned.
+     The visited set is every walk ever, so it cannot answer "what did today
+     get me", which is the number the history row wants. */
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const gained = useRef<Set<string>>(new Set());
 
   const map = useRef<MapViewHandle>(null);
   /* The walk as written is an arc across the ground. Once the basemap has the
@@ -58,6 +64,8 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
      new prop on the map on the one render that matters least. */
   const questRef = useRef(q);
   useEffect(() => { questRef.current = q; }, [q]);
+  const trackRef = useRef(track);
+  useEffect(() => { trackRef.current = track; }, [track]);
 
   /** Reached by having been there, or by the fixture already saying so for a
    *  walk somebody took before this screen could tell. */
@@ -92,8 +100,36 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
    *  new ground. The screen only had to ask. */
   const setOff = useCallback(() => {
     setBriefed(true);
+    setStartedAt(Date.now());
     map.current?.locate();
   }, []);
+
+  /** Cells go to the store, which is every walk ever, and to this walk's own
+   *  tally, which is what the history row reports. */
+  const onUnlock = useCallback((cell: string) => {
+    gained.current.add(cell);
+    unlock(cell);
+  }, [unlock]);
+
+  /** Ending it is what writes it down.
+   *
+   *  Recorded before the navigation rather than after, because the screen is
+   *  gone a frame later and an effect on the way out is a race. Ending the
+   *  same walk twice, which a double press will do, overwrites one row rather
+   *  than adding a second. */
+  const endWalk = useCallback(() => {
+    const walk = questRef.current;
+    if (walk && startedAt !== null) {
+      recordWalk(walkRecordFrom({
+        quest: walk,
+        walkedM: trackRef.current.metres,
+        startedAt,
+        endedAt: Date.now(),
+        tilesGained: gained.current.size,
+      }), walk);
+    }
+    router.push("/history");
+  }, [router, startedAt]);
 
   const markers = useMemo<MapMarker[]>(() => {
     const you = here ?? (q ? { lat: q.path[0][1], lng: q.path[0][0] } : DEFAULT_CENTRE);
@@ -166,7 +202,7 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
            that answers "where am I". */
         onLocate={onFix}
         visited={visited}
-        onUnlock={unlock}
+        onUnlock={onUnlock}
         controls={
           <>
             <button
@@ -343,7 +379,7 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
         onDismiss={() => setEnding(false)}
         label="End here?"
         title={q?.title ?? ""}
-        action={<Action tone="rust" onClick={() => router.push("/history")}>End walk</Action>}
+        action={<Action tone="rust" onClick={endWalk}>End walk</Action>}
       >
         <p className="t-body text-ink">
           You have covered {formatDistance(walkedM)} of {formatDistance(q?.distanceM ?? 0)}.

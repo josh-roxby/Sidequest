@@ -301,6 +301,7 @@ export function assembleQuest({
           key, from, tier, shape: wanted, targetM: r.metres, path: r.path,
           title: titleOf(some),
           flavour: flavourOf(some, true),
+          townland: some[0]?.townland,
           objectives: some.length > 0 ? objectivesFor(r.path, some) : [{
             id: "o-1", pointId: null, label: "The turn for home", required: false,
             reached: false, atM: Math.round(r.metres / 2),
@@ -333,6 +334,7 @@ export function assembleQuest({
         key, from, tier, shape: wanted, targetM, path,
         title: titleOf(some),
         flavour: flavourOf(some, false),
+        townland: some[0]?.townland,
         objectives: some.map((p, i) => ({
           id: `o-${i + 1}`, pointId: p.id, label: p.name, required: true, reached: false,
           atM: atAlong(path, { lat: p.lat, lng: p.lng }), lat: p.lat, lng: p.lng,
@@ -377,6 +379,10 @@ function buildQuest(a: {
   key: string; from: LatLng; tier: Tier; shape: QuestShape; targetM: number;
   path: Path; title: string; flavour: string; objectives: Objective[];
   encounters: Quest["encounters"]; stops: number; honesty?: string[];
+  /** Where the walk is, named. Taken from the places it calls at, because a
+   *  generated walk has no townland of its own and a history row reading
+   *  "Townland of " with nothing after it is worse than no line at all. */
+  townland?: string;
 }): Quest {
   return {
     /* Stamped with the position it was built from, so the same walker asking
@@ -392,7 +398,7 @@ function buildQuest(a: {
     distanceM: Math.round(a.targetM),
     durationMin: durationMin(a.targetM, a.stops),
     startsAwayM: 0,
-    townland: "",
+    townland: a.townland ?? "",
     start: a.from,
     startName: "Where you are",
     honesty: a.honesty ?? [
