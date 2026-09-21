@@ -18,10 +18,12 @@ component.
 Front end reface on mock data. See [`docs/reface-plan.md`](./docs/reface-plan.md).
 
 **What to work on next is in [`docs/mvp-plan.md`](./docs/mvp-plan.md)**, with
-the ordered list at the top of `TODO.md`. The short version: the app looks
-further along than it is, because the loop is the part that is missing. A walk
-does not follow the walker, nothing about it is recorded, and there are no
-points of interest outside Dublin 3 and 9.
+the ordered list at the top of `TODO.md`. A walk now follows the walker and
+the ground covered is kept, so what is left of the loop is recording a
+finished walk. The other two blockers are points of interest outside Dublin 3
+and 9, and getting the ingest onto a machine that can reach data.gov.ie: see
+[`docs/cowork-poi-brief.md`](./docs/cowork-poi-brief.md) for the brief that
+does it.
 
 **Hard constraints for this phase.** Breaking one of these is a defect, not a
 judgement call.

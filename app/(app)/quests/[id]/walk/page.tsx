@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { use, useMemo, useRef, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapView, type MapMarker, type MapViewHandle } from "@/components/map/MapView";
 import { Action } from "@/components/primitives/Action";
 import { Button } from "@/components/primitives/Button";
@@ -14,7 +14,9 @@ import { data, type Objective, type Point, type LatLng } from "@/lib/data";
 import { DEFAULT_CENTRE } from "@/lib/map/project";
 import { estimateDurationS, formatDistance, formatDuration } from "@/lib/walking";
 import { useAsync } from "@/hooks/use-async";
+import { useVisited } from "@/hooks/use-visited";
 import { useRoutedQuest } from "@/hooks/use-routed-quest";
+import { arrivedAt, emptyTrack, extend } from "@/lib/quest/track";
 import { cn } from "@/lib/cn";
 
 /** The walk itself: the map takes the screen and the quest sits over it.
@@ -36,12 +38,62 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   /* Where the walker actually is, once they have asked to be placed. Until
      then the start of the route is the honest stand-in. */
   const [here, setHere] = useState<LatLng | null>(null);
+  /* The walk as it happens. `track` is ground actually covered, summed between
+     fixes; `arrived` is the places reached by being at them. Both used to come
+     off `objectives.reached`, a flag on a fixture that nothing ever set, so
+     the card read 0 M for the whole walk however far anybody went. */
+  const [track, setTrack] = useState(emptyTrack);
+  const [arrived, setArrived] = useState<Set<string>>(() => new Set());
+  /* Ground covered on earlier walks, already lit when the screen opens. */
+  const [visited, unlock] = useVisited();
 
   const map = useRef<MapViewHandle>(null);
   /* The walk as written is an arc across the ground. Once the basemap has the
      ways under it, the same router that draws a generated walk redraws this
      one, so the line on the screen is one a walker can actually follow. */
   const { quest: q, onMapReady } = useRoutedQuest(quest.data, map);
+
+  /* Held in a ref so the fix handler never has to be rebuilt when the walk
+     is re-cut onto real streets. A new handler identity there would mean a
+     new prop on the map on the one render that matters least. */
+  const questRef = useRef(q);
+  useEffect(() => { questRef.current = q; }, [q]);
+
+  /** Reached by having been there, or by the fixture already saying so for a
+   *  walk somebody took before this screen could tell. */
+  const isReached = useCallback(
+    (o: Objective) => arrived.has(o.id) || o.reached, [arrived]);
+
+  /** Every fix while the walk is live: where the walker is, how far they have
+   *  come, and anything they are now standing at. The map owns the watch and
+   *  the camera; this owns what the walk makes of it. */
+  const onFix = useCallback((p: LatLng) => {
+    setHere(p);
+    setTrack((t) => extend(t, p));
+    const objectives = questRef.current?.objectives ?? [];
+    const at = arrivedAt(objectives, p);
+    if (at.length === 0) return;
+    setArrived((prev) => {
+      const next = at.filter((id) => !prev.has(id));
+      return next.length === 0 ? prev : new Set([...prev, ...next]);
+    });
+  }, []);
+
+  /** Setting off is what starts the watch.
+   *
+   *  Not the page load. The rule is that the browser's own prompt never fires
+   *  on a load, and this is the press it hangs off: the walker has read the
+   *  brief and pressed Set off. In practice the permission is already granted
+   *  by then, because a walk cannot be generated without a fix, so no prompt
+   *  appears at all and the pin simply starts following.
+   *
+   *  `locate` on the map does all of it: first fix, heading, the continuous
+   *  watch, the camera, and a cell unlock every time the walker crosses into
+   *  new ground. The screen only had to ask. */
+  const setOff = useCallback(() => {
+    setBriefed(true);
+    map.current?.locate();
+  }, []);
 
   const markers = useMemo<MapMarker[]>(() => {
     const you = here ?? (q ? { lat: q.path[0][1], lng: q.path[0][0] } : DEFAULT_CENTRE);
@@ -50,11 +102,11 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
       { id: "you", ...you, kind: "you" as const },
       ...q.objectives.map((o) => ({
         id: o.id, lat: o.lat, lng: o.lng,
-        kind: (o.reached ? "objective-done" : "objective") as MapMarker["kind"],
+        kind: (isReached(o) ? "objective-done" : "objective") as MapMarker["kind"],
         label: o.label,
       })),
     ];
-  }, [q, here]);
+  }, [q, here, isReached]);
 
   const trail = useMemo<[number, number][]>(
     () => (q?.path ?? []),
@@ -78,11 +130,12 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
    *  five times inside the drawer's markup. */
   const openPoint = openObj ? point(openObj) : undefined;
 
-  const doneCount = q?.objectives.filter((o) => o.reached).length ?? 0;
+  const doneCount = q?.objectives.filter(isReached).length ?? 0;
   const totalS = q ? estimateDurationS(q.distanceM, {
     surface: q.surface, ascentM: q.ascentM, dwellS: q.objectives.length * 240,
   }) : 0;
-  const walkedM = q ? Math.max(...q.objectives.filter((o) => o.reached).map((o) => o.atM), 0) : 0;
+  /* Ground actually covered, not the furthest waypoint ticked off. */
+  const walkedM = Math.round(track.metres);
 
   /** Pinned at submission, not at typing. The pin should mark where you
    *  actually stopped, and people write for a minute after they stop walking. */
@@ -111,7 +164,9 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
         /* Without this the camera flew to the walker and the dot stayed at the
            quest start, so pressing locate moved the map away from the only mark
            that answers "where am I". */
-        onLocate={setHere}
+        onLocate={onFix}
+        visited={visited}
+        onUnlock={unlock}
         controls={
           <>
             <button
@@ -143,11 +198,11 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
           there without having read the whole walk in advance. */}
       <Frame
         open={Boolean(q) && !briefed}
-        onDismiss={() => setBriefed(true)}
+        onDismiss={setOff}
         ratio="tall"
         label={`${formatDistance(q?.distanceM ?? 0)} · ${formatDuration(totalS)}`}
         title={q?.title ?? ""}
-        action={<Action onClick={() => setBriefed(true)}>Set off</Action>}
+        action={<Action onClick={setOff}>Set off</Action>}
       >
         <div className="flex flex-col gap-3">
           <p className="t-body text-ink">{q?.flavour}</p>

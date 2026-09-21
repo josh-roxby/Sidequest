@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MapView, type MapMarker, type MapViewHandle } from "@/components/map/MapView";
 import { LocationGate } from "@/components/domain/LocationGate";
@@ -14,6 +14,7 @@ import { Skeleton, StatusStrip } from "@/components/primitives/States";
 import { data, type CommunityPoint, type LatLng, type Note, type Point } from "@/lib/data";
 import { DEFAULT_CENTRE } from "@/lib/map/project";
 import { useAsync } from "@/hooks/use-async";
+import { useVisited } from "@/hooks/use-visited";
 import { useSettings } from "@/lib/settings";
 
 /** Fixtures carry normalised 0–1 positions. The canvas works in metres, so
@@ -84,13 +85,8 @@ export default function MapScreen() {
    *  them. Empty until the walk store lands in slice 6. */
   const trail = useMemo<[number, number][]>(() => [], []);
 
-  /** Ground walked in this session. Nothing is persisted yet: the store lands
-   *  in slice 6, and until it does an empty set is the honest starting state
-   *  rather than a map pretending you have been somewhere. */
-  const [visited, setVisited] = useState<string[]>([]);
-  const unlock = useCallback((cell: string) => {
-    setVisited((prev) => (prev.includes(cell) ? prev : [...prev, cell]));
-  }, []);
+  /* Ground covered on earlier walks, already lit when the screen opens. */
+  const [visited, unlock] = useVisited();
 
   return (
     <div className="absolute inset-0 overflow-hidden">

@@ -27,23 +27,24 @@ you can start a walk, and nothing that happens after that is recorded.
 
 **Blocking a share with friends and family.**
 
-- [ ] **1. The walk has to follow you.** The walk screen never watches
-      position. `MapView` already does all of it, holds the pin and fires
-      `onUnlock` per H3 cell, and the screen passes it no `visited`, no
-      `onUnlock`, and starts no watch. Progress reads `objectives.reached`, a
-      fixture flag nothing ever sets, so you can walk five kilometres and the
-      card still says 0 M. Mostly wiring, and the single biggest gap
-- [ ] **2. It has to still be there tomorrow.** No visited store exists at all
-      (`lib/fog/` is in the layout and not on disk), and ending a walk records
-      nothing. Someone walks five kilometres, closes the app, and it never
-      happened. Local storage until the migrations are approved: free, no
-      account, honest lifetime for a device the walker owns
+- [x] **1. The walk has to follow you.** Done. Pressing Set off starts the
+      watch, the pin follows, the camera keeps up, cells unlock as they are
+      entered, and distance covered comes from the track in `lib/quest/track.ts`
+      rather than from a fixture flag. Verified against a simulated 600m walk:
+      599m measured, eight cells lit
+- [~] **2. It has to still be there tomorrow.** Half done. `lib/fog/store.ts`
+      keeps the ground covered and both the map and the walk screen read it, so
+      cells survive a reload and a walk taken yesterday is still lit. **Still
+      missing: ending a walk records nothing.** No history row, no distance, no
+      points reached, and `/history` still shows fixtures. That is the next
+      piece
 - [ ] **3. Points of interest outside Dublin 3.** See the phases below. Until
       this lands the app works for about four square kilometres of the north
       side and politely refuses everywhere else
-- [ ] **4. It must not be able to show a white screen.** No error boundary
-      anywhere. Somebody two kilometres into a walk with a blank phone is the
-      worst failure this app has
+- [x] **4. It must not be able to show a white screen.** Done.
+      `app/(app)/error.tsx` and `app/global-error.tsx`, both saying that the
+      ground covered is safe, because that is the question somebody in that
+      position actually has
 
 **The national dataset, in phases.**
 
@@ -77,8 +78,7 @@ you can start a walk, and nothing that happens after that is recorded.
       only way to know where to go
 - [ ] Off route: say so quietly and offer the way back. There is no concept of
       being off the line at all right now
-- [ ] The camera should follow and hand back on a drag. Works on the map
-      screen, not wired on the walk screen
+- [x] The camera follows and hands back on a drag, on the walk screen too
 - [ ] Make the re-cut a transition rather than a jump. The written line is
       replaced under the walker about a second in and it reads as a glitch
 - [ ] A service worker for the shell and recent tiles. Walking in Ireland means
