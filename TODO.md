@@ -4,13 +4,85 @@ Live punch list, organised by the release phases in
 [`docs/PRD.md`](./docs/PRD.md) §15. `README.md` stays lean; this is the
 authoritative "what's left".
 
-Docs: [Audit](./docs/audit.md) · [V1 map build](./docs/v1-map-build.md) ·
+Docs: [MVP plan](./docs/mvp-plan.md) · [Audit](./docs/audit.md) ·
+[V1 map build](./docs/v1-map-build.md) ·
 [Map infrastructure](./docs/map-infrastructure.md) · [PRD](./docs/PRD.md) ·
 [Data pipeline](./docs/data-pipeline.md) · [Repo review](./docs/repo-review.md) ·
 [Fog of war](./docs/fog-of-war.md)
 
 **Standing constraints** (PRD §3): **C1** zero third-party spend to MVP ·
 **C2** we own the GIS · **C3** no chains, ever · **C4** no invented history.
+
+---
+
+## The road to a first MVP
+
+The ordered list, reasoned through in [`docs/mvp-plan.md`](./docs/mvp-plan.md).
+Everything below this section is the older punch list and still stands; this is
+what to do first and why.
+
+The app looks further along than it is. Twenty two screens, a real basemap, a
+router that draws walks on real streets. What it does not have is the loop:
+you can start a walk, and nothing that happens after that is recorded.
+
+**Blocking a share with friends and family.**
+
+- [ ] **1. The walk has to follow you.** The walk screen never watches
+      position. `MapView` already does all of it, holds the pin and fires
+      `onUnlock` per H3 cell, and the screen passes it no `visited`, no
+      `onUnlock`, and starts no watch. Progress reads `objectives.reached`, a
+      fixture flag nothing ever sets, so you can walk five kilometres and the
+      card still says 0 M. Mostly wiring, and the single biggest gap
+- [ ] **2. It has to still be there tomorrow.** No visited store exists at all
+      (`lib/fog/` is in the layout and not on disk), and ending a walk records
+      nothing. Someone walks five kilometres, closes the app, and it never
+      happened. Local storage until the migrations are approved: free, no
+      account, honest lifetime for a device the walker owns
+- [ ] **3. Points of interest outside Dublin 3.** See the phases below. Until
+      this lands the app works for about four square kilometres of the north
+      side and politely refuses everywhere else
+- [ ] **4. It must not be able to show a white screen.** No error boundary
+      anywhere. Somebody two kilometres into a walk with a blank phone is the
+      worst failure this app has
+
+**The national dataset, in phases.**
+
+- [ ] **Phase 0. Somewhere that can reach the internet.** Nothing else here can
+      start until this exists. data.gov.ie, the Logainm API, Wikidata and every
+      OSM endpoint are refused by the proxy on the machine this repo is built
+      on. Recommended: a GitHub Action that runs the ingest and commits the
+      output. Free, versioned, re-runnable by anyone
+- [ ] **Phase 1. A national spine, 3,000 to 5,000 points.** Not all 140,000.
+      Every OPW heritage site and NPWS reserve, the SMR filtered to classes
+      with something upstanding to see, NIAH entries rated Regional or above
+      because that is where the written appraisals are, and OSM's historic and
+      attraction tags as the net for what the registers miss. Commit it as
+      NDJSON, two to three megabytes, read through `lib/data` like the mock
+      source. No database, no bill, works offline
+- [ ] **Phase 2. Density where people actually walk.** The spine gives every
+      county something. It does not give a trot from your own door. Parks,
+      bridges, churches, libraries, statues, named terraces, nearly all in OSM.
+      Yardstick: ten presses in a row should give eight or more different walks
+- [ ] **Phase 3. The rest of the survey.** All 140,000 through the pipeline's
+      reachability, visibility and scoring passes. Can wait until it is in use
+- [ ] **Tests over the national file.** Extend the three quality checks in
+      `test/fixtures.test.ts` to whatever ships. A dataset with no tests over
+      it rots in a month
+
+**Then, for how it feels to walk.**
+
+- [ ] Arrival as an event: the tile pops, the card opens, the lore unlocks. The
+      pop animation exists and nothing triggers it
+- [ ] A bearing and a distance to the next objective, so the map is not the
+      only way to know where to go
+- [ ] Off route: say so quietly and offer the way back. There is no concept of
+      being off the line at all right now
+- [ ] The camera should follow and hand back on a drag. Works on the map
+      screen, not wired on the walk screen
+- [ ] Make the re-cut a transition rather than a jump. The written line is
+      replaced under the walker about a second in and it reads as a glitch
+- [ ] A service worker for the shell and recent tiles. Walking in Ireland means
+      losing signal
 
 ---
 
