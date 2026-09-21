@@ -30,23 +30,21 @@ test("every layer binds to a source that exists", () => {
   }
 });
 
-test("the fog is gone and walked ground is lit in its place", () => {
-  const ids = new Set(surveyStyle().layers.map((l) => l.id));
-  for (const gone of ["fog", "fog-edge", "quest-tiles", "quest-tiles-edge"]) {
-    assert.ok(!ids.has(gone), `${gone} survived the flip away from fog of war`);
-  }
-  for (const want of ["visited", "visited-edge", "tile-pop", "tile-pop-edge"]) {
-    assert.ok(ids.has(want), `${want} is missing`);
-  }
-});
+test("nothing draws a hex grid over the map any more", () => {
+  /* Two rounds of this. The fog came off in September 2026 and was replaced
+     by lit cells; the lit cells came off a week later, because they were the
+     last thing on the map that was about the app rather than about the ground
+     and they sat on top of the streets a walker is trying to read.
 
-test("walked ground is drawn under the trail, never over it", () => {
-  const order = surveyStyle().layers.map((l) => l.id);
-  // A highlight that covers the route you are walking is worse than no
-  // highlight, so the draw order is a property worth pinning down.
-  for (const lit of ["visited", "visited-edge", "tile-pop", "tile-pop-edge"]) {
-    assert.ok(order.indexOf(lit) < order.indexOf("trail-done"),
-      `${lit} draws over the trail`);
+     What they were keeping is kept elsewhere: `lib/fog/store.ts` still
+     records every cell entered and a finished walk still reports the tiles it
+     earned. This is about the drawing and only the drawing. */
+  const ids = new Set(surveyStyle().layers.map((l) => l.id));
+  for (const gone of [
+    "fog", "fog-edge", "quest-tiles", "quest-tiles-edge",
+    "visited", "visited-edge", "tile-pop", "tile-pop-edge",
+  ]) {
+    assert.ok(!ids.has(gone), `${gone} is still drawn over the map`);
   }
 });
 

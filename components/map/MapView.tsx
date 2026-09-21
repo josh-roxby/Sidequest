@@ -4,7 +4,7 @@ import {
   useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState,
 } from "react";
 import {
-  cellAt, cellRing, metresPerPixel, RES_FINEST, resForMetresPerPixel, visitedAtRes,
+  cellAt, metresPerPixel, RES_FINEST,
 } from "@/lib/map/hex";
 import { DEFAULT_CENTRE, IRELAND_BOUNDS } from "@/lib/map/project";
 import {
@@ -95,9 +95,6 @@ export interface MapViewProps {
   onAdd?: (id: string, at: LatLng) => void;
 }
 
-/** How long a tile takes to pop when you step into it. Long enough to read as
- *  a reward, short enough that a brisk walk through a row of cells does not
- *  queue up a backlog of flourishes. */
 /** How long a walker will wait for a better line before they would rather have
  *  a worse one. Spent across the whole sweep, not per stop. */
 const DEADLINE_MS = 6000;
@@ -127,19 +124,6 @@ function settled(m: MLMap, budgetMs: number): Promise<void> {
     m.once("idle", finish);
   });
 }
-
-const POP_MS = 620;
-
-/** One cell as a GeoJSON polygon. The ring is cached and already closed, so
- *  this is a wrapper rather than work. */
-const cellFeature = (cell: string, properties: Record<string, number> = {}) => ({
-  type: "Feature" as const,
-  properties,
-  geometry: { type: "Polygon" as const, coordinates: [cellRing(cell)] },
-});
-
-const collection = (features: ReturnType<typeof cellFeature>[]) =>
-  ({ type: "FeatureCollection" as const, features });
 
 const GLYPH: Record<MapMarker["kind"], MarkName | null> = {
   you: null, point: "point", objective: "flag", "objective-done": "badge",
@@ -233,60 +217,15 @@ export function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 
-  /* ---- walked ground, repainted when the camera settles ---------------- */
-  const visitedKey = visited.join(",");
-  const paintVisited = useCallback(() => {
-    const m = map.current;
-    if (!m) return;
-    /* At the resolution the camera is drawing, so the lit ground is one grid
-       with the cell that pops on top of it rather than a second grid of a
-       different size, which is what made the tiling look irregular before. */
-    const res = resForMetresPerPixel(metresPerPixel(m.getZoom(), m.getCenter().lat));
-    (m.getSource("visited") as GeoJSONSource | undefined)
-      ?.setData(collection(visitedAtRes(visited, res).map((c) => cellFeature(c))));
-    // visitedKey is the honest dependency: the same cells in a new array are
-    // not a reason to rebuild every polygon.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visitedKey]);
-
-  /* ---- a tile popping when you step into it ---------------------------- */
-  const popping = useRef<number | null>(null);
-  const pop = useCallback((cell: string) => {
-    const m = map.current;
-    if (!m) return;
-    const src = () => m.getSource("tile-pop") as GeoJSONSource | undefined;
-    if (popping.current) cancelAnimationFrame(popping.current);
-
-    /* Drawn on its own source for the length of the flourish rather than
-       animated inside the visited set, so one cell changing does not mean
-       rewriting every polygon on screen sixty times a second.
-
-       There is no scale transform to reach for here: MapLibre draws a polygon
-       where its coordinates say, so the pop is carried by opacity and by the
-       edge thickening and settling. */
-    const t0 = performance.now();
-    const frame = (now: number) => {
-      const t = Math.min(1, (now - t0) / POP_MS);
-      // Out and back: bright in the first third, settling through the rest.
-      const swell = t < 0.34 ? t / 0.34 : 1 - (t - 0.34) / 0.66;
-      src()?.setData(collection([cellFeature(cell, {
-        fill: 0.42 + swell * 0.48,
-        line: 0.5 + swell * 0.5,
-        width: 1 + swell * 2.6,
-      })]));
-      if (t < 1) {
-        popping.current = requestAnimationFrame(frame);
-        return;
-      }
-      popping.current = null;
-      src()?.setData(collection([]));
-    };
-    popping.current = requestAnimationFrame(frame);
-  }, []);
-
-  useEffect(() => () => {
-    if (popping.current) cancelAnimationFrame(popping.current);
-  }, []);
+  /* Ground covered is counted, not drawn.
+   *
+   *  The lit hexagons came off on 21 September 2026. They were the last thing
+   *  on the map that was about the app rather than about the ground, and they
+   *  sat on top of the streets a walker is trying to read. What they were
+   *  keeping is kept: every cell entered still goes to the store, the counts
+   *  still add up, and a walk still reports the tiles it earned. The quantiser
+   *  in `lib/map/hex.ts` is unchanged and still has `visitedAtRes`, which is
+   *  what a coverage view will want when there is one. */
 
   /* ---- the trail ------------------------------------------------------- */
   useEffect(() => {
@@ -328,11 +267,9 @@ export function MapView({
     const m = map.current;
     if (!m || !ready) return;
     place();
-    paintVisited();
     m.on("move", place);
-    m.on("moveend", paintVisited);
-    return () => { m.off("move", place); m.off("moveend", paintVisited); };
-  }, [ready, place, paintVisited]);
+    return () => { m.off("move", place); };
+  }, [ready, place]);
 
   /* ---- press and hold to add ------------------------------------------- */
   /** Where the thumb went down, once the hold has been held long enough. */
@@ -456,10 +393,7 @@ export function MapView({
             const cell = cellAt({ lat: next.lat, lng: next.lng }, RES_FINEST);
             if (cell !== lastCell.current) {
               lastCell.current = cell;
-              if (!visited.includes(cell)) {
-                pop(cell);
-                onUnlock?.(cell);
-              }
+              if (!visited.includes(cell)) onUnlock?.(cell);
             }
           },
           (reason) => {
@@ -483,9 +417,10 @@ export function MapView({
     }
     // visited is read inside the watch callback, which is created once; the
     // page owns the set and re-supplies it, so reading a stale array here only
-    // ever risks a second pop on a cell already lit.
+    // ever risks reporting a cell that was already recorded, which the store
+    // discards.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [homeLat, homeLng, locating, onLocate, onLocateFail, onUnlock, pop]);
+  }, [homeLat, homeLng, locating, onLocate, onLocateFail, onUnlock]);
 
   /* The page gets first refusal. On the first press it shows what the location
      is for, and bumps `locateSignal` once the walker has agreed, so the

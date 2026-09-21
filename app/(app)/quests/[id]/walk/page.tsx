@@ -385,8 +385,8 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
           You have covered {formatDistance(walkedM)} of {formatDistance(q?.distanceM ?? 0)}.
         </p>
         <p className="t-small mt-2 text-stone">
-          Every tile you uncovered stays uncovered. Ending early costs you nothing
-          you have already walked for.
+          The ground you covered is kept. Ending early costs you nothing you
+          have already walked for.
         </p>
       </Frame>
 

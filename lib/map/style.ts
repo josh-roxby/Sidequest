@@ -27,7 +27,10 @@ const token = (name: string, fallback: string) => {
 };
 
 /** The sources the app writes into as the camera and the walk move. */
-export const DATA_SOURCES = ["visited", "tile-pop", "trail-done", "trail-todo"] as const;
+/* The lit hexagons came off on 21 September 2026, so `visited` and `tile-pop`
+   went with them. The visited set itself is unchanged and still recorded: see
+   `lib/fog/store.ts`. */
+export const DATA_SOURCES = ["trail-done", "trail-todo"] as const;
 
 const EMPTY = {
   type: "geojson" as const,
@@ -140,8 +143,6 @@ export function surveyStyle(): StyleSpecification {
   const paper = token("--map-paper", "#EDEBE3");
   const water = token("--map-water", "#CFD8D6");
   const green = token("--map-green", "#DEE4D7");
-  const visited = token("--map-visited", "#FFFFFF");
-  const visitedLine = token("--map-visited-line", "#A9ADAA");
   const rule = token("--rule", "#D6D2C6");
   const stone = token("--stone", "#6E6F69");
   const ink = token("--ink", "#22231F");
@@ -249,47 +250,11 @@ export function surveyStyle(): StyleSpecification {
       ...coastLayers,
       ...groundLayers,
 
-      /* Ground you have walked, lit rather than the rest of the country
-         hidden. Flat: one tone, no per cell variation, because the variation
-         was there to stop a fog blanket showing its seams and there is no
-         blanket any more. White over the real ground reads as lit; a warm grey
-         over it reads as dirty, which is what it was doing before. */
-      {
-        id: "visited",
-        type: "fill",
-        source: "visited",
-        paint: { "fill-color": visited, "fill-opacity": 0.42 },
-      },
-      {
-        id: "visited-edge",
-        type: "line",
-        source: "visited",
-        layout: { "line-join": "round" },
-        paint: { "line-color": visitedLine, "line-width": 1, "line-opacity": 0.5 },
-      },
-      {
-        /* The cell you have just stepped into, on its own layer for the length
-           of the flourish. Separate from `visited` so animating one cell does
-           not mean rewriting the whole set sixty times a second. */
-        id: "tile-pop",
-        type: "fill",
-        source: "tile-pop",
-        paint: {
-          "fill-color": visited,
-          "fill-opacity": ["coalesce", ["get", "fill"], 0],
-        },
-      },
-      {
-        id: "tile-pop-edge",
-        type: "line",
-        source: "tile-pop",
-        layout: { "line-join": "round" },
-        paint: {
-          "line-color": visitedLine,
-          "line-width": ["coalesce", ["get", "width"], 1],
-          "line-opacity": ["coalesce", ["get", "line"], 0],
-        },
-      },
+      /* Ground you have walked used to be lit here, as a hex grid over the
+         map. It came off because it was the last thing on the map that was
+         about the app rather than about the ground, and it sat on top of the
+         streets a walker is trying to read. The ground covered is still
+         recorded and still counted, it is simply not drawn. */
       { id: "trail-done", type: "line", source: "trail-done",
         layout: { "line-cap": "round", "line-join": "round" },
         paint: { "line-color": token("--map-trail", "#2E4034"), "line-width": 3 } },

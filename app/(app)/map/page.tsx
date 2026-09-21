@@ -179,8 +179,15 @@ export default function MapScreen() {
         ) : (
           <>
             <Label style={{ fontSize: 9 }}>{territory.data?.county}</Label>
+            {/* The tile count is the walker's own, not the fixture's. The
+                fixture says 1,284, the dock says however many you have
+                actually covered, and two numbers disagreeing on one screen is
+                worse than either of them being missing. Townlands still comes
+                from the territory read and is still mock, which the corpus
+                will settle. */}
             <Data className="mt-0.5 block text-ink">
-              {territory.data?.tiles.toLocaleString()} TILES · {territory.data?.townlands} TOWNLANDS
+              {visited.length.toLocaleString()} {visited.length === 1 ? "TILE" : "TILES"}
+              {" · "}{territory.data?.townlands} TOWNLANDS
             </Data>
           </>
         )}
@@ -193,8 +200,7 @@ export default function MapScreen() {
       ) : null}
 
       <MapDock
-        region={territory.data?.county ?? "In view"}
-        tilesInView={{ revealed: territory.data?.tiles ?? 0, total: 4200 }}
+        tilesCovered={visited.length}
         points={(points.data ?? []).map((p) => ({
           id: p.id, name: p.name, category: p.category, unlocked: p.lore.length > 0,
         }))}

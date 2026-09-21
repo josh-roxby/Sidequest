@@ -142,7 +142,7 @@ export function SettingsPanel() {
       <Label className="mt-6">Your data</Label>
       <Card className="mt-2">
         <p className="t-small text-stone">
-          We keep the tiles you uncovered, never the path you took, so nothing
+          We keep the tiles you covered, never the path you took, so nothing
           here can be replayed as a route. Your recorded track is the one
           exception and it is deletable from any walk in History.
         </p>
@@ -233,8 +233,8 @@ export function SettingsPanel() {
           ) : (
             <>
               <p className="t-body text-ink">
-                The short version: we store the squares of the map you have
-                uncovered, not the path you walked. A set of hexagon identifiers
+                The short version: we store which tiles of the map you have
+                covered, not the path you walked. A set of hexagon identifiers
                 cannot be replayed as a route and does not reveal your speed,
                 your direction or where you stopped.
               </p>

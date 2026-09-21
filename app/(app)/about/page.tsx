@@ -143,7 +143,7 @@ export default function AboutScreen() {
           Fourteen townlands in Clare reads better than any number of steps.
         </p>
         <p className="t-body text-ink">
-          We keep the squares you uncovered, never the path you took, so none of
+          We keep the tiles you covered, never the path you took, so none of
           this can be replayed as a route. Your recorded track is the one
           exception and you can delete it from any walk.
         </p>

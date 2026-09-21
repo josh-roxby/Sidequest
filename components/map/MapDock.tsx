@@ -19,8 +19,14 @@ export interface MapDockProps {
   /** Tiles revealed and total, for whatever the camera currently holds. The
    *  numbers move as you pan, which is the point: it reads as a survey of the
    *  ground in front of you rather than a lifetime total. */
-  tilesInView: { revealed: number; total: number };
-  region: string;
+  /** Ground the walker has covered, as a count of H3 cells.
+   *
+   *  A count and no denominator, because there is no honest one: the total
+   *  used to be four thousand two hundred, which was a number somebody made
+   *  up, and a progress bar against an invented total is a progress bar
+   *  against nothing. The tiles themselves are no longer drawn on the map;
+   *  this is the ledger they left behind. */
+  tilesCovered: number;
   points: { id: string; name: string; category: string; unlocked: boolean }[];
   badges: { label: string; progress: number; target: number }[];
   notes: Note[];
@@ -38,7 +44,7 @@ export interface MapDockProps {
  *  are looking at, so the answer belongs over the map, not on another screen.
  *  Only one panel is open at a time. */
 export function MapDock({
-  tilesInView, region, points, badges, notes, layers, onLayer, onPoint, onNote,
+  tilesCovered, points, badges, notes, layers, onLayer, onPoint, onNote,
   onAdd,
 }: MapDockProps) {
   const [open, setOpen] = useState<PanelId | null>(null);
@@ -96,18 +102,17 @@ export function MapDock({
 
           {open === "tiles" ? (
             <>
-              <Label>{region} in view</Label>
+              <Label>Ground you have covered</Label>
               <div className="mt-2 flex items-baseline gap-2">
-                <Data size="lg" className="text-ink">{tilesInView.revealed.toLocaleString()}</Data>
-                <Data className="text-stone">/ {tilesInView.total.toLocaleString()}</Data>
-              </div>
-              <div className="mt-2 h-1 w-full bg-surface-2">
-                <div className="h-full bg-field"
-                  style={{ width: `${(tilesInView.revealed / Math.max(1, tilesInView.total)) * 100}%` }} />
+                <Data size="lg" className="text-ink">{tilesCovered.toLocaleString()}</Data>
+                <Data className="text-stone">
+                  {tilesCovered === 1 ? "tile" : "tiles"}
+                </Data>
               </div>
               <p className="t-small mt-2 text-stone">
-                A tile clears when you walk through it. Zoomed out, a big tile only
-                clears once most of the ground inside it has.
+                {tilesCovered === 0
+                  ? `Nothing yet. A tile is about eighty metres across and one is yours the moment you walk into it.`
+                  : "About eighty metres across each, and counted rather than drawn, so the map stays a map."}
               </p>
             </>
           ) : null}

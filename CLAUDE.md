@@ -3,11 +3,19 @@
 A walking app for Ireland. Pick how long you have, get a loop anchored to
 real places worth knowing about, walk it, keep the ground you covered.
 
-**The fog of war came off on 13 September 2026.** The map is fully visible and
-ground you have walked is lit, rather than unwalked country being hidden. The
-PRD still describes the fog in places; `docs/v1-map-build.md` records why it
-changed and what it costs. Anything reading `docs/fog-of-war.md` should be
-read as the quantiser and the store, which are unchanged, not as the look.
+**Nothing is drawn over the map.** The fog of war came off on 13 September
+2026, replaced by lit hexagons over ground you had walked; those came off on
+21 September, because they were the last thing on the map that was about the
+app rather than about the ground and they sat on top of the streets a walker
+is trying to read.
+
+**The ledger survived both.** Every cell you enter still goes to
+`lib/fog/store.ts`, the counts on the map screen and in the dock are yours
+rather than a fixture's, and a finished walk still reports the tiles it
+earned. `lib/map/hex.ts` is unchanged and still carries `visitedAtRes`, which
+is what a coverage view will want when there is one. The PRD still describes
+the fog in places, and `docs/fog-of-war.md` should be read as the quantiser
+and the store, not as a look.
 
 Read [`docs/PRD.md`](./docs/PRD.md) before making product decisions. Read
 [`docs/design-system.md`](./docs/design-system.md) before touching any
