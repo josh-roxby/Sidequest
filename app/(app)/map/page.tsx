@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MapView, type MapMarker, type MapViewHandle } from "@/components/map/MapView";
 import { LocationGate } from "@/components/domain/LocationGate";
@@ -15,13 +15,13 @@ import { data, type CommunityPoint, type LatLng, type Note, type Point } from "@
 import { DEFAULT_CENTRE } from "@/lib/map/project";
 import { useAsync } from "@/hooks/use-async";
 import { useVisited } from "@/hooks/use-visited";
+import { lastFix } from "@/lib/location";
 import { useSettings } from "@/lib/settings";
 
 /** Fixtures carry normalised 0–1 positions. The canvas works in metres, so
  *  one place converts and everything downstream is world space. */
 export default function MapScreen() {
   const territory = useAsync(() => data.getTerritory(), []);
-  const points = useAsync(() => data.getPointsNearby(), []);
   const quests = useAsync(() => data.getQuests("stroll"), []);
   const router = useRouter();
   const [refresh, setRefresh] = useState(0);
@@ -29,6 +29,26 @@ export default function MapScreen() {
      and grant it, then wherever they actually are: the camera, the cleared
      ground and the you marker all read from this one value. */
   const [here, setHere] = useState<LatLng>(DEFAULT_CENTRE);
+  /* Where the walker actually is, as opposed to where the camera opens. Null
+     until they have been found once, which is what keeps the app from loading
+     Dublin for somebody in Cork. */
+  const [fix, setFix] = useState<LatLng | null>(null);
+  useEffect(() => {
+    const f = lastFix();
+    if (!f) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only read, impossible before mount
+    setFix(f);
+    setHere(f);
+  }, []);
+  const located = useCallback((p: LatLng) => { setHere(p); setFix(p); }, []);
+
+  /* Keyed on the fix rather than fetched once. Gathered counties are loaded
+     around where the walker is, so a read taken before there is a position
+     comes back with the hand written corpus and nothing else, and it used to
+     stay that way for the life of the screen: locating yourself lit the pin
+     and added no places. */
+  const points = useAsync(() => data.getPointsNearby(fix ?? undefined),
+    [fix?.lat ?? null, fix?.lng ?? null]);
   const [locateNote, setLocateNote] = useState<string | null>(null);
   /* The explainer is shown once. After that the locate control goes straight
      to the browser, which is the behaviour someone who has already said yes
@@ -109,7 +129,7 @@ export default function MapScreen() {
           setAskLocation(true);
           return false;
         }}
-        onLocate={setHere}
+        onLocate={located}
         onLocateFail={setLocateNote}
         markers={markers}
         trail={trail}

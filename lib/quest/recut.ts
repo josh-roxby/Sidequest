@@ -36,8 +36,8 @@ const TOO_SHORT = 0.5;
  *  not always the doorstep. */
 const PASSES_M = 150;
 
-const ROUTED = "Routed on real streets and paths";
-const DRAWN = "Drawn straight, not routed: the map had no streets loaded here, so follow the places rather than the line";
+export const ROUTED = "Routed on real streets and paths";
+export const DRAWN = "Not drawn yet: the streets here have not loaded, so the places are marked and the line is not. It will appear once the map has them.";
 
 /** Strips whichever of the two claims is already on a walk, so re-cutting the
  *  same walk twice cannot leave both. */

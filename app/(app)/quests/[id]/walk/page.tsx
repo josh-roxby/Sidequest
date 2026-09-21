@@ -18,6 +18,7 @@ import { useVisited } from "@/hooks/use-visited";
 import { useRoutedQuest } from "@/hooks/use-routed-quest";
 import { arrivedAt, emptyTrack, extend } from "@/lib/quest/track";
 import { recordWalk, walkRecordFrom } from "@/lib/walk/history";
+import { ROUTED } from "@/lib/quest/recut";
 import { cn } from "@/lib/cn";
 
 /** The walk itself: the map takes the screen and the quest sits over it.
@@ -29,7 +30,12 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   const { id } = use(params);
   const router = useRouter();
   const quest = useAsync(() => data.getQuest(id), [id]);
-  const points = useAsync(() => data.getPointsNearby(), []);
+  /* Around the walk, not around nothing. A generated walk in a county with
+     gathered points needs them loaded or its own objectives cannot be looked
+     up for their lore. */
+  const points = useAsync(
+    () => data.getPointsNearby(quest.data?.start ?? undefined),
+    [quest.data?.start?.lat ?? null, quest.data?.start?.lng ?? null]);
   const [openObj, setOpenObj] = useState<Objective | null>(null);
   const [ending, setEnding] = useState(false);
   const [briefed, setBriefed] = useState(false);
@@ -144,9 +150,18 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
     ];
   }, [q, here, isReached]);
 
+  /** The line, but only when it is a line somebody can follow.
+   *
+   *  A written walk carries the arc it was drawn with before there was a
+   *  router, bowed across gardens and rivers to hit its stated length. Once
+   *  the map has the streets under it, `useRoutedQuest` replaces that with a
+   *  real route. Until then, and if the streets never load, the waypoints are
+   *  shown and the line is not: a wrong line is worse than no line, because a
+   *  walker will try to follow it. */
+  const routed = Boolean(q?.honesty.includes(ROUTED));
   const trail = useMemo<[number, number][]>(
-    () => (q?.path ?? []),
-    [q],
+    () => (routed ? (q?.path ?? []) : []),
+    [q, routed],
   );
 
   /** Everything the walker needs on screen at the start: the route and every

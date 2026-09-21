@@ -168,6 +168,21 @@ npm run ingest:points # build public/data/points/ from data/points/*.ndjson
 
 ## Things that will bite you
 
+- **A walk is never drawn unless it is routed.** No arcs, no bowed lines, no
+  "close enough". If the streets cannot be read, generation refuses with a
+  retry and the walk screen draws waypoints and no line. `viaRoute` and
+  `circleRoute` still exist for the offline corpus builder and must not come
+  back into the runtime path.
+- **Do not gate reading the map on a MapLibre readiness flag.** `idle` fires
+  before a cold map has requested anything and `isStyleLoaded` stays false
+  while unrelated resources are pending, so both answer "no streets" on a map
+  that has them. `loadAround` polls `walkableLines` until the answer stops
+  changing, which is the only question that matters.
+- **Anything read from the browser is read after mount**, never in a
+  `useState` initialiser. Prerendered pages run the initialiser on a server
+  with no storage and keep that value, which has silently emptied the visited
+  set and thrown a hydration error on the picker.
+
 - `proxy.ts` is the Next 16 name for middleware. The matcher deliberately
   excludes `/api/*` so the health probe stays reachable when env is broken.
 - Onboarding state lives in `user_metadata` because middleware reads it from

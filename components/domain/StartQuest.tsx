@@ -51,6 +51,10 @@ export function StartQuest() {
      state rather than a note on the card: it needs different words and a
      different thing to do next depending on what is switched off. */
   const [blocked, setBlocked] = useState<LocationFailure | null>(null);
+  /* Streets were not readable, so there is no route. Its own state for the
+     same reason as `blocked`: a different thing is wrong and a different thing
+     fixes it. */
+  const [unrouted, setUnrouted] = useState(false);
   /** Whether the takeover has played out. It is a floor on how long the wait
    *  lasts, not a timer the work has to beat: reading the streets off the map
    *  can take longer than the animation, and finishing the animation first used
@@ -64,7 +68,6 @@ export function StartQuest() {
   const mapRef = useRef<MapViewHandle>(null);
   const spec = TIERS.find((t) => t.id === tier)!;
   const territory = useAsync(() => data.getTerritory(), []);
-  const points = useAsync(() => data.getPointsNearby(), []);
 
   /* Where the walker was the last time we actually found them. Geolocation is
      never fired on a page load, so a remembered place is the only honest thing
@@ -80,6 +83,12 @@ export function StartQuest() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only read, impossible before mount
     if (fix) setHere(fix);
   }, []);
+
+  /* Keyed on the remembered place, which arrives after mount, so the count
+     under the heading is of places actually around the walker rather than of
+     the corpus alone. */
+  const points = useAsync(() => data.getPointsNearby(here ?? undefined),
+    [here?.lat ?? null, here?.lng ?? null]);
 
   /* "Nearby" has to be measured, not assumed. The read hands back everything
      in range, so taking the first row put a Clare townland under a Dublin
@@ -110,6 +119,7 @@ export function StartQuest() {
     setResult(null);
     setFailed("none");
     setBlocked(null);
+    setUnrouted(false);
     setPending(null);
     try {
       /* Asked for every time, not once. A granted permission only says the
@@ -149,7 +159,7 @@ export function StartQuest() {
         }
       }
 
-      const all = await data.getPointsNearby();
+      const all = await data.getPointsNearby(at);
       /* Fresh every press. The assembler is deterministic on purpose, so that
          reopening a walk gives back the same walk rather than a new one under
          the same heading; without a seed that also meant asking twice from the
@@ -157,7 +167,7 @@ export function StartQuest() {
          was the Casino at Marino every single time. The seed is what makes the
          next press a different walk while the one in hand stays put. */
       const seed = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-      const { quest } = assembleQuest({
+      const { quest, routed } = assembleQuest({
         from: at, tier, shape, points: all, streets, seed,
         /* Where this walker was sent lately. Randomness alone does not stop a
            thin area offering the same place twice in three presses, which is
@@ -165,13 +175,18 @@ export function StartQuest() {
         avoid: recentlyOffered(),
       });
 
-      /* Both facts ride on the walk rather than on this screen, because this
-         screen is gone a second later and the walk is what the walker reads
-         before setting off. Honesty lines are already shown in the brief. */
-      const built: Quest = located ? quest : {
-        ...quest,
-        honesty: ["Built from your home area, not from a live fix", ...quest.honesty],
-      };
+      /* A walk that is not on the streets is not a walk we will hand anybody.
+         The assembler can still draw one geometrically, and that is right for
+         the offline corpus builder, but at runtime it produces a line bowed
+         across gardens and rivers that no walker can follow. Better to say the
+         ground could not be read and offer to try again. */
+      if (!routed) {
+        setUnrouted(true);
+        setWorking(false);
+        return;
+      }
+
+      const built: Quest = quest;
       noteOffered(built.objectives.map((o) => o.pointId).filter((id): id is string => !!id));
       putGenerated(built);
       setPending(built);
@@ -319,6 +334,29 @@ export function StartQuest() {
             <p className="t-h2 text-ink">{locationBlocker(blocked).title}</p>
             <p className="t-small selectable mt-1 text-stone">
               {locationBlocker(blocked).body}
+            </p>
+            <button
+              type="button"
+              onClick={generate}
+              className="mt-3 border border-rule bg-field px-3 py-2 text-ink active:scale-[0.99]"
+              style={{ borderRadius: "var(--r-sm)" }}
+            >
+              <Label>Try again</Label>
+            </button>
+          </div>
+        ) : null}
+
+        {unrouted && !takeover ? (
+          <div
+            role="alert"
+            className="mt-3 w-full border border-rust bg-surface p-3"
+            style={{ borderRadius: "var(--r-md)" }}
+          >
+            <p className="t-h2 text-ink">The streets here have not loaded</p>
+            <p className="t-small selectable mt-1 text-stone">
+              A walk is drawn on real roads and paths, and we could not read
+              them for this ground. Rather than hand you a line across the
+              gardens, here is nothing. Give it a moment and try again.
             </p>
             <button
               type="button"

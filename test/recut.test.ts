@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { recutQuest, passesAll } from "../lib/quest/recut.ts";
+import { recutQuest, passesAll, ROUTED, DRAWN } from "../lib/quest/recut.ts";
 import { drawnLength } from "../lib/quest/route.ts";
 import { DUBLIN_QUESTS } from "../lib/data/mock/dublin.ts";
 import { distanceM } from "../lib/geo.ts";
@@ -11,8 +11,6 @@ import { overlap } from "../lib/quest/graph.ts";
  *  there was a router, so every route in it is an arc across the ground; these
  *  are about redrawing one without losing the walk it was. */
 
-const ROUTED = "Routed on real streets and paths";
-const DRAWN = /^Drawn straight, not routed/;
 
 /** Streets as a tile hands them over: two points per line, no vertex at any
  *  junction, laid over the ground the corpus uses. */
@@ -104,7 +102,7 @@ test("with no streets the written line stands, and says that it is drawn", () =>
   const out = recutQuest(q, []);
   assert.deepEqual(out.path, q.path, "it changed a route it had no streets to route on");
   assert.equal(out.distanceM, q.distanceM);
-  assert.ok(out.honesty.some((h) => DRAWN.test(h)),
+  assert.ok(out.honesty.includes(DRAWN),
     "a walker is left to guess whether the line can be followed");
 });
 
@@ -112,14 +110,14 @@ test("streets nowhere near the walk are refused rather than followed", () => {
   const q = DUBLIN_QUESTS[0];
   const out = recutQuest(q, grid({ lat: 53.30, lng: -6.60 }));
   assert.deepEqual(out.path, q.path, "it dragged the walk across the county");
-  assert.ok(out.honesty.some((h) => DRAWN.test(h)));
+  assert.ok(out.honesty.includes(DRAWN));
 });
 
 test("re-cutting twice does not stack up claims about the line", () => {
   const q = DUBLIN_QUESTS.find((x) => x.id === "q-marino-fairview")!;
   const once = recutQuest(q, grid(started(q)));
   const twice = recutQuest(once, grid(started(q)));
-  const claims = (x: Quest) => x.honesty.filter((h) => h === ROUTED || DRAWN.test(h));
+  const claims = (x: Quest) => x.honesty.filter((h) => h === ROUTED || h === DRAWN);
   assert.equal(claims(once).length, 1);
   assert.equal(claims(twice).length, 1, `honesty reads ${JSON.stringify(twice.honesty)}`);
 });

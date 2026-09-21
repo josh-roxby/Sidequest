@@ -104,26 +104,11 @@ const DEADLINE_MS = 6000;
  *  every tier but the longest. */
 const STOPS_PER_AXIS = 3;
 
-/** Resolves once the map has every tile it asked for, or the budget runs out.
- *
- *  `idle` is the only honest signal that tiles have landed, but it never fires
- *  if the camera did not actually move, so it is always raced against a timer
- *  rather than waited on alone. */
-function settled(m: MLMap, budgetMs: number): Promise<void> {
-  return new Promise((resolve) => {
-    if (budgetMs <= 0) { resolve(); return; }
-    let done = false;
-    const finish = () => {
-      if (done) return;
-      done = true;
-      m.off("idle", finish);
-      window.clearTimeout(timer);
-      resolve();
-    };
-    const timer = window.setTimeout(finish, Math.min(budgetMs, 2500));
-    m.once("idle", finish);
-  });
-}
+/** How often to ask the map whether it has any ways yet. */
+const POLL_MS = 180;
+
+/** How long to keep asking at one stop before moving to the next. */
+const PER_STOP_MS = 2500;
 
 const GLYPH: Record<MapMarker["kind"], MarkName | null> = {
   you: null, point: "point", objective: "flag", "objective-done": "badge",
@@ -436,6 +421,7 @@ export function MapView({
       const m = map.current;
       if (!m) return [];
 
+
       /* The router is only as good as the ground it can see, and what the map
          has loaded is decided by zoom twice over.
 
@@ -493,10 +479,16 @@ export function MapView({
       const started = performance.now();
       const found = new Map<string, Street>();
 
-      for (const stop of stops) {
-        if (performance.now() - started > DEADLINE_MS) break;
-        m.jumpTo({ center: [stop.lng, stop.lat], zoom });
-        await settled(m, DEADLINE_MS - (performance.now() - started));
+      /* Polled, not waited on.
+       *
+       *  Every readiness flag MapLibre offers is the wrong question here.
+       *  `idle` fires before a cold map has asked for anything, and
+       *  `isStyleLoaded` stays false while an unrelated resource is pending,
+       *  so gating on it returned no streets at all and every walk came back
+       *  drawn as an arc. What matters is only whether there are ways to read
+       *  yet, so that is what gets asked, repeatedly, until the answer stops
+       *  changing. */
+      const collect = () => {
         for (const line of walkableLines(m)) {
           /* Tiles clip a street at their edge, so the same road arrives in
              pieces and every piece is wanted. Only an identical piece, from a
@@ -504,6 +496,27 @@ export function MapView({
           const a = line.coords[0], b = line.coords[line.coords.length - 1];
           found.set(`${line.level}:${line.coords.length}:${a}:${b}`, line);
         }
+      };
+      const harvest = async (budgetMs: number) => {
+        const from = performance.now();
+        let quiet = 0;
+        for (;;) {
+          const before = found.size;
+          collect();
+          /* Two polls that add nothing, with something already in hand, means
+             this stop has given what it has. */
+          quiet = found.size === before ? quiet + 1 : 0;
+          if (quiet >= 2 && found.size > 0) return;
+          if (performance.now() - from > budgetMs) return;
+          await new Promise((r) => window.setTimeout(r, POLL_MS));
+        }
+      };
+
+      for (const stop of stops) {
+        const left = DEADLINE_MS - (performance.now() - started);
+        if (left <= 0) break;
+        m.jumpTo({ center: [stop.lng, stop.lat], zoom });
+        await harvest(Math.min(left, PER_STOP_MS));
       }
 
       m.jumpTo({ center: home.center, zoom: home.zoom });
