@@ -173,11 +173,22 @@ npm run ingest:points # build public/data/points/ from data/points/*.ndjson
   retry and the walk screen draws waypoints and no line. `viaRoute` and
   `circleRoute` still exist for the offline corpus builder and must not come
   back into the runtime path.
+- **Streets come from `lib/map/harvest.ts`, never from a map on screen.** The
+  picker's preview is a decoration created before the walker has been placed,
+  so it opens zoomed out where the tiles carry no streets. The harvester is
+  its own off screen map at a fixed z14, warmed on mount, and it answers in
+  under a second once it is up.
 - **Do not gate reading the map on a MapLibre readiness flag.** `idle` fires
   before a cold map has requested anything and `isStyleLoaded` stays false
   while unrelated resources are pending, so both answer "no streets" on a map
-  that has them. `loadAround` polls `walkableLines` until the answer stops
-  changing, which is the only question that matters.
+  that has them. Poll `walkableLines` until the answer stops changing, which
+  is the only question that matters.
+- **Routing tries several times before it gives up.** One set of places is one
+  shape of walk and the streets will not always make the promised length out
+  of it, so `assembleQuest` works through the chosen places, then fewer of
+  them, then a different draw, and finally a walk of the right length with
+  nothing named on it. Failing on the first no is what produced the drawn
+  arcs.
 - **Anything read from the browser is read after mount**, never in a
   `useState` initialiser. Prerendered pages run the initialiser on a server
   with no storage and keep that value, which has silently emptied the visited

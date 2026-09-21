@@ -69,7 +69,7 @@ const CHAIN_BUDGET = 0.75;
  *  fresh press gets a fresh one. */
 function chooseStops(
   near: { p: Point; d: number }[], want: number, from: LatLng, targetM: number,
-  next: () => number, avoid: string[] = [],
+  next: () => number, avoid: string[] = [], skip = 0,
 ): Point[] {
   /* Drawn in a random order, but not a flat one. A place with two things
      recorded about it is more worth walking to than a street with one, so
@@ -108,7 +108,11 @@ function chooseStops(
 
   const budget = targetM * CHAIN_BUDGET;
   const taken: Point[] = [];
-  for (const p of pool) {
+  /* Passing over the first few gives the caller a different set to try when
+     the streets cannot make a walk of the right length out of the first one.
+     The order is already the weighted draw, so what comes back is still the
+     places worth going to, just not the same ones. */
+  for (const p of pool.slice(skip)) {
     if (taken.length >= want) break;
     const trial = order(from, [...taken, p]);
     if (chainLength(from, trial) <= budget) taken.push(p);
@@ -231,7 +235,9 @@ export function assembleQuest({
      everything is a candidate, which is the same answer as before. */
   const near = candidates(from, points, spec.reachM)
     .filter(({ p }) => !graph || nearestNode(graph, { lat: p.lat, lng: p.lng }) !== null);
-  const stops = chooseStops(near, spec.stops, from, targetM, next, avoid);
+  const attempts = [0, 1, 2, 3].map((skip) =>
+    chooseStops(near, spec.stops, from, targetM, next, avoid, skip));
+  const stops = attempts[0];
 
   const objectivesFor = (path: Path, on: Point[]) => on.map((p, i) => ({
     id: `o-${i + 1}`,
@@ -265,15 +271,38 @@ export function assembleQuest({
      all, because a four hundred metre "stroll" is worse than an honest
      straight line. */
   if (graph) {
-    /* Tried with every stop, then with one fewer, and so on down to one.
-       A single place the streets cannot reach, at the far end of the walk,
-       used to cost the whole route its streets and drop the line back to an
-       arc across the ground. Losing the last stop is a much smaller loss than
-       losing the road under all of them. Stops are ordered nearest first, so
-       what goes is always the far end. */
-    const floor = stops.length > 0 ? 1 : 0;
-    for (let take = stops.length; take >= floor; take--) {
-      const some = stops.slice(0, take);
+    /* Every way of asking the streets for a walk, in order of how much of the
+       original idea it keeps.
+       
+       The walk was failing here and falling out to a drawn arc, which is what
+       a walker saw as a curvy line that ignores the roads. One set of places
+       is one shape of walk, and the streets will not always make the promised
+       length out of it: a stop down a cul de sac, or two that sit either side
+       of a river with no crossing between them. Giving up on the first no was
+       the mistake.
+       
+       So: the chosen places, then the same places minus the far ones, then a
+       different draw from the same pool, and finally, rather than nothing at
+       all, a walk of the right length with no particular place on it. The last
+       of those almost always works on a connected graph, and a real walk past
+       nothing named beats an arc across the gardens. */
+    const tries: Point[][] = [];
+    for (const set of attempts) {
+      for (let take = set.length; take >= 1; take--) tries.push(set.slice(0, take));
+    }
+    tries.push([]);   // length alone, the one that rarely fails
+
+    /* Bounded, because each of these is a pair of Dijkstras on a graph that
+       can hold twenty thousand nodes, and a walker is standing there. */
+    const BUDGET = 8;
+    const seen = new Set<string>();
+    let spent = 0;
+
+    for (const some of tries) {
+      const key2 = some.map((x) => x.id).join(",");
+      if (seen.has(key2)) continue;
+      seen.add(key2);
+      if (spent++ >= BUDGET) break;
       /* One shape for both, because only the walk with nothing to aim at has a
          turning point worth naming. */
       const r: { path: Path; metres: number; turn?: LatLng } | null = some.length > 0
