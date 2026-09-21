@@ -1,98 +1,159 @@
 # Brief for a Cowork session: the Side Quest points dataset
 
-Copy everything between the rules below into a Cowork session. It has web
-search and this machine does not, which is the whole reason the job lives
-there. One county per run.
+Everything below the rule is the prompt. Paste it into a Cowork session, which
+has web search and this machine does not, and set `COUNTY` on the first line.
+One county per run.
 
-The output lands in `data/points/<county>.ndjson` in this repo, and
-`scripts/ingest-points.mjs` reads it from there.
+Output goes to `data/points/<county-slug>.ndjson`; `npm run ingest:points`
+reads every file in that folder and rebuilds the corpus.
+
+**Why NDJSON and not one JSON array.** These runs are long. One object per
+line means a session that stops halfway still leaves a usable file, where a
+truncated array is a syntax error and the whole run is lost.
 
 ---
 
+COUNTY: <put the county here, e.g. Clare>
+
 You are building the points of interest dataset for Side Quest, a walking app
-for Ireland. A point is somewhere worth walking to, with something true to say
-about it. The walk generator anchors routes on these, so a bad point sends a
-real person to a real place for no reason.
+for Ireland. A point is somewhere worth walking to with something true and
+interesting to say about it. The app anchors generated walking routes on these,
+so a bad point sends a real person to a real place for no reason, and a dull
+point wastes the one line of text they will read about it.
 
-## The job
+## What to produce
 
-Produce **one NDJSON file for the county named in this run**: one JSON object
-per line, no wrapping array, no trailing commas, UTF-8. Filename
-`<county-slug>.ndjson`, for example `clare.ndjson`, `dublin.ndjson`.
+One NDJSON file for the county named above: one JSON object per line, no
+wrapping array, no trailing commas, UTF-8, filename `<county-slug>.ndjson`.
 
-Target **100 to 150 points for the county**. Fewer is fine for a small or
-thinly recorded county. Do not pad to hit a number.
+**Volume.** This is a national dataset and thin coverage is the thing that
+makes the app useless outside Dublin. Aim for:
+
+| County size | Target points |
+|---|---|
+| Dublin, Cork, Galway, Antrim, Down | 350 to 500 |
+| Kerry, Mayo, Donegal, Tipperary, Clare, Limerick, Wexford, Wicklow, Kilkenny, Waterford, Meath, Kildare, Tyrone, Londonderry | 200 to 350 |
+| Everywhere else | 120 to 250 |
+
+**Spread matters more than the total.** A county with 300 points all within
+ten kilometres of the county town is worse than one with 150 spread properly.
+Two rules:
+
+1. **Every settlement over about 1,500 people gets at least 5 points**, and
+   every town over 10,000 gets at least 20. Get the settlement list and
+   populations from the CSO census of population small area or settlement
+   tables, or from NISRA for the six northern counties. Work through them by
+   name, do not eyeball a map.
+2. **Rural ground counts.** Between the towns there are ringforts, holy wells,
+   mass rocks, famine roads, castles, souterrains and mountain passes. A walker
+   in a village of 400 people still deserves somewhere to go.
 
 ## Hard rules
 
 These are not style preferences. Breaking one makes the record unusable.
 
-1. **Never invent history.** Every factual claim must come from a source you
+1. **Never invent anything.** Every factual claim must come from a source you
    actually opened in this session. If you cannot source it, leave the field
-   out. A point with a name and no lore is better than a point with a
-   plausible invented story. This is the single most important rule.
-2. **Every `lore` entry carries its source.** `sourceName`, `sourceUrl` and
-   `licence` are required and must be real.
-3. **Share-alike and non-commercial sources are linked, never quoted.** If the
-   text is Wikipedia (CC BY-SA) or Dúchas (CC BY-NC), set `linkOnly: true`,
-   leave `body` as an empty string, and put the URL in `sourceUrl`. You may
-   still use those pages to *find* a place and to check a fact against an open
-   source. You may not copy their prose into `body`.
-4. **Coordinates must be real and checked.** Decimal degrees, six places,
-   WGS84. Ireland is roughly lat 51.4 to 55.4, lng -10.6 to -5.4. A point in
-   the sea or in the wrong county is a defect. Cross-check against a second
-   source where you can.
-5. **British English.** No em dashes anywhere, in any field. Irish placenames
-   carry their Irish form in `nameGa` where a source gives one, left out where
-   none does. Do not translate one yourself.
-6. **No chains and no commercial venues.** No shops, no cafés, no hotels, no
-   restaurants. This app does not send people shopping.
-7. **Nothing on private land without public access.** If you cannot walk to it
-   or see it from a public road or right of way, leave it out.
+   out. A point with a name and no lore beats a point with a plausible
+   invented story. Do not infer a date, a founder or an etymology because it
+   sounds right. This is the single most important rule and the one that would
+   quietly ruin the dataset.
+2. **Coordinates must be checked against a second source.** Decimal degrees,
+   six places, WGS84. Ireland runs roughly lat 51.4 to 55.4, lng -10.6 to
+   -5.4. A point in the sea, in the wrong county, or in the middle of a field
+   half a kilometre from the thing it names is a defect. Much of the SMR is
+   published in Irish Transverse Mercator (EPSG:2157) or Irish Grid
+   (EPSG:29903): convert properly, do not approximate.
+3. **Every `lore` entry carries a real `sourceName`, `sourceUrl` and
+   `licence`.**
+4. **Share-alike and non-commercial sources are linked, never quoted.**
+   Wikipedia is CC BY-SA and Dúchas is CC BY-NC. Use them to *find* places and
+   to check facts, never to fill `body`. For those, set `linkOnly: true`,
+   leave `body` as an empty string, and put the URL in `sourceUrl`.
+5. **British English. No em dashes anywhere, in any field.** Irish forms in
+   `nameGa` only where a source gives one. Never translate one yourself.
+6. **No commercial venues.** No shops, cafés, pubs, hotels or restaurants.
+7. **Nothing you cannot legally reach.** If it is on private land with no
+   public access and cannot be seen from a public road or right of way, leave
+   it out. Say so in `tags` as `No entry` where a thing is visible but closed.
+
+## Sources
+
+Start at **data.gov.ie**. It runs CKAN, so the search API is the fast way in
+rather than clicking around:
+
+```
+https://data.gov.ie/api/3/action/package_search?q=<terms>&rows=50
+https://data.gov.ie/api/3/action/package_show?id=<dataset-name>
+```
+
+Search terms worth running: `archaeological survey`, `national monuments`,
+`sites and monuments record`, `architectural heritage`, `NIAH`, `protected
+structures`, `heritage`, `walking trails`, `placenames`, `settlements`.
+
+**Do not trust any specific URL I give you.** Dataset paths move. Resolve the
+current resource through the CKAN API or the dataset page, and if something
+404s, search for it rather than guessing a variant.
+
+| Source | What it gives | Licence | Quote in `body`? |
+|---|---|---|---|
+| Archaeological Survey of Ireland / SMR, National Monuments Service (data.gov.ie, archaeology.ie, the Historic Environment Viewer) | ~140k monument records: class, position, description | CC BY 4.0 | Yes, attributed |
+| NIAH, buildingsofireland.ie | Post-1700 buildings with **written Description and Appraisal**. The best prose in the whole register and it needs editing, not writing | CC BY | Yes, attributed |
+| Logainm.ie (Gaois) | Irish forms, placename meanings, townlands | CC BY 4.0 | Yes, attributed |
+| OpenStreetMap (Overpass API) | Positions, parks, bridges, trails, `historic=*`, `tourism=attraction` | ODbL | Yes, attributed |
+| Wikidata | Dates, identifiers, coordinates to cross-check | CC0 | Yes |
+| NPWS (npws.ie) | National parks, nature reserves, designated sites | Open, verify | Check the page |
+| OPW (heritageireland.ie) | State heritage sites, the ones with car parks and signs | Verify | Check the page |
+| Heritage Council, heritagemaps.ie | County heritage inventories | Verify | Check |
+| Sport Ireland / National Trails Office | Waymarked ways and looped walks | Verify | Check |
+| CSO and NISRA | Settlement names and populations, for the coverage rule | Open | Not lore |
+| Wikipedia | **Finding** places, checking facts | CC BY-SA | **No.** `linkOnly` |
+| Dúchas, National Folklore Collection | **Finding** stories | CC BY-NC | **No.** `linkOnly` |
+
+For the six northern counties the equivalents are the **Northern Ireland
+Sites and Monuments Record** and the **NI Historic Environment Division**
+listed buildings database, via opendatani.gov.uk and communities-ni.gov.uk.
+
+Overpass is the quickest way to sweep a county for what the official registers
+miss. A query shape that works:
+
+```
+[out:json][timeout:180];
+area["name"="County Clare"]["admin_level"~"6|5"]->.a;
+(
+  node(area.a)["historic"];
+  way(area.a)["historic"];
+  node(area.a)["tourism"="attraction"];
+  node(area.a)["natural"="waterfall"];
+  way(area.a)["leisure"="park"];
+);
+out center tags;
+```
 
 ## What counts as a point
 
-In priority order. Work down the list until the county has enough.
+In priority order.
 
-1. **OPW heritage sites and National Monuments in state care.** Signed, open,
-   usually with parking. These are the brown sign spots and every one belongs.
-2. **NPWS national parks, nature reserves and designated sites** with public
-   access.
-3. **Upstanding archaeology** from the Archaeological Survey of Ireland: castles
-   and tower houses, round towers, high crosses, dolmens and portal tombs,
-   stone circles, cairns, monastic sites, holy wells, ringforts and cashels with
-   something still standing. Skip records that are cropmarks, "site of", or
-   levelled: there is nothing to go and see.
-4. **Architectural heritage** from the National Inventory of Architectural
-   Heritage rated Regional or above. The NIAH's own Description and Appraisal
-   fields are professionally written, openly licensed, and are usually the best
-   lore you will find. Edit them down, do not rewrite them into something they
-   do not say.
-5. **Landscape and water**: waterfalls, loughs with a shore path, sea stacks,
-   named headlands, holy wells, mass rocks, famine roads, old railway lines and
-   greenways.
-6. **Urban texture**, for towns over about five thousand people: parks, notable
-   bridges, churches, libraries, statues, mills and old industrial works, named
-   terraces and squares. This is what makes a fifteen minute walk possible from
-   somebody's front door, so do not skip it in the towns.
-
-Aim for a spread across the county rather than a cluster round the county town.
-A walker in a village needs something too.
-
-## Sources, and what each is good for
-
-| Source | Use it for | Licence | In `body`? |
-|---|---|---|---|
-| Archaeological Survey of Ireland / SMR, via data.gov.ie or archaeology.ie | Class, position, description of monuments | CC BY 4.0 | Yes, with attribution |
-| National Inventory of Architectural Heritage (buildingsofireland.ie) | Post-1700 buildings, **written appraisals** | CC BY | Yes, with attribution |
-| Logainm.ie | Irish forms and placename meanings | CC BY 4.0 | Yes, with attribution |
-| OpenStreetMap | Positions, parks, bridges, paths | ODbL | Yes, with attribution |
-| Wikidata | Dates, identifiers, cross-links | CC0 | Yes |
-| OPW (heritageireland.ie) | State sites, opening arrangements | Verify per page | Check first |
-| Wikipedia | **Finding** places and checking facts | CC BY-SA | **No.** `linkOnly: true` |
-| Dúchas / National Folklore Collection | **Finding** stories | CC BY-NC | **No.** `linkOnly: true` |
-
-Prefer an open source for the prose even when a closed one is better written.
+1. **OPW and state heritage sites, NPWS parks and reserves.** Signed, open,
+   parked. Every one belongs.
+2. **Upstanding archaeology**: castles, tower houses, round towers, high
+   crosses, dolmens and portal tombs, stone circles, cairns, monastic sites,
+   holy wells, cashels and ringforts with something still standing. **Skip
+   anything recorded as levelled, "site of", or cropmark only.** There is
+   nothing to go and see and sending somebody to an empty field is the fastest
+   way to lose their trust.
+3. **Architectural heritage** rated Regional or above in the NIAH.
+4. **Landscape and water**: waterfalls, lough shores with a path, sea stacks,
+   headlands, beaches, mountain passes, forest parks, greenways, famine roads,
+   disused railway lines.
+5. **Urban texture**, in every town: parks, bridges, churches, libraries,
+   statues, market houses, mills, old industrial works, named terraces and
+   squares, town walls, harbours. This is what makes a fifteen minute walk
+   possible from somebody's front door, and it is the part most likely to get
+   skipped. Do not skip it.
+6. **Where something happened**: battle sites, birthplaces, wreck sites,
+   famine graveyards, places in a well known song or poem. Say plainly when a
+   location is traditional or disputed rather than asserting it.
 
 ## The record
 
@@ -103,6 +164,7 @@ Prefer an open source for the prose even when a closed one is better written.
   "nameGa": "Díseart Uí Dheá",
   "county": "Clare",
   "townland": "Dysert",
+  "settlement": "Corofin",
   "category": "Monastic site",
   "group": "sacred",
   "lat": 52.905123,
@@ -112,10 +174,10 @@ Prefer an open source for the prose even when a closed one is better written.
   "lore": [
     {
       "kind": "archaeology",
-      "title": "The doorway and the cross",
-      "body": "One sourced paragraph, forty words or more, in plain British English. Say what is there and why it matters. Do not pad.",
+      "title": "Twelve apostles and a bishop",
+      "body": "One sourced paragraph of forty to ninety words, in plain British English. Say the thing a local would tell you, not what the eye can already see.",
       "sourceName": "Archaeological Survey of Ireland",
-      "sourceUrl": "https://www.archaeology.ie/...",
+      "sourceUrl": "https://...",
       "licence": "CC BY 4.0",
       "linkOnly": false
     },
@@ -135,47 +197,59 @@ Prefer an open source for the prose even when a closed one is better written.
 **Field rules.**
 
 - `id`: `p-<county-slug>-<name-slug>`, lowercase, hyphens, unique in the file.
-- `name`: what a local would call it. Not the survey's record number.
+- `name`: what a local calls it, not the survey's record number.
 - `nameGa`: omit the field entirely if no source gives one.
-- `county`: full name, no "Co.". Northern counties included: this is the
-  island, not the state.
-- `townland`: the townland or, in a town, the district. Logainm has these.
-- `category`: a short human noun phrase: "Ringfort", "Round tower", "Country
-  house", "Waterfall", "Holy well", "Sea wall". Title case, not a code.
-- `group`: exactly one of: `fort`, `sacred`, `ancient`, `water`, `green`,
-  `height`, `built`, `table`. Use `table` only for a place to sit and eat that
-  is not a business, such as a picnic area.
+- `county`: full name, no "Co.". All 32, north and south.
+- `townland`: the townland, from Logainm. Omit if you genuinely cannot find it.
+- `settlement`: the town or village it belongs to, for the coverage rule. Omit
+  for open country.
+- `category`: a short human noun phrase in title case. "Ringfort", "Round
+  tower", "Waterfall", "Market house". Not a code and not a survey class.
+- `group`: exactly one of `fort`, `sacred`, `ancient`, `water`, `green`,
+  `height`, `built`, `table`. Use `table` only for a picnic area or similar
+  that is not a business.
 - `lat` / `lng`: decimal degrees, six places.
-- `blurb`: **one sentence**, under about 90 characters, saying what it is
-  before you have been. Concrete, not promotional. "A wall built to scour the
-  harbour that accidentally made an island" rather than "a fascinating
-  historical landmark".
-- `tags`: two to four short chips. Useful ones: `Free`, `Paid entry`,
-  `Guided`, `Upstanding remains`, `Coastal`, `Level walking`, `Steep`,
-  `Waterside`, `No entry`, `Street`, and a century such as `12th century`.
-- `lore`: **one to three entries**. At least one must be non-`linkOnly` with a
-  real `body`, unless the only thing you can source is a link, in which case
-  one `linkOnly` entry alone is acceptable and honest.
-- `lore[].kind`: exactly one of: `archaeology`, `architecture`, `placename`,
-  `fact`, `reference`. Use `reference` for `linkOnly` entries.
-- `lore[].body`: 40 to 90 words. Plain, specific, and true. No "nestled", no
-  "steeped in history", no "must-see".
+- `blurb`: **one sentence, under 90 characters**, saying what it is before you
+  have been. Concrete and specific. "A wall built to scour the harbour that
+  accidentally made an island" rather than "a fascinating historic landmark".
+- `tags`: two to four short chips. `Free`, `Paid entry`, `Guided`, `Upstanding
+  remains`, `Coastal`, `Level walking`, `Steep`, `Waterside`, `No entry`,
+  `Street`, and a century such as `12th century`.
+- `lore`: one to three entries. At least one non-`linkOnly` with a real `body`,
+  unless a link is genuinely all you can source.
+- `lore[].kind`: one of `archaeology`, `architecture`, `placename`, `fact`,
+  `reference`. Use `reference` for `linkOnly`.
+- `lore[].body`: 40 to 90 words. **This is the product.** It should be the
+  thing somebody repeats in the pub afterwards: who built it and why it went
+  wrong, what the name actually means, what happened here, what it was before.
+  Not a description of what is visible, which the walker can see for
+  themselves. No "nestled", no "steeped in history", no "must-see".
 
-## Before you hand the file over
+## How to work
 
-Check all of these and say in your reply that you did:
+Do not try to hold the whole county in one pass. Work in rounds and append to
+the file as you go, so an interrupted run still leaves everything found so far:
+
+1. Pull the settlement list with populations. Write it down.
+2. Sweep the official registers for the county: OPW, NPWS, SMR, NIAH.
+3. Run Overpass for the county and reconcile against what you already have.
+4. Go settlement by settlement, largest first, until each clears its quota.
+5. Fill the rural gaps: look for any 10km square of the county with nothing in
+   it and go and find something there.
+
+## Before you hand it over
+
+Check each of these and say in your reply that you did:
 
 - Every line parses as JSON on its own.
-- Every `id` is unique within the file.
-- Every `lat`/`lng` is inside Ireland and inside the right county.
-- No two points sit within 50m of each other with similar names. Merge them.
-- Every `lore` entry has a `sourceName`, a `sourceUrl` that resolves, and a
-  `licence`.
+- Every `id` is unique.
+- Every coordinate is inside Ireland and inside the right county.
+- No two points within 50m of each other with similar names. Merge them.
+- Every `lore` entry has a source name, a URL that resolves, and a licence.
 - Every `linkOnly: true` entry has an empty `body`.
-- No em dashes anywhere in the file.
-- No commercial venues.
-- Count the points and report the number, and list any part of the county you
-  could not find anything for.
+- No em dashes. No commercial venues.
 
-Report honestly. A county with 60 good points is a better result than 150 with
-invented lore in it, and a gap you name is a gap somebody can fill.
+Then report: the total count, the count per settlement against its quota, and
+**any part of the county you could not find anything for**. A county with 150
+good points and an honest list of gaps is a far better result than 400 with
+invented lore in it. The gaps are how the next run knows where to go.

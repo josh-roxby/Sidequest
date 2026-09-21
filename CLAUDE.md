@@ -111,9 +111,12 @@ lib/
                 written walk on the ways the phone has loaded, because the
                 corpus is built where no tile host is reachable
   nav.ts        the destination list, shared by the drawer and the shortcut
-  fog/          H3 quantiser and local store, when it lands
-                (the store survived the fog itself: it is the visited set)
+  fog/          H3 quantiser and local store. The store survived the fog
+                itself and the lit tiles after it: it is the visited set
   location.ts   the geolocation prompt, fired from a press and nowhere else
+data/
+  points/       county point files gathered by a Cowork session, NDJSON.
+                Not written here: this machine cannot reach data.gov.ie
 supabase/
   migrations/   written, not applied
 docs/           PRD, design system, UX loops, reface plan, data pipeline,
@@ -138,6 +141,7 @@ npm run lint
 npm run type-check
 npm run media       # which plates have landed, which are still waiting
 npm run build
+npm run check:points  # validate gathered county point files before ingesting
 ```
 
 ## Conventions

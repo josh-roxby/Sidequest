@@ -11,7 +11,8 @@
     "lint": "eslint",
     "type-check": "tsc --noEmit",
     "test": "node --test --experimental-strip-types test/*.test.ts",
-    "media": "node scripts/media.mjs"
+    "media": "node scripts/media.mjs",
+    "check:points": "node scripts/check-points.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
