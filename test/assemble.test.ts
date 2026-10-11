@@ -344,3 +344,23 @@ test("a thin area still offers a walk rather than running out", () => {
       "with everything marked as recently seen it gave up instead of repeating");
   }
 });
+
+test("every tier routes on streets, the three hour one included", () => {
+  /* The long tiers used to come back unrouted, and the walker was told the
+     streets had not loaded on ground that routes perfectly well. An adventure
+     asks for five places, so the four draws made twenty sets of stops and the
+     budget ran out before the one try that almost never fails, which is a walk
+     of the right length with nothing named on it. */
+  for (const tier of ALL_TIERS) {
+    const spec = TIERS.find((t) => t.id === tier)!;
+    const streets = streetGrid(CLONTARF, Math.max(spec.reachM, spec.maxM) * 0.8);
+    for (let i = 0; i < 6; i++) {
+      const { quest, routed } = assembleQuest({
+        from: CLONTARF, tier, shape: "loop", points: POINTS, streets, seed: `t-${i}`,
+      });
+      assert.ok(routed, `a ${tier} came back unrouted on a full street grid`);
+      assert.ok(quest.distanceM >= spec.minM && quest.distanceM <= spec.maxM,
+        `a ${tier} came back ${quest.distanceM}m, outside ${spec.minM}-${spec.maxM}`);
+    }
+  }
+});

@@ -25,7 +25,7 @@ import type { Path } from "../quest/route.ts";
  *  roads with pavements and people walk them. Motorway and trunk stay out,
  *  because nobody walks those and routing someone onto one is worse than
  *  routing them nowhere. */
-const WALKABLE = new Set([
+export const WALKABLE = new Set([
   "path", "track", "service", "minor", "tertiary", "secondary", "primary",
 ]);
 
@@ -38,6 +38,30 @@ export const FOOT_SUBCLASS = new Set([
 
 /** Ways the walker cannot get onto even if the class is walkable. */
 const BLOCKED_ACCESS = new Set(["no", "private"]);
+
+/** Whether a set of tile properties describes a way a walker may use, and
+ *  which deck it is on.
+ *
+ *  Shared, because the ways reach the router by two routes now: queried off a
+ *  live map, and decoded straight out of a fetched tile. Two copies of this
+ *  rule would drift, and the drift would show up as a walk that routes in one
+ *  place and refuses in another. */
+export function walkable(props: Record<string, unknown>): number | null {
+  if (!WALKABLE.has(String(props.class))) return null;
+  if (BLOCKED_ACCESS.has(String(props.access))) return null;
+  /* A tunnel is walkable often enough, but a bridge or tunnel drawn as if it
+     were at ground level is where a route quietly becomes impossible. Only
+     the surface network is used. */
+  if (props.brunnel === "tunnel") return null;
+
+  /* `layer` is the schema's own answer to what crosses what. A bridge with no
+     layer is still above the ground, so it is nudged up; everything else sits
+     at zero and crosses everything else at zero. */
+  const layer = Number(props.layer);
+  return Number.isFinite(layer) && layer !== 0
+    ? layer
+    : props.brunnel === "bridge" ? 1 : 0;
+}
 
 /** Every walkable line the map currently holds, as polylines in lng/lat.
  *
@@ -66,20 +90,8 @@ export function walkableLines(map: MLMap): Street[] {
   const lines: Street[] = [];
   for (const f of features) {
     const props = (f.properties ?? {}) as Record<string, unknown>;
-    if (!WALKABLE.has(String(props.class))) continue;
-    if (BLOCKED_ACCESS.has(String(props.access))) continue;
-    /* A tunnel is walkable often enough, but a bridge or tunnel drawn as if it
-       were at ground level is where a route quietly becomes impossible. Only
-       the surface network is used. */
-    if (props.brunnel === "tunnel") continue;
-
-    /* `layer` is the schema's own answer to what crosses what. A bridge with no
-       layer is still above the ground, so it is nudged up; everything else sits
-       at zero and crosses everything else at zero. */
-    const layer = Number(props.layer);
-    const level = Number.isFinite(layer) && layer !== 0
-      ? layer
-      : props.brunnel === "bridge" ? 1 : 0;
+    const level = walkable(props);
+    if (level === null) continue;
 
     const geom = f.geometry;
     if (geom.type === "LineString") {

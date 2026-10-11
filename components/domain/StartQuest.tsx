@@ -19,7 +19,7 @@ import { noteOffered, recentlyOffered } from "@/lib/quest/recent";
 import { getPosition, lastFix, locationBlocker, LocationError, rememberFix, type LocationFailure }
   from "@/lib/location";
 import type { Street } from "@/lib/map/streets";
-import { harvestStreets, prewarmHarvester } from "@/lib/map/harvest";
+import { prefetchAround, streetsAround } from "@/lib/map/tiles";
 
 const TIER_MARK: Record<Tier, MarkName> = {
   trot: "trot", stroll: "stroll", sidequest: "sidequest", adventure: "adventure",
@@ -83,11 +83,10 @@ export function StartQuest() {
     const fix = lastFix();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only read, impossible before mount
     if (fix) setHere(fix);
-    /* Start the street reader warming now rather than when the button is
-       pressed. A second map costs a worker, a style and a first round of
-       tiles, and paying that inside the press is what made the first walk of
-       a session come back with no streets while the next one was fine. */
-    prewarmHarvester(fix ?? undefined);
+    /* Pull the tiles for where the walker was last seen, so the press does
+       not pay for the network. They are the same tiles the visible map is
+       fetching anyway, so this costs nothing it was not already spending. */
+    if (fix) prefetchAround(fix, 2500);
   }, []);
 
   /* Keyed on the remembered place, which arrives after mount, so the count
@@ -148,20 +147,20 @@ export function StartQuest() {
         setWorking(false);
         return;
       }
-      /* Read off a map of our own, not off the preview behind this card.
-         The preview is a decoration: it is created before the walker has been
-         placed, so it opens zoomed out over the whole island where the tiles
-         carry no streets, and whether a walk came out routed depended on that.
-         `harvestStreets` keeps its own map, off screen, at a zoom that still
-         has minor roads in it. */
+      /* The tiles themselves, fetched and decoded. Every earlier version of
+         this asked a MapLibre map what it could see, and each one broke
+         somewhere only a real phone would show: the preview opens at a zoom
+         with no streets in it, a second map of our own costs a WebGL context
+         a phone may refuse, and in both cases "are the streets loaded yet" is
+         a guess dressed as a flag. Tiles are files. */
       let streets: Street[] = [];
       try {
         /* The ground the walk will actually cover. Half the walk out in any
            direction, plus a margin, is the box the router needs a graph for. */
-        streets = await harvestStreets(at, spec.maxM * 0.6);
+        streets = await streetsAround(at, spec.maxM * 0.6);
       } catch {
-        /* A map that will not load leaves no streets, which the walker is
-           told about rather than handed a line across the gardens. */
+        /* No streets is reported to the walker rather than papered over with
+           a line across the gardens. */
       }
 
       const all = await data.getPointsNearby(at);

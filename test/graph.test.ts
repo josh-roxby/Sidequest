@@ -277,3 +277,51 @@ test("a routed walk turns corners rather than running straight", () => {
     `the loop came back as ${r?.path.length ?? 0} points, which is not a walk round streets`);
   assert.ok(overlap(r!.path) < 0.5, "the loop retraces itself rather than coming home another way");
 });
+
+test("two halves of a street from two tiles are one street", () => {
+  /* What a tile boundary actually hands over. Every tile is cut with a buffer,
+     so the same road arrives twice, each half running a little past the
+     boundary and ending in the middle of the other. They are collinear, so
+     they never cross, and their ends are tens of metres apart, so welding
+     cannot see them either. Left alone, every street in the country was two
+     streets and the router could reach almost none of them. */
+  const west: Path = [[ORIGIN.lng, ORIGIN.lat], [ORIGIN.lng + 4 * BLOCK, ORIGIN.lat]];
+  const east: Path = [[ORIGIN.lng + 3.8 * BLOCK, ORIGIN.lat], [ORIGIN.lng + 8 * BLOCK, ORIGIN.lat]];
+  const g = buildGraph([west, east]);
+  const a = nearestNode(g, { lat: ORIGIN.lat, lng: ORIGIN.lng });
+  const b = nearestNode(g, { lat: ORIGIN.lat, lng: ORIGIN.lng + 8 * BLOCK });
+  assert.ok(a && b);
+  assert.ok(shortestPath(g, a!, b!), "the two halves of one street never joined up");
+});
+
+test("a side street that stops a few metres short still joins the road", () => {
+  /* Simplification rounds a junction apart, so the stem of a T arrives ending
+     near the road rather than on it. A walker can obviously turn there. */
+  const road: Path = [[ORIGIN.lng, ORIGIN.lat], [ORIGIN.lng + 4 * BLOCK, ORIGIN.lat]];
+  const stem: Path = [
+    [ORIGIN.lng + 2 * BLOCK, ORIGIN.lat - 0.00005],   // about 5m short of it
+    [ORIGIN.lng + 2 * BLOCK, ORIGIN.lat - 3 * BLOCK],
+  ];
+  const g = buildGraph([road, stem]);
+  const a = nearestNode(g, { lat: ORIGIN.lat, lng: ORIGIN.lng });
+  const b = nearestNode(g, { lat: ORIGIN.lat - 3 * BLOCK, lng: ORIGIN.lng + 2 * BLOCK });
+  assert.ok(a && b);
+  assert.ok(shortestPath(g, a!, b!), "the side street was never joined to the road");
+});
+
+test("a street is not joined to one it merely runs beside", () => {
+  /* The snap has to stay small enough that a road and the one across the road
+     from it stay two roads. Fifty metres apart is a street with houses on it,
+     not a junction. */
+  const north: Path = [[ORIGIN.lng, ORIGIN.lat], [ORIGIN.lng + 4 * BLOCK, ORIGIN.lat]];
+  const south: Path = [
+    [ORIGIN.lng + 1 * BLOCK, ORIGIN.lat - 0.00045],   // about 50m south
+    [ORIGIN.lng + 3 * BLOCK, ORIGIN.lat - 0.00045],
+  ];
+  const g = buildGraph([north, south]);
+  const a = nearestNode(g, { lat: ORIGIN.lat, lng: ORIGIN.lng });
+  const b = nearestNode(g, { lat: ORIGIN.lat - 0.00045, lng: ORIGIN.lng + 3 * BLOCK });
+  assert.ok(a && b);
+  assert.equal(shortestPath(g, a!, b!), null,
+    "two streets fifty metres apart were joined to each other");
+});

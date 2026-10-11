@@ -12,7 +12,6 @@ import {
   type Fix,
 } from "@/lib/location";
 import { BASEMAP_URL, surveyStyle } from "@/lib/map/style";
-import { walkableLines, type Street } from "@/lib/map/streets";
 import type { LatLng } from "@/lib/data";
 import { Mark, type MarkName } from "@/components/primitives/Marks";
 import { AddWheel, type WheelOption } from "@/components/map/AddWheel";
@@ -35,17 +34,6 @@ export interface MapViewHandle {
   /** Load the basemap tiles covering `radiusM` around a place, and resolve once
    *  there are walkable ways to route on, or once waiting any longer would be
    *  worse than routing without them. */
-  loadAround: (at: LatLng, radiusM: number) => Promise<Street[]>;
-  /** The walkable ways the basemap has loaded, for the router. Empty whenever
-   *  there is no basemap, no tiles, or no ground covered yet. */
-  streets: () => Street[];
-  /** The same, but waits for the tiles carrying them to arrive.
-   *
-   *  Moves nothing. A screen already framed on the ground it cares about has
-   *  the right tiles coming and only needs to wait; sweeping the camera there
-   *  would judder the view in front of the walker to collect ground that is
-   *  already on its way. `loadAround` is for the other case. */
-  streetsWhenLoaded: (timeoutMs?: number) => Promise<Street[]>;
 }
 
 export interface MapViewProps {
@@ -94,21 +82,6 @@ export interface MapViewProps {
    *  not the walker: the place the thumb was on. */
   onAdd?: (id: string, at: LatLng) => void;
 }
-
-/** How long a walker will wait for a better line before they would rather have
- *  a worse one. Spent across the whole sweep, not per stop. */
-const DEADLINE_MS = 6000;
-
-/** Camera stops per axis when collecting ways. Three is the point where the
- *  sweep is still quick and the zoom it implies still holds minor roads for
- *  every tier but the longest. */
-const STOPS_PER_AXIS = 3;
-
-/** How often to ask the map whether it has any ways yet. */
-const POLL_MS = 180;
-
-/** How long to keep asking at one stop before moving to the next. */
-const PER_STOP_MS = 2500;
 
 const GLYPH: Record<MapMarker["kind"], MarkName | null> = {
   you: null, point: "point", objective: "flag", "objective-done": "badge",
@@ -417,132 +390,6 @@ export function MapView({
 
   useImperativeHandle(ref, () => ({
     locate: () => void locate(),
-    loadAround: async (at: LatLng, radiusM: number): Promise<Street[]> => {
-      const m = map.current;
-      if (!m) return [];
-
-
-      /* The router is only as good as the ground it can see, and what the map
-         has loaded is decided by zoom twice over.
-
-         Framing the whole walk in one screen was the obvious move and it was
-         the bug: a stroll needs two kilometres of ground, which on a phone
-         means about z13, and OpenMapTiles stops carrying minor roads below
-         z14. The graph came back holding nothing but dual carriageways, the
-         router could not join them into a walk, and every route fell back to
-         a straight line. Zooming out to see more is how you end up seeing
-         less.
-
-         So the zoom is chosen to keep the street network intact and the ground
-         is covered by moving instead: the camera visits a few stops and the
-         ways from each are kept. Tiles already in the cache answer instantly,
-         so in practice this is one or two stops and no wait at all. */
-      const rad = (at.lat * Math.PI) / 180;
-      const dLat = radiusM / 111_320;
-      const dLng = radiusM / (111_320 * Math.cos(rad));
-
-      const canvas = m.getCanvas();
-      const wPx = canvas.clientWidth || 390;
-      const hPx = canvas.clientHeight || 640;
-
-      /* The highest zoom at which STOPS_PER_AXIS screens still cover the
-         ground, so the sweep stays short. Small walks land above z14 and get
-         footpaths with it; only the longest tiers are forced under, where the
-         walk is on main roads anyway. */
-      const zoomFor = (px: number) =>
-        Math.log2((156_543.034 * Math.cos(rad) * STOPS_PER_AXIS * px) / (2 * radiusM));
-      const zoom = Math.min(18, zoomFor(wPx), zoomFor(hPx));
-
-      const mPerPx = (156_543.034 * Math.cos(rad)) / 2 ** zoom;
-      const stopsX = Math.min(STOPS_PER_AXIS,
-        Math.max(1, Math.ceil((2 * radiusM) / (wPx * mPerPx))));
-      const stopsY = Math.min(STOPS_PER_AXIS,
-        Math.max(1, Math.ceil((2 * radiusM) / (hPx * mPerPx))));
-
-      /* Stop centres, spread across the ground and always including the middle
-         when the count is odd, so the walker's own position is covered first. */
-      const spread = (n: number, half: number) => n === 1 ? [0]
-        : Array.from({ length: n }, (_, i) => -half + (2 * half * i) / (n - 1));
-      const stops: LatLng[] = [];
-      for (const oy of spread(stopsY, dLat)) {
-        for (const ox of spread(stopsX, dLng)) {
-          stops.push({ lat: at.lat + oy, lng: at.lng + ox });
-        }
-      }
-      /* Nearest first: if the deadline bites, the ground under the walker is
-         the ground already in hand. */
-      stops.sort((a, b) =>
-        (Math.abs(a.lat - at.lat) + Math.abs(a.lng - at.lng))
-        - (Math.abs(b.lat - at.lat) + Math.abs(b.lng - at.lng)));
-
-      const home = { center: m.getCenter(), zoom: m.getZoom() };
-      const started = performance.now();
-      const found = new Map<string, Street>();
-
-      /* Polled, not waited on.
-       *
-       *  Every readiness flag MapLibre offers is the wrong question here.
-       *  `idle` fires before a cold map has asked for anything, and
-       *  `isStyleLoaded` stays false while an unrelated resource is pending,
-       *  so gating on it returned no streets at all and every walk came back
-       *  drawn as an arc. What matters is only whether there are ways to read
-       *  yet, so that is what gets asked, repeatedly, until the answer stops
-       *  changing. */
-      const collect = () => {
-        for (const line of walkableLines(m)) {
-          /* Tiles clip a street at their edge, so the same road arrives in
-             pieces and every piece is wanted. Only an identical piece, from a
-             tile read twice across two stops, is dropped. */
-          const a = line.coords[0], b = line.coords[line.coords.length - 1];
-          found.set(`${line.level}:${line.coords.length}:${a}:${b}`, line);
-        }
-      };
-      const harvest = async (budgetMs: number) => {
-        const from = performance.now();
-        let quiet = 0;
-        for (;;) {
-          const before = found.size;
-          collect();
-          /* Two polls that add nothing, with something already in hand, means
-             this stop has given what it has. */
-          quiet = found.size === before ? quiet + 1 : 0;
-          if (quiet >= 2 && found.size > 0) return;
-          if (performance.now() - from > budgetMs) return;
-          await new Promise((r) => window.setTimeout(r, POLL_MS));
-        }
-      };
-
-      for (const stop of stops) {
-        const left = DEADLINE_MS - (performance.now() - started);
-        if (left <= 0) break;
-        m.jumpTo({ center: [stop.lng, stop.lat], zoom });
-        await harvest(Math.min(left, PER_STOP_MS));
-      }
-
-      m.jumpTo({ center: home.center, zoom: home.zoom });
-      return [...found.values()];
-    },
-    streets: () => (map.current ? walkableLines(map.current) : []),
-    streetsWhenLoaded: (timeoutMs = DEADLINE_MS) => new Promise<Street[]>((resolve) => {
-      const m = map.current;
-      if (!m) { resolve([]); return; }
-      /* Polled rather than waited on. `idle` fires when nothing is in flight,
-         which on a cold start happens before the first tile has been asked
-         for, so it answers "nothing loading" when the truth is "nothing loaded
-         yet". The deadline is the point at which a walker would rather have
-         the written line than keep waiting for a better one. */
-      const started = performance.now();
-      let timer = 0;
-      const check = () => {
-        const lines = walkableLines(m);
-        if (lines.length > 0 || performance.now() - started > timeoutMs) {
-          window.clearInterval(timer);
-          resolve(lines);
-        }
-      };
-      timer = window.setInterval(check, 250);
-      check();
-    }),
   }), [locate]);
 
 

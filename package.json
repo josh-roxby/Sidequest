@@ -16,12 +16,14 @@
     "ingest:points": "node scripts/ingest-points.mjs"
   },
   "dependencies": {
+    "@mapbox/vector-tile": "^2.0.5",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.49.1",
     "h3-js": "^4.5.0",
     "lucide-react": "^1.14.0",
     "maplibre-gl": "^6.8.0",
     "next": "^16.2.6",
+    "pbf": "^4.0.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

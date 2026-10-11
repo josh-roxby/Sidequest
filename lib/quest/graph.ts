@@ -112,14 +112,76 @@ function planarise(lines: Path[], levels: number[]): Path[] {
     }
   }
 
-  if (cuts.size === 0) return lines;
+  /* Where a line simply stops on top of another one, which is the whole of a
+     tile boundary.
+
+     Crossings are not enough, because two halves of the same street arriving
+     in two tiles are parallel and never cross: they overlap. Every tile is cut
+     with a buffer, so each half runs a little way past the boundary and ends
+     in the middle of the other, and the ends are tens of metres apart. Welding
+     at two metres cannot see that, and nor can the crossing pass, so the two
+     halves of every street stayed two streets.
+
+     The damage was invisible until a walk was long enough to need the far
+     side: the graph held ten thousand nodes and the router could reach five
+     hundred of them, a network that stopped at three and a half kilometres. A
+     stroll routed, a three hour walk had nowhere to go and the walker was told
+     the streets had not loaded.
+
+     So an end that lands on another way splits it there, and the shared vertex
+     is what `weld` then joins. The same pass puts back the T junctions that
+     simplification rounds apart. */
+  const SNAP_M = 8;
+  /** Line index to a replacement for its first and last vertex. The end is
+   *  moved onto the way it lands on rather than left a few metres off it,
+   *  because a shared vertex is the only thing the graph counts as a junction
+   *  and the weld radius is deliberately tighter than this. */
+  const moved = new Map<number, { first?: [number, number]; last?: [number, number] }>();
+
+  lines.forEach((line, li) => {
+    for (const which of ["first", "last"] as const) {
+      const [ex, ey] = which === "first" ? line[0] : line[line.length - 1];
+      let best: { seg: Seg; u: number; foot: [number, number]; m: number } | null = null;
+      const bx = Math.floor(ex / CELL), by = Math.floor(ey / CELL);
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          for (const s of buckets.get(`${bx + dx},${by + dy}`) ?? []) {
+            if (s.line === li) continue;
+            if (levels[s.line] !== levels[li]) continue;
+            const rx = s.bx - s.ax, ry = s.by - s.ay;
+            const len2 = rx * rx + ry * ry;
+            if (len2 < 1e-18) continue;
+            const u = ((ex - s.ax) * rx + (ey - s.ay) * ry) / len2;
+            if (u <= 0 || u >= 1) continue;               // past one of its ends
+            const foot: [number, number] = [s.ax + rx * u, s.ay + ry * u];
+            const m = distanceM({ lat: ey, lng: ex }, { lat: foot[1], lng: foot[0] });
+            if (m > SNAP_M) continue;
+            if (!best || m < best.m) best = { seg: s, u, foot, m };
+          }
+        }
+      }
+      if (!best) continue;
+      /* Never move an end further than the line's own last run, which would
+         turn a short stub inside out. */
+      const own = which === "first" ? [line[0], line[1]] : [line[line.length - 1], line[line.length - 2]];
+      if (!own[1] || distanceM({ lat: own[0][1], lng: own[0][0] }, { lat: own[1][1], lng: own[1][0] }) < best.m) {
+        continue;
+      }
+      note(best.seg.line, best.seg.i, best.u);
+      const at = moved.get(li) ?? moved.set(li, {}).get(li)!;
+      at[which] = [+best.foot[0].toFixed(6), +best.foot[1].toFixed(6)];
+    }
+  });
+
+  if (cuts.size === 0 && moved.size === 0) return lines;
 
   return lines.map((line, li) => {
     const byLine = cuts.get(li);
-    if (!byLine) return line;
-    const out: Path = [line[0]];
+    const shift = moved.get(li);
+    if (!byLine && !shift) return line;
+    const out: Path = [shift?.first ?? line[0]];
     for (let i = 1; i < line.length; i++) {
-      const ts = byLine.get(i - 1);
+      const ts = byLine?.get(i - 1);
       if (ts) {
         for (const t of [...new Set(ts)].sort((x, y) => x - y)) {
           out.push([
@@ -128,7 +190,7 @@ function planarise(lines: Path[], levels: number[]): Path[] {
           ]);
         }
       }
-      out.push(line[i]);
+      out.push(i === line.length - 1 ? (shift?.last ?? line[i]) : line[i]);
     }
     return out;
   });

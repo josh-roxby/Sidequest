@@ -263,7 +263,7 @@ export function assembleQuest({
 
   /* With a street graph the walk is routed on real ways and the distance comes
      out of the route rather than being imposed on it.
-     
+
      Two ways to route it. With places to take in, the walk calls at each of
      them and the way home is stretched to the length the tier promises. With
      nothing recorded in reach, length leads instead: the turn is whatever is
@@ -273,14 +273,14 @@ export function assembleQuest({
   if (graph) {
     /* Every way of asking the streets for a walk, in order of how much of the
        original idea it keeps.
-       
+
        The walk was failing here and falling out to a drawn arc, which is what
        a walker saw as a curvy line that ignores the roads. One set of places
        is one shape of walk, and the streets will not always make the promised
        length out of it: a stop down a cul de sac, or two that sit either side
        of a river with no crossing between them. Giving up on the first no was
        the mistake.
-       
+
        So: the chosen places, then the same places minus the far ones, then a
        different draw from the same pool, and finally, rather than nothing at
        all, a walk of the right length with no particular place on it. The last
@@ -290,7 +290,6 @@ export function assembleQuest({
     for (const set of attempts) {
       for (let take = set.length; take >= 1; take--) tries.push(set.slice(0, take));
     }
-    tries.push([]);   // length alone, the one that rarely fails
 
     /* Bounded, because each of these is a pair of Dijkstras on a graph that
        can hold twenty thousand nodes, and a walker is standing there. */
@@ -298,15 +297,27 @@ export function assembleQuest({
     const seen = new Set<string>();
     let spent = 0;
 
-    for (const some of tries) {
-      const key2 = some.map((x) => x.id).join(",");
-      if (seen.has(key2)) continue;
-      seen.add(key2);
-      if (spent++ >= BUDGET) break;
+    /* Length alone is outside the budget, always, and always last: the `null`
+       on the end of the list below.
+
+       It used to sit on the end of `tries` and share the allowance, which
+       worked for the short tiers and silently broke the long ones: an
+       adventure wants five places, so four draws of five produced twenty sets
+       and the budget was gone by the ninth. The one try that almost never
+       fails was never reached, and a three hour walk came back as "the streets
+       here have not loaded" on ground that routes perfectly well. */
+    for (const some of [...tries, null]) {
+      if (some !== null) {
+        const id = some.map((x) => x.id).join(",");
+        if (seen.has(id)) continue;
+        seen.add(id);
+        if (spent++ >= BUDGET) continue;
+      }
       /* One shape for both, because only the walk with nothing to aim at has a
          turning point worth naming. */
-      const r: { path: Path; metres: number; turn?: LatLng } | null = some.length > 0
-        ? routeVia(graph, from, some.map((x) => ({ lat: x.lat, lng: x.lng })), wanted, targetM)
+      const on = some ?? [];
+      const r: { path: Path; metres: number; turn?: LatLng } | null = on.length > 0
+        ? routeVia(graph, from, on.map((x) => ({ lat: x.lat, lng: x.lng })), wanted, targetM)
         : routeOfLength(graph, from, targetM, wanted);
       if (!r) continue;
       if (r.metres < spec.minM || r.metres > spec.maxM) continue;
@@ -315,7 +326,7 @@ export function assembleQuest({
          stand at it. Routed walks turn where the streets allow, which is not
          always the doorstep, and a stop the line never reaches is a promise
          the walk does not keep. */
-      const missed = some.some((x) =>
+      const missed = on.some((x) =>
         nearestOnPath(r.path, { lat: x.lat, lng: x.lng }) >= 150);
       if (missed) continue;
 
@@ -324,25 +335,25 @@ export function assembleQuest({
         : "There and back along the same way";
 
       return {
-        anchor: some[0] ?? null,
+        anchor: on[0] ?? null,
         routed: true,
         quest: buildQuest({
           key, from, tier, shape: wanted, targetM: r.metres, path: r.path,
-          title: titleOf(some),
-          flavour: flavourOf(some, true),
-          townland: some[0]?.townland,
-          objectives: some.length > 0 ? objectivesFor(r.path, some) : [{
+          title: titleOf(on),
+          flavour: flavourOf(on, true),
+          townland: on[0]?.townland,
+          objectives: on.length > 0 ? objectivesFor(r.path, on) : [{
             id: "o-1", pointId: null, label: "The turn for home", required: false,
             reached: false, atM: Math.round(r.metres / 2),
             ...(r.turn ?? alongRoute(r.path, r.metres / 2)),
           }],
-          encounters: encountersFor(some, true),
+          encounters: encountersFor(on, true),
           honesty: [
             "Built from where you are standing",
             "Routed on real streets and paths",
             shapeLine,
           ],
-          stops: some.length,
+          stops: on.length,
         }),
       };
     }

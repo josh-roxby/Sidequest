@@ -63,7 +63,7 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   /* The walk as written is an arc across the ground. Once the basemap has the
      ways under it, the same router that draws a generated walk redraws this
      one, so the line on the screen is one a walker can actually follow. */
-  const { quest: q, onMapReady } = useRoutedQuest(quest.data, map);
+  const q = useRoutedQuest(quest.data);
 
   /* Held in a ref so the fix handler never has to be rebuilt when the walk
      is re-cut onto real streets. A new handler identity there would mean a
@@ -209,7 +209,6 @@ export default function WalkScreen({ params }: { params: Promise<{ id: string }>
   return (
     <div className="absolute inset-0 overflow-hidden">
       <MapView ref={map} markers={markers} trail={trail}
-        onReady={onMapReady}
         fit={fitPoints}
         home={q?.path[0] ? { lat: q.path[0][1], lng: q.path[0][0] } : undefined}
         /* Without this the camera flew to the walker and the dot stayed at the

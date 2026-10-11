@@ -103,6 +103,7 @@ lib/
   geo.ts        haversine, uniform point in radius, perpendicular waypoints
   map/
     project.ts  the one Web Mercator projection
+    tiles.ts    fetches and decodes the vector tiles the router runs on
     hex.ts      H3 on h3-js, and the resolution to draw at
     style.ts    the MapLibre style, built from the design tokens
   quest/        assembling a walk and drawing it on real streets.
@@ -173,22 +174,29 @@ npm run ingest:points # build public/data/points/ from data/points/*.ndjson
   retry and the walk screen draws waypoints and no line. `viaRoute` and
   `circleRoute` still exist for the offline corpus builder and must not come
   back into the runtime path.
-- **Streets come from `lib/map/harvest.ts`, never from a map on screen.** The
-  picker's preview is a decoration created before the walker has been placed,
-  so it opens zoomed out where the tiles carry no streets. The harvester is
-  its own off screen map at a fixed z14, warmed on mount, and it answers in
-  under a second once it is up.
-- **Do not gate reading the map on a MapLibre readiness flag.** `idle` fires
-  before a cold map has requested anything and `isStyleLoaded` stays false
-  while unrelated resources are pending, so both answer "no streets" on a map
-  that has them. Poll `walkableLines` until the answer stops changing, which
-  is the only question that matters.
+- **Streets come from `lib/map/tiles.ts`, never from a map.** It fetches the
+  z14 vector tiles itself and decodes the `transportation` layer. Three
+  versions of this asked MapLibre instead and each broke somewhere only a
+  phone would show: the picker's preview opens before the walker is placed, so
+  it sits at a zoom with no streets in it; a second off screen map costs a
+  WebGL context a phone may refuse; and in both cases "are the streets loaded
+  yet" is a guess dressed as a flag. Tiles are files. Nothing in the routing
+  path may gate on `idle` or `isStyleLoaded`.
+- **A tile is a picture of a network, not the network, and two tiles do not
+  join themselves.** Simplification drops the vertices where streets cross, so
+  `planarise` puts the crossings back; and tiles are cut with a buffer, so the
+  same street arrives twice, overlapping, collinear, never crossing. Without
+  the end-snap pass in `planarise` every street was two streets: ten thousand
+  nodes of which the router could reach five hundred, a network that stopped
+  at 3.4km. Strolls routed, three hour walks did not, and the walker was told
+  the streets had not loaded. `test/graph.test.ts` holds both cases.
 - **Routing tries several times before it gives up.** One set of places is one
   shape of walk and the streets will not always make the promised length out
   of it, so `assembleQuest` works through the chosen places, then fewer of
   them, then a different draw, and finally a walk of the right length with
   nothing named on it. Failing on the first no is what produced the drawn
-  arcs.
+  arcs. The last of those is outside the attempt budget, because an adventure
+  wants five places and the budget was gone before it was ever reached.
 - **Anything read from the browser is read after mount**, never in a
   `useState` initialiser. Prerendered pages run the initialiser on a server
   with no storage and keep that value, which has silently emptied the visited

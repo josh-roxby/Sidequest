@@ -45,7 +45,7 @@ export default function TrailScreen({ params }: { params: Promise<{ id: string }
      as an arc before there was a router. Re-cutting it here means a finished
      walk is remembered along the streets it was walked on. Replace this with
      the recorded track once walks are stored, in slice 6. */
-  const { quest, onMapReady } = useRoutedQuest(d?.quest ?? null, map);
+  const quest = useRoutedQuest(d?.quest ?? null);
 
   const trail = (quest?.path ?? []);
 
@@ -65,7 +65,6 @@ export default function TrailScreen({ params }: { params: Promise<{ id: string }
           <div className="relative -mx-4 h-[220px] overflow-hidden border-y border-rule">
             <MapView
               ref={map}
-              onReady={onMapReady}
               interactive={false}
               fit={trail.map(([lng, lat]) => ({ lat, lng }))}
               trail={trail}
